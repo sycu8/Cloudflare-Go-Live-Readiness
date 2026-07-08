@@ -1,0 +1,71 @@
+{
+  "name": "@orangecloud/cf-ready",
+  "version": "0.1.0",
+  "description": "Cloudflare Go-Live Readiness CLI — migration, security, AI, SEO, and deployment readiness checks",
+  "type": "module",
+  "license": "MIT",
+  "author": "OrangeCloud",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sycu8/cloudflare-go-live-readiness.git"
+  },
+  "homepage": "https://ready.orangecloud.vn",
+  "bugs": {
+    "url": "https://github.com/sycu8/cloudflare-go-live-readiness/issues"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "pages",
+    "readiness",
+    "migration",
+    "security",
+    "seo",
+    "cli",
+    "devops",
+    "nextjs",
+    "vite"
+  ],
+  "bin": {
+    "cf-ready": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run tests/integration",
+    "prepublishOnly": "npm run build",
+    "pages:deploy": "wrangler pages deploy docs --project-name=cf-ready-docs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "execa": "^9.5.2",
+    "fast-glob": "^3.3.3",
+    "picocolors": "^1.1.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "eslint": "^9.22.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.1",
+    "vitest": "^3.0.9",
+    "wrangler": "^4.108.0"
+  }
+}

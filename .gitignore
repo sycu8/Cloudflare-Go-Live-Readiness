@@ -1,0 +1,22 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+coverage/
+.cf-ready-cache/
+*.tgz
+
+# Generated scan reports (from local test runs)
+tests/fixtures/**/cf-ready-report.*
+tests/fixtures/**/migration-plan.md
+tests/fixtures/**/security-findings.sarif
+tests/fixtures/**/ai-readiness-report.md
+tests/fixtures/**/seo-readiness-report.md
+tests/fixtures/**/go-live-checklist.md
+tests/fixtures/**/rollback-plan.md
+tests/fixtures/**/deployment-manifest.json
+tests/fixtures/**/cf-ready-seo-suggestions.md
+tests/fixtures/**/openapi.json
+tests/fixtures/**/mcp-server-card.json
+tests/fixtures/**/auth.md
+tests/fixtures/**/public/

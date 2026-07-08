@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloudflare Go-Live Readiness — cf-ready</title>
+    <meta
+      name="description"
+      content="Cloudflare Go-Live Readiness helps developers move from finished code to production-ready Cloudflare deployment."
+    />
+    <meta property="og:title" content="cf-ready — Cloudflare Go-Live Readiness" />
+    <meta property="og:description" content="Migration, security, AI, SEO, and deployment readiness CLI for Cloudflare." />
+    <link rel="canonical" href="https://ready.orangecloud.vn" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --accent: #f38020;
+        --bg: #0a0a0a;
+        --text: #f5f5f5;
+        --muted: #a3a3a3;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+        background: var(--bg);
+        color: var(--text);
+      }
+      h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+      .tagline { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
+      pre {
+        background: #171717;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        overflow-x: auto;
+      }
+      code { color: #fbbf24; }
+      a { color: var(--accent); }
+      .badge {
+        display: inline-block;
+        background: #262626;
+        border: 1px solid #404040;
+        border-radius: 999px;
+        padding: 0.2rem 0.75rem;
+        font-size: 0.85rem;
+        margin-right: 0.5rem;
+      }
+      ul { padding-left: 1.25rem; }
+      li { margin: 0.35rem 0; }
+    </style>
+  </head>
+  <body>
+    <p><span class="badge">@orangecloud/cf-ready</span><span class="badge">MIT</span></p>
+    <h1>Cloudflare Go-Live Readiness</h1>
+    <p class="tagline">
+      Move from finished code to production-ready Cloudflare deployment with migration checks,
+      security scanning, AI readiness, SEO readiness, and go-live reporting.
+    </p>
+
+    <h2>Quick start</h2>
+    <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+
+    <h2>Install</h2>
+    <pre><code>npm install -g @orangecloud/cf-ready
+cf-ready scan</code></pre>
+
+    <h2>Commands</h2>
+    <ul>
+      <li><code>cf-ready scan</code> — full readiness scan</li>
+      <li><code>cf-ready inspect</code> — repository detection</li>
+      <li><code>cf-ready migration-plan</code> — Cloudflare migration plan</li>
+      <li><code>cf-ready security-scan</code> — security checks + SARIF</li>
+      <li><code>cf-ready ai-ready</code> — AI readiness checks</li>
+      <li><code>cf-ready seo-ready</code> — SEO readiness checks</li>
+      <li><code>cf-ready fix --ai-readiness</code> — generate AI assets</li>
+      <li><code>cf-ready fix --seo</code> — generate SEO suggestions</li>
+      <li><code>cf-ready deploy-check</code> — deployment readiness</li>
+      <li><code>cf-ready smoke-test --url &lt;url&gt;</code> — live HTTP checks</li>
+    </ul>
+
+    <h2>Safety</h2>
+    <p>
+      Read-only by default. Does not deploy or migrate automatically.
+      Only modifies files when you run explicit <code>fix</code> commands.
+    </p>
+
+    <p>
+      <a href="https://github.com/sycu8/cloudflare-go-live-readiness">GitHub</a>
+      ·
+      <a href="https://www.npmjs.com/package/@orangecloud/cf-ready">npm</a>
+    </p>
+  </body>
+</html>

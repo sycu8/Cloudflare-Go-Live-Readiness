@@ -1,0 +1,13 @@
+{
+  "name": "express-fixture-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "build": "echo \"no build\""
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}

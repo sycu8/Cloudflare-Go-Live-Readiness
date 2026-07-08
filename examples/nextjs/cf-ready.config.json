@@ -1,0 +1,23 @@
+{
+  "projectName": "Next.js Cloudflare App",
+  "productionUrl": "https://example.com",
+  "framework": "nextjs",
+  "target": "cloudflare-workers",
+  "migration": {
+    "preferredPath": "vinext",
+    "fallbackPath": "opennext",
+    "allowAutoMigration": false
+  },
+  "aiPolicy": "allow-assistive-agents",
+  "seo": {
+    "defaultTitle": "Next.js Cloudflare App",
+    "defaultDescription": "A production-ready Next.js application prepared for Cloudflare deployment.",
+    "defaultImage": "/og.png",
+    "organizationName": "OrangeCloud"
+  },
+  "criticalRoutes": ["/", "/login", "/dashboard", "/api/health"],
+  "security": {
+    "blockOnSecrets": true,
+    "blockOnCriticalDependencies": true
+  }
+}
