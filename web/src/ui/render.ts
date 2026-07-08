@@ -1,4 +1,4 @@
-import type { Finding, ScanScores } from "./api/client.js";
+import type { Finding, ScanScores } from "../api/client.js";
 
 export type ScanResultData = {
   productionReady?: boolean;

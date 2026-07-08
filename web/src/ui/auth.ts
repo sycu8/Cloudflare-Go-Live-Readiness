@@ -93,10 +93,24 @@ export function renderLoginLoading(): string {
   `;
 }
 
+function sanitizeAvatarUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+      return escapeHtml(parsed.href);
+    }
+  } catch {
+    /* invalid URL */
+  }
+  return null;
+}
+
 export function renderUserMenu(name: string, email: string, avatarUrl: string | null): string {
-  const initial = (name || email).charAt(0).toUpperCase();
-  const avatar = avatarUrl
-    ? `<img class="user-menu__avatar" src="${avatarUrl}" alt="" width="28" height="28" />`
+  const initial = escapeHtml((name || email).charAt(0).toUpperCase());
+  const safeAvatar = sanitizeAvatarUrl(avatarUrl);
+  const avatar = safeAvatar
+    ? `<img class="user-menu__avatar" src="${safeAvatar}" alt="" width="28" height="28" />`
     : `<span class="user-menu__initial" aria-hidden="true">${initial}</span>`;
 
   return `
