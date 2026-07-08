@@ -17,6 +17,8 @@ import {
   registerGitHubRepoSession,
 } from "./reports-cache.js";
 
+import { resolveSessionId } from "./session-id.js";
+
 const PROJECT_DIR = "/workspace/project";
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
@@ -31,7 +33,7 @@ export class SessionDO implements DurableObject {
     this.state = state;
     this.env = env;
     this.session = {
-      id: state.id.toString(),
+      id: resolveSessionId(state),
       status: "idle",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -41,6 +43,7 @@ export class SessionDO implements DurableObject {
   private async load(): Promise<void> {
     const stored = await this.state.storage.get<SessionState>("session");
     if (stored) this.session = stored;
+    this.session.id = resolveSessionId(this.state, this.session.id);
   }
 
   private async save(): Promise<void> {
@@ -49,10 +52,10 @@ export class SessionDO implements DurableObject {
   }
 
   private sandbox(): SandboxHandle {
-    // Sandbox binding class is provided by @cloudflare/sandbox at deploy time
+    const sandboxId = resolveSessionId(this.state, this.session.id);
     return getSandbox(
       this.env.Sandbox as unknown as Parameters<typeof getSandbox>[0],
-      this.session.id,
+      sandboxId,
     );
   }
 
