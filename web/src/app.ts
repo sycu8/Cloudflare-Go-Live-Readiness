@@ -12,20 +12,26 @@ import {
   listFiles,
   listGitHubRepos,
   uploadZip,
-  type Finding,
-  type ScanScores,
 } from "./api/client.js";
+import {
+  renderEmptyResults,
+  renderResults,
+  type ScanResultData,
+} from "./ui/render.js";
 
-const COMMANDS = [
-  "scan",
-  "inspect",
-  "security-scan",
-  "ai-ready",
-  "seo-ready",
-  "deploy-check",
-  "migration-plan",
-  "ai-optimize",
+const COMMANDS: Array<{ name: string; desc: string }> = [
+  { name: "scan", desc: "Full readiness scan" },
+  { name: "inspect", desc: "Detect framework" },
+  { name: "security-scan", desc: "Security + SARIF" },
+  { name: "ai-ready", desc: "AI readiness" },
+  { name: "seo-ready", desc: "SEO checks" },
+  { name: "deploy-check", desc: "Deploy readiness" },
+  { name: "migration-plan", desc: "Migration plan" },
+  { name: "ai-optimize", desc: "AI suggestions" },
 ];
+
+type MobileTab = "project" | "workspace" | "results";
+type WorkspaceView = "chat" | "cli";
 
 export async function mountApp(root: HTMLElement): Promise<void> {
   let sessionId = sessionStorage.getItem("cf-ready-session") ?? "";
@@ -34,86 +40,189 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     sessionStorage.setItem("cf-ready-session", sessionId);
   }
 
+  let lastResultData: ScanResultData | null = null;
+  let findingsFilter = "all";
+  let projectName = "";
+  let fileCount = 0;
+
   root.innerHTML = `
     <header class="app-header">
-      <h1>cf-ready Agent</h1>
-      <div>
-        <span class="status-pill" id="status-pill">idle</span>
-        <a href="/" style="margin-left:1rem">Docs</a>
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">☁</div>
+        <div class="brand__text">
+          <h1>cf-ready Agent</h1>
+          <p>Cloudflare Go-Live Readiness</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
+        <a class="link-btn" href="/">Docs</a>
       </div>
     </header>
-    <div class="layout">
-      <aside class="panel" id="project-panel">
-        <div class="panel-header">Project</div>
-        <div class="panel-body">
-          <div class="dropzone" id="dropzone">
-            Drop ZIP here or click to upload
-            <input type="file" id="file-input" accept=".zip" hidden />
+
+    <div class="app-shell">
+      <div class="layout">
+        <aside class="panel panel--project is-active" id="panel-project" aria-label="Project">
+          <div class="panel-header">
+            <h2>Project</h2>
+            <span id="file-count-label">Chưa có source</span>
           </div>
-          <div class="input-row">
-            <input type="text" id="github-url" placeholder="https://github.com/owner/repo" />
-            <button id="import-btn">Import</button>
+          <div class="panel-body">
+            <div class="project-card" id="project-card">
+              <p class="project-card__name" id="project-name">Chưa import project</p>
+              <p class="project-card__hint">Upload ZIP hoặc import GitHub để bắt đầu scan.</p>
+            </div>
+
+            <p class="section-label">Upload source</p>
+            <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload ZIP file">
+              <div class="dropzone__icon" aria-hidden="true">📦</div>
+              <p class="dropzone__title">Kéo thả hoặc chọn file ZIP</p>
+              <p class="dropzone__sub">Tối đa 50MB · không cần node_modules</p>
+              <input type="file" id="file-input" accept=".zip" hidden />
+            </div>
+
+            <p class="section-label">GitHub</p>
+            <div class="field">
+              <label for="github-url">Repo URL (public)</label>
+              <input type="text" id="github-url" placeholder="https://github.com/owner/repo" autocomplete="off" />
+            </div>
+            <div class="btn-row">
+              <button type="button" class="primary" id="import-btn">Import</button>
+              <button type="button" class="ghost" id="github-connect">Connect</button>
+              <button type="button" class="ghost" id="github-repos" disabled>Repos</button>
+            </div>
+
+            <div class="file-tree" id="file-tree" hidden>
+              <div class="file-tree__head">Files (<span id="file-count">0</span>)</div>
+              <ul id="file-list"></ul>
+            </div>
           </div>
-          <div class="input-row">
-            <button class="secondary" id="github-connect">Connect GitHub</button>
-            <button class="secondary" id="github-repos" disabled>Repos</button>
+        </aside>
+
+        <main class="panel workspace-panel is-active" id="panel-workspace" aria-label="Workspace">
+          <div class="panel-header">
+            <h2>Workspace</h2>
+            <span>Chat + CLI</span>
           </div>
-          <ul class="file-list" id="file-list"></ul>
-        </div>
-      </aside>
-      <main class="center-panel">
-        <div class="panel-header">Agent</div>
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="Ask in Vietnamese or English… e.g. kiểm tra bảo mật" />
-          <button id="chat-send">Send</button>
-        </div>
-        <div class="chips" id="chips"></div>
-        <div class="terminal-wrap" id="terminal"></div>
-      </main>
-      <aside class="panel">
-        <div class="panel-header">Results</div>
-        <div class="panel-body" id="results-panel">
-          <p style="color:var(--muted)">Run <code>scan</code> to see readiness scores.</p>
-        </div>
-      </aside>
+          <div class="workspace-layout">
+            <div class="workspace-tabs" role="tablist" aria-label="Workspace mode">
+              <button type="button" class="active" data-workspace="chat" role="tab" aria-selected="true">💬 Chat</button>
+              <button type="button" data-workspace="cli" role="tab" aria-selected="false">⌨️ CLI</button>
+            </div>
+
+            <div class="workspace-view active" data-view="chat" id="view-chat">
+              <div class="chat-section">
+                <div class="chat-messages" id="chat-messages" aria-live="polite">
+                  <div class="chat-welcome">
+                    <strong>Xin chào!</strong> Tôi có thể giúp bạn chạy cf-ready.
+                    <ul>
+                      <li>Hỏi: <em>"kiểm tra bảo mật"</em> → security-scan</li>
+                      <li>Hỏi: <em>"scan project"</em> → full scan</li>
+                      <li>Hoặc dùng CLI tab để gõ lệnh trực tiếp</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="chat-input-row">
+                  <input type="text" id="chat-input" placeholder="Hỏi bằng tiếng Việt hoặc English…" aria-label="Chat message" />
+                  <button type="button" class="primary" id="chat-send">Gửi</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="workspace-view" data-view="cli" id="view-cli">
+              <div class="cli-section">
+                <div class="commands-section">
+                  <h3>Quick commands</h3>
+                  <div class="chips" id="chips"></div>
+                </div>
+                <div class="terminal-wrap" id="terminal" aria-label="cf-ready terminal"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <aside class="panel panel--results" id="panel-results" aria-label="Results">
+          <div class="panel-header">
+            <h2>Results</h2>
+            <span id="results-summary">—</span>
+          </div>
+          <div class="panel-body" id="results-panel">
+            ${renderEmptyResults()}
+          </div>
+        </aside>
+      </div>
     </div>
+
+    <nav class="mobile-tabs" aria-label="Mobile navigation">
+      <button type="button" class="active" data-tab="project" aria-current="page">
+        <span class="tab-icon" aria-hidden="true">📁</span>
+        Project
+      </button>
+      <button type="button" data-tab="workspace">
+        <span class="tab-icon" aria-hidden="true">⚡</span>
+        Workspace
+      </button>
+      <button type="button" data-tab="results">
+        <span class="tab-icon" aria-hidden="true">📊</span>
+        Results
+      </button>
+    </nav>
   `;
 
-  const statusPill = root.querySelector("#status-pill") as HTMLElement;
-  const dropzone = root.querySelector("#dropzone") as HTMLElement;
-  const fileInput = root.querySelector("#file-input") as HTMLInputElement;
-  const githubUrl = root.querySelector("#github-url") as HTMLInputElement;
-  const importBtn = root.querySelector("#import-btn") as HTMLButtonElement;
-  const githubConnect = root.querySelector("#github-connect") as HTMLButtonElement;
-  const githubReposBtn = root.querySelector("#github-repos") as HTMLButtonElement;
-  const fileList = root.querySelector("#file-list") as HTMLUListElement;
-  const chips = root.querySelector("#chips") as HTMLElement;
-  const terminalEl = root.querySelector("#terminal") as HTMLElement;
-  const resultsPanel = root.querySelector("#results-panel") as HTMLElement;
-  const chatMessages = root.querySelector("#chat-messages") as HTMLElement;
-  const chatInput = root.querySelector("#chat-input") as HTMLInputElement;
-  const chatSend = root.querySelector("#chat-send") as HTMLButtonElement;
+  const $ = <T extends HTMLElement>(sel: string) => root.querySelector(sel) as T;
+
+  const statusPill = $("#status-pill");
+  const dropzone = $("#dropzone");
+  const fileInput = $("#file-input") as HTMLInputElement;
+  const githubUrl = $("#github-url") as HTMLInputElement;
+  const importBtn = $("#import-btn");
+  const githubConnect = $("#github-connect");
+  const githubReposBtn = $("#github-repos");
+  const fileList = $("#file-list");
+  const fileTree = $("#file-tree");
+  const fileCountEl = $("#file-count");
+  const fileCountLabel = $("#file-count-label");
+  const projectNameEl = $("#project-name");
+  const projectCard = $("#project-card");
+  const chips = $("#chips");
+  const terminalEl = $("#terminal");
+  const resultsPanel = $("#results-panel");
+  const resultsSummary = $("#results-summary");
+  const chatMessages = $("#chat-messages");
+  const chatInput = $("#chat-input") as HTMLInputElement;
+  const chatSend = $("#chat-send");
 
   const term = new Terminal({
     theme: {
       background: "#000000",
-      foreground: "#f5f5f5",
+      foreground: "#e4e4e7",
       cursor: "#f38020",
+      selectionBackground: "rgba(243, 128, 32, 0.3)",
     },
-    fontFamily: "ui-monospace, monospace",
+    fontFamily: "JetBrains Mono, ui-monospace, monospace",
     fontSize: 13,
+    lineHeight: 1.35,
     cursorBlink: true,
+    scrollback: 2000,
   });
   const fitAddon = new FitAddon();
   term.loadAddon(fitAddon);
   term.open(terminalEl);
-  fitAddon.fit();
 
-  window.addEventListener("resize", () => fitAddon.fit());
-
-  let prompt = "cf-ready> ";
+  const prompt = "cf-ready> ";
   let inputBuffer = "";
+
+  function fitTerminal() {
+    requestAnimationFrame(() => {
+      try {
+        fitAddon.fit();
+      } catch {
+        /* container may be hidden on mobile */
+      }
+    });
+  }
+
+  window.addEventListener("resize", fitTerminal);
 
   function writeln(text: string) {
     term.writeln(text);
@@ -128,7 +237,16 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     statusPill.className = `status-pill ${status}`;
   }
 
+  function setProjectInfo(name: string, hint: string) {
+    projectName = name;
+    projectNameEl.textContent = name;
+    projectCard.querySelector(".project-card__hint")!.textContent = hint;
+    fileCountLabel.textContent = fileCount > 0 ? `${fileCount} files` : "Đã import";
+  }
+
   function addChatBubble(role: "user" | "agent", text: string) {
+    const welcome = chatMessages.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
     const div = document.createElement("div");
     div.className = `chat-bubble ${role}`;
     div.textContent = text;
@@ -136,58 +254,77 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
+  function updateResultsPanel() {
+    if (!lastResultData) {
+      resultsPanel.innerHTML = renderEmptyResults();
+      resultsSummary.textContent = "—";
+      return;
+    }
+    resultsPanel.innerHTML = renderResults(lastResultData, findingsFilter);
+    resultsPanel.querySelectorAll(".filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        findingsFilter = (btn as HTMLElement).dataset.filter ?? "all";
+        updateResultsPanel();
+      });
+    });
+    const scores = lastResultData.scores;
+    if (scores) {
+      resultsSummary.textContent = `${scores.overall}/100`;
+    }
+  }
+
+  function showResults(data: ScanResultData) {
+    lastResultData = { ...lastResultData, ...data };
+    if (data.inspection?.projectName) {
+      setProjectInfo(data.inspection.projectName, "Scan completed — xem kết quả bên phải.");
+    }
+    updateResultsPanel();
+    if (window.innerWidth <= 1024) {
+      setMobileTab("results");
+    }
+  }
+
   async function refreshFiles() {
     try {
       const { files } = await listFiles(sessionId);
-      fileList.innerHTML = files.slice(0, 50).map((f) => `<li>${f}</li>`).join("");
+      fileCount = files.length;
+      fileCountEl.textContent = String(fileCount);
+      fileCountLabel.textContent = `${fileCount} files`;
+      fileList.innerHTML = files
+        .slice(0, 80)
+        .map((f) => `<li title="${f}">${f}</li>`)
+        .join("");
+      fileTree.hidden = files.length === 0;
     } catch {
-      fileList.innerHTML = "";
+      fileTree.hidden = true;
     }
   }
 
-  function renderResults(data: {
-    productionReady?: boolean;
-    scores?: ScanScores;
-    blockers?: Finding[];
-    findings?: Finding[];
-    markdown?: string;
-  }) {
-    if (!data.scores) {
-      resultsPanel.innerHTML = `<pre style="font-size:0.8rem;white-space:pre-wrap">${JSON.stringify(data, null, 2)}</pre>`;
-      return;
-    }
-
-    const scores = data.scores;
-    const blockers = data.blockers ?? [];
-    const findings = (data.findings ?? []).filter((f) => f.severity !== "info").slice(0, 20);
-
-    resultsPanel.innerHTML = `
-      <p>${data.productionReady ? '<span style="color:var(--success)">Production ready</span>' : '<span style="color:var(--danger)">Not production ready</span>'}</p>
-      <div class="score-grid">
-        ${scoreCard("Overall", scores.overall)}
-        ${scoreCard("Migration", scores.migration)}
-        ${scoreCard("Security", scores.security)}
-        ${scoreCard("AI", scores.aiReadiness)}
-        ${scoreCard("SEO", scores.seo)}
-        ${scoreCard("Deployment", scores.deployment)}
-      </div>
-      ${blockers.length ? `<h4 style="color:var(--danger)">Blockers (${blockers.length})</h4><ul class="findings">${blockers.map(findingItem).join("")}</ul>` : ""}
-      <h4>Findings</h4>
-      <ul class="findings">${findings.map(findingItem).join("") || "<li>No issues</li>"}</ul>
-      ${data.markdown ? `<div class="markdown-preview">${escapeHtml(data.markdown)}</div>` : ""}
-    `;
+  function setMobileTab(tab: MobileTab) {
+    mobileTab = tab;
+    root.querySelectorAll(".mobile-tabs button").forEach((btn) => {
+      const active = (btn as HTMLElement).dataset.tab === tab;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-current", active ? "page" : "false");
+    });
+    root.querySelectorAll(".panel").forEach((panel) => {
+      panel.classList.remove("is-active");
+    });
+    $(`#panel-${tab}`).classList.add("is-active");
+    if (tab === "workspace") fitTerminal();
   }
 
-  function scoreCard(label: string, value: number) {
-    return `<div class="score-card"><div class="label">${label}</div><div class="value">${value}</div></div>`;
-  }
-
-  function findingItem(f: Finding) {
-    return `<li><span class="severity-${f.severity}">[${f.severity}]</span> ${escapeHtml(f.title)}</li>`;
-  }
-
-  function escapeHtml(s: string) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  function setWorkspaceView(view: WorkspaceView) {
+    workspaceView = view;
+    root.querySelectorAll(".workspace-tabs button").forEach((btn) => {
+      const active = (btn as HTMLElement).dataset.workspace === view;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", String(active));
+    });
+    root.querySelectorAll(".workspace-view").forEach((el) => {
+      el.classList.toggle("active", (el as HTMLElement).dataset.view === view);
+    });
+    if (view === "cli") fitTerminal();
   }
 
   async function pollStatus() {
@@ -201,6 +338,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     if (!trimmed) return;
 
     setStatus("running");
+    setWorkspaceView("cli");
     writeln(`$ cf-ready ${trimmed}`);
 
     try {
@@ -208,14 +346,14 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       if (result.stderr) writeln(result.stderr);
       if (result.stdout) {
         try {
-          const parsed = JSON.parse(result.stdout);
-          writeln(JSON.stringify(parsed, null, 2).slice(0, 4000));
-          renderResults(parsed);
+          const parsed = JSON.parse(result.stdout) as ScanResultData;
+          writeln(`✓ Done — Overall: ${parsed.scores?.overall ?? "—"}/100`);
+          showResults(parsed);
         } catch {
-          writeln(result.stdout.slice(0, 4000));
+          writeln(result.stdout.slice(0, 3000));
         }
       }
-      if (result.data) renderResults(result.data as Parameters<typeof renderResults>[0]);
+      if (result.data) showResults(result.data as ScanResultData);
       if (result.error) writeln(`Error: ${result.error}`);
     } catch (err) {
       writeln(`Error: ${err instanceof Error ? err.message : String(err)}`);
@@ -225,8 +363,10 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
     await pollStatus();
     const results = await getResults(sessionId);
-    if (results.result) renderResults(results.result as Parameters<typeof renderResults>[0]);
-    if (results.markdown) renderResults({ ...(results.result as object), markdown: results.markdown });
+    if (results.result) showResults(results.result as ScanResultData);
+    if (results.markdown) {
+      showResults({ ...(results.result as ScanResultData), markdown: results.markdown });
+    }
   }
 
   async function handleUpload(file: File) {
@@ -234,19 +374,23 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     writeln(`Uploading ${file.name}…`);
     try {
       await uploadZip(sessionId, file);
-      writeln("Upload complete. Project ready.");
+      const name = file.name.replace(/\.zip$/i, "");
+      setProjectInfo(name, "Upload thành công — chạy scan để kiểm tra.");
+      writeln("✓ Upload complete.");
       setStatus("idle");
       await refreshFiles();
-      addChatBubble("agent", `Imported ${file.name}. Try: scan`);
+      addChatBubble("agent", `Đã import ${file.name}. Gõ "scan" hoặc hỏi tôi để bắt đầu.`);
+      setMobileTab("workspace");
     } catch (err) {
       writeln(`Upload failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
     }
   }
 
-  writeln("cf-ready Web Agent — upload source or import GitHub, then run commands.");
-  writeln("Type a command (e.g. scan) or use quick chips below.");
+  writeln("cf-ready Web Agent");
+  writeln("Import project → run scan → xem Results tab.");
   writePrompt();
+  fitTerminal();
 
   term.onData((data) => {
     if (data === "\r") {
@@ -269,14 +413,21 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   });
 
   for (const cmd of COMMANDS) {
-    const chip = document.createElement("span");
+    const chip = document.createElement("button");
+    chip.type = "button";
     chip.className = "chip";
-    chip.textContent = cmd;
-    chip.onclick = () => runLine(cmd);
+    chip.innerHTML = `<span class="chip__name">${cmd.name}</span><span class="chip__desc">${cmd.desc}</span>`;
+    chip.onclick = () => runLine(cmd.name);
     chips.appendChild(chip);
   }
 
   dropzone.onclick = () => fileInput.click();
+  dropzone.onkeydown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fileInput.click();
+    }
+  };
   dropzone.ondragover = (e) => {
     e.preventDefault();
     dropzone.classList.add("dragover");
@@ -295,15 +446,21 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   importBtn.onclick = async () => {
     const url = githubUrl.value.trim();
-    if (!url) return;
+    if (!url) {
+      githubUrl.focus();
+      return;
+    }
     setStatus("importing");
     writeln(`Importing ${url}…`);
     try {
       await importGitHub(sessionId, url);
-      writeln("GitHub import complete.");
+      const short = url.replace(/^https?:\/\/github\.com\//, "");
+      setProjectInfo(short, "GitHub import thành công — chạy scan để kiểm tra.");
+      writeln("✓ GitHub import complete.");
       setStatus("idle");
       await refreshFiles();
-      addChatBubble("agent", `Imported ${url}. Try: scan`);
+      addChatBubble("agent", `Đã import ${short}. Thử lệnh scan.`);
+      setMobileTab("workspace");
     } catch (err) {
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
@@ -317,11 +474,14 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   githubReposBtn.onclick = async () => {
     try {
       const { repos } = await listGitHubRepos(sessionId);
-      const pick = repos.slice(0, 20).map((r) => r.full_name).join("\n");
-      addChatBubble("agent", `Your repos:\n${pick}`);
-      githubReposBtn.disabled = false;
+      const pick = repos
+        .slice(0, 15)
+        .map((r) => `• ${r.full_name}${r.private ? " (private)" : ""}`)
+        .join("\n");
+      addChatBubble("agent", `Repos của bạn:\n${pick}`);
+      setMobileTab("workspace");
     } catch {
-      addChatBubble("agent", "Connect GitHub first.");
+      addChatBubble("agent", "Hãy Connect GitHub trước.");
     }
   };
 
@@ -330,26 +490,26 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     if (!msg) return;
     chatInput.value = "";
     addChatBubble("user", msg);
-    chatSend.disabled = true;
+    chatSend.setAttribute("disabled", "true");
     try {
       const result = await chat(sessionId, msg);
-      addChatBubble("agent", result.reply ?? "Done.");
+      addChatBubble("agent", result.reply ?? "Đã xử lý.");
       if (result.command) writeln(`$ ${result.command}`);
-      if (result.result?.data) renderResults(result.result.data);
+      if (result.result?.data) showResults(result.result.data as ScanResultData);
       else if (result.result) {
         const r = result.result as { stdout?: string };
         if (r.stdout) {
           try {
-            renderResults(JSON.parse(r.stdout));
+            showResults(JSON.parse(r.stdout) as ScanResultData);
           } catch {
             /* ignore */
           }
         }
       }
     } catch (err) {
-      addChatBubble("agent", `Error: ${err instanceof Error ? err.message : String(err)}`);
+      addChatBubble("agent", `Lỗi: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
-      chatSend.disabled = false;
+      chatSend.removeAttribute("disabled");
     }
   }
 
@@ -358,10 +518,22 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     if (e.key === "Enter") void sendChat();
   };
 
+  root.querySelectorAll(".mobile-tabs button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setMobileTab((btn as HTMLElement).dataset.tab as MobileTab);
+    });
+  });
+
+  root.querySelectorAll(".workspace-tabs button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setWorkspaceView((btn as HTMLElement).dataset.workspace as WorkspaceView);
+    });
+  });
+
   const params = new URLSearchParams(window.location.search);
   if (params.get("github") === "connected") {
-    addChatBubble("agent", "GitHub connected. Use Repos or paste a repo URL.");
-    githubReposBtn.disabled = false;
+    addChatBubble("agent", "GitHub đã kết nối. Bấm Repos hoặc dán URL repo.");
+    githubReposBtn.removeAttribute("disabled");
   }
 
   await pollStatus();
