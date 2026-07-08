@@ -583,6 +583,15 @@ button.full {
 .workspace-panel {
   background: var(--bg);
   border-right: 1px solid var(--border);
+  min-height: 0;
+}
+
+.workspace-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .workspace-tabs {
@@ -1101,20 +1110,32 @@ button.full {
     grid-template-rows: minmax(200px, 36%) minmax(240px, 1fr);
     flex: 1;
     min-height: 0;
+    height: 100%;
   }
 
   .workspace-view {
     display: flex !important;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
   }
 
   .workspace-view[data-view="chat"] {
     border-bottom: 1px solid var(--border);
+    min-height: 0;
   }
 
-  .chat-section {
-    border-bottom: none;
+  .workspace-view[data-view="cli"] {
+    min-height: 0;
+  }
+
+  .cli-section {
+    min-height: 0;
+  }
+
+  .terminal-wrap {
+    flex: 1;
+    min-height: 200px;
   }
 }
 

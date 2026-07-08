@@ -161,18 +161,16 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   if (pathname.endsWith("/import/github") && request.method === "POST") {
+    const body = (await request.json()) as Record<string, unknown>;
     const token = await getGitHubToken(env, sessionId, user?.id);
-    if (token) {
-      const body = (await request.json()) as Record<string, unknown>;
-      body.token = token;
-      return stub.fetch(
-        new Request(request.url, {
-          method: "POST",
-          headers: request.headers,
-          body: JSON.stringify(body),
-        }),
-      );
-    }
+    if (token) body.token = token;
+    return stub.fetch(
+      new Request("http://do/import/github", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
   }
 
   const subPath = pathname.replace(`/api/sessions/${sessionId}`, "");

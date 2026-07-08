@@ -17,6 +17,15 @@ describe("github import", () => {
     );
   });
 
+  it("parses owner/repo shorthand", () => {
+    const parsed = parseGitHubRepoUrl("sycu8/testquotetool");
+    expect(parsed).toEqual({
+      owner: "sycu8",
+      repo: "testquotetool",
+      ref: "HEAD",
+    });
+  });
+
   it("rejects non-github URLs", () => {
     expect(() => validateGitHubUrl("https://gitlab.com/foo/bar")).toThrow();
   });

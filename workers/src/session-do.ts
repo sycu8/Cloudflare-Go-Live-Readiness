@@ -60,14 +60,25 @@ export class SessionDO implements DurableObject {
     await sandbox.exec(`rm -rf ${PROJECT_DIR} && mkdir -p ${PROJECT_DIR}`);
   }
 
-  private async importTarball(sandbox: SandboxHandle, tarballUrl: string): Promise<void> {
+  private async importTarball(
+    sandbox: SandboxHandle,
+    tarballUrl: string,
+    token?: string,
+  ): Promise<void> {
     await this.ensureProjectDir(sandbox);
+    const authFlag = token ? `-H "Authorization: Bearer ${token}"` : "";
     const result = await sandbox.exec(
-      `curl -fsSL "${tarballUrl}" | tar -xz -C ${PROJECT_DIR} --strip-components=1`,
+      `curl -fsSL ${authFlag} "${tarballUrl}" | tar -xz -C ${PROJECT_DIR} --strip-components=1`,
       { timeout: 120000 },
     );
     if (!result.success) {
-      throw new Error(result.stderr || "Failed to extract archive");
+      const detail = (result.stderr || result.stdout || "").trim();
+      if (detail.includes("<!DOCTYPE") || detail.includes("Not Found")) {
+        throw new Error(
+          "GitHub archive download failed. For private repos, connect GitHub or check repository access.",
+        );
+      }
+      throw new Error(detail || "Failed to extract archive");
     }
   }
 
@@ -203,7 +214,10 @@ export class SessionDO implements DurableObject {
 
     const parsed = parseGitHubRepoUrl(body.repoUrl);
     if (!parsed) {
-      return Response.json({ error: "Invalid GitHub URL" }, { status: 400 });
+      return Response.json(
+        { error: "Invalid GitHub URL. Use https://github.com/owner/repo or owner/repo" },
+        { status: 400 },
+      );
     }
 
     const ref = body.ref ?? parsed.ref;
@@ -221,32 +235,54 @@ export class SessionDO implements DurableObject {
     this.session.source = "github";
     this.session.projectName = `${parsed.owner}/${parsed.repo}`;
     this.session.githubRepo = { owner: parsed.owner, repo: parsed.repo, ref };
+    this.session.lastError = undefined;
     if (commitSha) this.session.sourceCommitSha = commitSha;
     await this.save();
 
-    const sandbox = this.sandbox();
-    let fetchUrl = tarballUrl;
-    if (body.token) {
-      fetchUrl = tarballUrl.replace("https://", `https://${body.token}@`);
-    }
-
-    await this.importTarball(sandbox, fetchUrl);
-    await registerGitHubRepoSession(this.env, parsed.owner, parsed.repo, this.session.id);
-
-    this.session.status = "idle";
-    await this.save();
-
-    const commitChanged = Boolean(commitSha && commitSha !== previousSha);
-    if (commitChanged || !previousSha) {
-      this.state.waitUntil(this.runScanAndCacheReport(commitSha));
-    }
+    this.state.waitUntil(
+      this.finishGitHubImport({
+        tarballUrl,
+        token: body.token,
+        previousSha,
+        commitSha,
+      }),
+    );
 
     return Response.json({
       ok: true,
+      status: "importing",
       projectName: this.session.projectName,
       commitSha: commitSha ?? null,
-      reportQueued: commitChanged || !previousSha,
     });
+  }
+
+  private async finishGitHubImport(args: {
+    tarballUrl: string;
+    token?: string;
+    previousSha?: string;
+    commitSha?: string;
+  }): Promise<void> {
+    const { tarballUrl, token, previousSha, commitSha } = args;
+    const parsed = this.session.githubRepo;
+    if (!parsed) return;
+
+    try {
+      const sandbox = this.sandbox();
+      await this.importTarball(sandbox, tarballUrl, token);
+      await registerGitHubRepoSession(this.env, parsed.owner, parsed.repo, this.session.id);
+
+      this.session.status = "idle";
+      await this.save();
+
+      const commitChanged = Boolean(commitSha && commitSha !== previousSha);
+      if (commitChanged || !previousSha) {
+        await this.runScanAndCacheReport(commitSha);
+      }
+    } catch (error) {
+      this.session.status = "error";
+      this.session.lastError = error instanceof Error ? error.message : String(error);
+      await this.save();
+    }
   }
 
   private async handleRefreshGitHub(request: Request): Promise<Response> {
@@ -259,15 +295,13 @@ export class SessionDO implements DurableObject {
     const ref = body.ref ?? repo.ref;
     const token = await getGitHubToken(this.env, this.session.id);
     const tarballUrl = githubTarballUrl(repo.owner, repo.repo, ref);
-    let fetchUrl = tarballUrl;
-    if (token) fetchUrl = tarballUrl.replace("https://", `https://${token}@`);
 
     this.session.status = "importing";
     if (body.commitSha) this.session.sourceCommitSha = body.commitSha;
     await this.save();
 
     const sandbox = this.sandbox();
-    await this.importTarball(sandbox, fetchUrl);
+    await this.importTarball(sandbox, tarballUrl, token ?? undefined);
     this.session.status = "idle";
     await this.save();
 

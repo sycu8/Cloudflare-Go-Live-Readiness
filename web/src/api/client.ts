@@ -1,5 +1,31 @@
+import { readApiError, readApiJson } from "./errors.js";
+
 const API_BASE = "";
 const fetchOpts: RequestInit = { credentials: "include" };
+
+export function normalizeGitHubRepoUrl(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^[\w.-]+\/[\w.-]+/.test(trimmed)) return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
+  return trimmed;
+}
+
+async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const status = (await getStatus(sessionId)) as {
+      status?: string;
+      lastError?: string | null;
+    };
+    if (status.status === "idle") return;
+    if (status.status === "error") {
+      throw new Error(status.lastError ?? "Import failed");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  throw new Error("Import timed out. The repository may be large — try again.");
+}
 
 export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
 
@@ -23,10 +49,9 @@ export type Finding = {
 export async function createSession(): Promise<string> {
   const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error ?? "Failed to create session");
+    throw new Error(await readApiError(res, "Failed to create session"));
   }
-  const data = (await res.json()) as { sessionId: string };
+  const data = await readApiJson<{ sessionId: string }>(res);
   return data.sessionId;
 }
 
@@ -46,7 +71,10 @@ export async function ensureWorkspaceSession(): Promise<string> {
 
 export async function getStatus(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load session status"));
+  }
+  return readApiJson(res);
 }
 
 export async function uploadZip(sessionId: string, file: File) {
@@ -57,19 +85,24 @@ export async function uploadZip(sessionId: string, file: File) {
     body: form,
     credentials: "include",
   });
-  if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed");
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Upload failed"));
+  return readApiJson(res);
 }
 
 export async function importGitHub(sessionId: string, repoUrl: string) {
+  const normalized = normalizeGitHubRepoUrl(repoUrl);
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/import/github`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repoUrl }),
+    body: JSON.stringify({ repoUrl: normalized }),
     credentials: "include",
   });
-  if (!res.ok) throw new Error((await res.json()).error ?? "Import failed");
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Import failed"));
+  const data = await readApiJson<{ ok?: boolean; status?: string }>(res);
+  if (data.status === "importing") {
+    await waitForImportComplete(sessionId);
+  }
+  return data;
 }
 
 export async function execCommand(sessionId: string, line: string) {

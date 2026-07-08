@@ -560,7 +560,7 @@ async function mountAgentApp(
     writeln(`Importing ${url}…`);
     try {
       await importGitHub(sessionId, url);
-      const short = url.replace(/^https?:\/\/github\.com\//, "");
+      const short = url.replace(/^https?:\/\/github\.com\//, "").replace(/^\/+/, "");
       setProjectInfo(short, "GitHub import thành công — chạy scan để kiểm tra.");
       writeln("✓ GitHub import complete.");
       setStatus("idle");

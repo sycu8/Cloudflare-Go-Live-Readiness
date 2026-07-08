@@ -1,8 +1,23 @@
 const GITHUB_HOST = "github.com";
 
 export function parseGitHubRepoUrl(repoUrl: string): { owner: string; repo: string; ref: string } | null {
+  const trimmed = repoUrl.trim();
+  if (!trimmed) return null;
+
+  if (!/^https?:\/\//i.test(trimmed)) {
+    const shorthand = trimmed.replace(/^\/+/, "").split("/").filter(Boolean);
+    if (shorthand.length >= 2) {
+      return {
+        owner: shorthand[0],
+        repo: shorthand[1].replace(/\.git$/, ""),
+        ref: "HEAD",
+      };
+    }
+    return null;
+  }
+
   try {
-    const url = new URL(repoUrl.trim());
+    const url = new URL(trimmed);
     if (url.hostname !== GITHUB_HOST && url.hostname !== `www.${GITHUB_HOST}`) {
       return null;
     }
