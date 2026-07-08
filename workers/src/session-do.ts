@@ -319,21 +319,23 @@ export class SessionDO implements DurableObject {
   }
 
   private async runScanAndCacheReport(commitSha?: string): Promise<void> {
-    const execResponse = await this.handleExec(
+    await this.handleExec(
       new Request("http://do/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command: "scan" }),
       }),
     );
-    if (!execResponse.ok) return;
 
-    try {
-      const payload = await execResponse.json();
-      const data = (payload as { data?: unknown }).data ?? this.session.lastResult;
-      await this.cachePdfFromScanData(data, commitSha);
-    } catch {
-      /* ignore cache failures */
+    const start = Date.now();
+    while (Date.now() - start < 300_000) {
+      await this.load();
+      if (this.session.status === "done") {
+        await this.cachePdfFromScanData(this.session.lastResult, commitSha);
+        return;
+      }
+      if (this.session.status === "error") return;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 
@@ -502,52 +504,55 @@ export class SessionDO implements DurableObject {
     this.session.lastError = undefined;
     await this.save();
 
-    const sandbox = this.sandbox();
-    const cliArgs = this.buildCfReadyArgs(req);
-    const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
-
-    const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
-    const envPrefix = workerUrl
-      ? `CF_READY_AI_WORKER_URL="${workerUrl}" `
-      : "";
-
-    const result = await sandbox.exec(`${envPrefix}${cmd}`, { timeout: 180000 });
-
-    if (!result.success && !result.stdout) {
-      this.session.status = "error";
-      this.session.lastError = result.stderr || `Command failed with exit ${result.exitCode}`;
-      await this.save();
-      return Response.json({
-        exitCode: result.exitCode,
-        stderr: result.stderr,
-        stdout: result.stdout,
-      });
-    }
-
-    let parsed: unknown = null;
-    try {
-      parsed = JSON.parse(result.stdout.trim());
-    } catch {
-      parsed = { stdout: result.stdout, stderr: result.stderr };
-    }
-
-    this.session.status = "done";
-    this.session.lastResult = parsed;
-    if (typeof parsed === "object" && parsed && "markdown" in parsed) {
-      this.session.lastMarkdown = String((parsed as { markdown: string }).markdown);
-    }
-    await this.save();
-
-    if (req.command === "scan" || req.command === "report") {
-      this.state.waitUntil(this.cachePdfFromScanData(parsed, this.session.sourceCommitSha));
-    }
+    this.state.waitUntil(this.runExec(req));
 
     return Response.json({
-      exitCode: result.exitCode,
-      stdout: result.stdout,
-      stderr: result.stderr,
-      data: parsed,
+      ok: true,
+      status: "running",
+      command: req.command,
     });
+  }
+
+  private async runExec(req: ExecRequest): Promise<void> {
+    try {
+      const sandbox = this.sandbox();
+      const cliArgs = this.buildCfReadyArgs(req);
+      const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
+
+      const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
+      const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
+
+      const result = await sandbox.exec(`${envPrefix}${cmd}`, { timeout: 180000 });
+
+      if (!result.success && !result.stdout) {
+        this.session.status = "error";
+        this.session.lastError = result.stderr || `Command failed with exit ${result.exitCode}`;
+        await this.save();
+        return;
+      }
+
+      let parsed: unknown = null;
+      try {
+        parsed = JSON.parse(result.stdout.trim());
+      } catch {
+        parsed = { stdout: result.stdout, stderr: result.stderr };
+      }
+
+      this.session.status = "done";
+      this.session.lastResult = parsed;
+      if (typeof parsed === "object" && parsed && "markdown" in parsed) {
+        this.session.lastMarkdown = String((parsed as { markdown: string }).markdown);
+      }
+      await this.save();
+
+      if (req.command === "scan" || req.command === "report") {
+        await this.cachePdfFromScanData(parsed, this.session.sourceCommitSha);
+      }
+    } catch (error) {
+      this.session.status = "error";
+      this.session.lastError = error instanceof Error ? error.message : String(error);
+      await this.save();
+    }
   }
 
   private async handleChat(request: Request): Promise<Response> {
@@ -598,8 +603,24 @@ Respond with JSON only: {"reply":"short explanation","command":"cf-ready scan","
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ line: parsed.command }),
       });
-      const execResponse = await this.handleExec(execReq);
-      execResult = await execResponse.json();
+      await this.handleExec(execReq);
+
+      const start = Date.now();
+      while (Date.now() - start < 300_000) {
+        await this.load();
+        if (this.session.status === "done") {
+          execResult = {
+            data: this.session.lastResult,
+            stdout: this.session.lastResult ? JSON.stringify(this.session.lastResult) : "",
+          };
+          break;
+        }
+        if (this.session.status === "error") {
+          execResult = { error: this.session.lastError ?? "Command failed" };
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
 
     return Response.json({

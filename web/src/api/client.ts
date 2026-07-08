@@ -11,20 +11,41 @@ export function normalizeGitHubRepoUrl(input: string): string {
   return trimmed;
 }
 
-async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Promise<void> {
+async function waitForSessionStatus(
+  sessionId: string,
+  done: (status: Record<string, unknown>) => boolean,
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<Record<string, unknown>> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const status = (await getStatus(sessionId)) as {
-      status?: string;
-      lastError?: string | null;
-    };
-    if (status.status === "idle") return;
+    const status = (await getStatus(sessionId)) as Record<string, unknown>;
     if (status.status === "error") {
-      throw new Error(status.lastError ?? "Import failed");
+      throw new Error(String(status.lastError ?? "Operation failed"));
     }
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (done(status)) return status;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  throw new Error("Import timed out. The repository may be large — try again.");
+  throw new Error(timeoutMessage);
+}
+
+async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Promise<void> {
+  await waitForSessionStatus(
+    sessionId,
+    (status) => status.status === "idle",
+    timeoutMs,
+    "Import timed out. The repository may be large — try again.",
+  );
+}
+
+async function waitForExecComplete(sessionId: string, timeoutMs = 300_000) {
+  await waitForSessionStatus(
+    sessionId,
+    (status) => status.status === "done" || status.status === "idle",
+    timeoutMs,
+    "Command timed out. Try again or use a smaller project.",
+  );
+  return getResults(sessionId);
 }
 
 export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
@@ -59,8 +80,15 @@ export async function createSession(): Promise<string> {
 export async function ensureWorkspaceSession(): Promise<string> {
   const stored = sessionStorage.getItem("cf-ready-session");
   if (stored) {
-    const res = await fetch(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
-    if (res.ok) return stored;
+    try {
+      const res = await fetch(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
+      if (res.ok) {
+        const status = await readApiJson<{ status?: string }>(res);
+        if (status.status) return stored;
+      }
+    } catch {
+      /* stale or invalid session */
+    }
     sessionStorage.removeItem("cf-ready-session");
   }
 
@@ -112,12 +140,40 @@ export async function execCommand(sessionId: string, line: string) {
     body: JSON.stringify({ line }),
     credentials: "include",
   });
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Command failed"));
+  const data = await readApiJson<{
+    status?: string;
+    exitCode?: number;
+    stdout?: string;
+    stderr?: string;
+    data?: unknown;
+    error?: string;
+  }>(res);
+
+  if (data.status === "running") {
+    const results = (await waitForExecComplete(sessionId)) as {
+      result?: unknown;
+      markdown?: string;
+      error?: string | null;
+    };
+    if (results.error) throw new Error(results.error);
+    const payload = results.result ?? null;
+    return {
+      exitCode: 0,
+      stdout: payload ? JSON.stringify(payload) : "",
+      stderr: "",
+      data: payload,
+      markdown: results.markdown,
+    };
+  }
+
+  return data;
 }
 
 export async function getResults(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/results`, fetchOpts);
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load results"));
+  return readApiJson(res);
 }
 
 export function reportPdfUrl(sessionId: string): string {
@@ -129,16 +185,14 @@ export async function regenerateReport(sessionId: string): Promise<Blob> {
     method: "POST",
     credentials: "include",
   });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error ?? "Failed to regenerate PDF report");
-  }
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to regenerate PDF report"));
   return res.blob();
 }
 
 export async function listFiles(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/files`, fetchOpts);
-  return res.json() as Promise<{ files: string[] }>;
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to list files"));
+  return readApiJson<{ files: string[] }>(res);
 }
 
 export async function chat(sessionId: string, message: string) {
@@ -148,7 +202,8 @@ export async function chat(sessionId: string, message: string) {
     body: JSON.stringify({ message }),
     credentials: "include",
   });
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Chat request failed"));
+  return readApiJson(res);
 }
 
 export function githubAuthUrl(sessionId: string): string {
@@ -157,6 +212,6 @@ export function githubAuthUrl(sessionId: string): string {
 
 export async function listGitHubRepos(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/auth/github/repos`, fetchOpts);
-  if (!res.ok) throw new Error("GitHub not connected");
-  return res.json() as Promise<{ repos: Array<{ full_name: string; private: boolean }> }>;
+  if (!res.ok) throw new Error(await readApiError(res, "GitHub not connected"));
+  return readApiJson<{ repos: Array<{ full_name: string; private: boolean }> }>(res);
 }

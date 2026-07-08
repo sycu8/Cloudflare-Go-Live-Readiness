@@ -27,5 +27,9 @@ export async function readApiJson<T>(res: Response): Promise<T> {
   if (!contentType.includes("application/json")) {
     throw new Error(await readApiError(res, "Invalid server response"));
   }
-  return res.json() as Promise<T>;
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new Error(await readApiError(res, "Invalid server response"));
+  }
 }

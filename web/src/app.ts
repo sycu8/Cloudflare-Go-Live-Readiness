@@ -434,9 +434,18 @@ async function mountAgentApp(
   }
 
   async function pollStatus() {
-    const status = await getStatus(sessionId);
-    setStatus(status.status ?? "idle");
-    return status;
+    try {
+      const status = await getStatus(sessionId);
+      setStatus(status.status ?? "idle");
+      return status;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("Session expired") || message.includes("Authentication required")) {
+        sessionStorage.removeItem("cf-ready-session");
+        window.location.reload();
+      }
+      throw err;
+    }
   }
 
   async function runLine(line: string) {
@@ -460,6 +469,9 @@ async function mountAgentApp(
         }
       }
       if (result.data) showResults(result.data as ScanResultData);
+      if ("markdown" in result && result.markdown) {
+        showResults({ ...(result.data as ScanResultData), markdown: String(result.markdown) });
+      }
       if (result.error) writeln(`Error: ${result.error}`);
     } catch (err) {
       writeln(`Error: ${err instanceof Error ? err.message : String(err)}`);
