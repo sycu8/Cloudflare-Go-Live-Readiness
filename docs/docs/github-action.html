@@ -29,8 +29,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -42,8 +44,21 @@
       </nav>
       <article class="docs-content">
         <h1>GitHub Action</h1>
-        <p>Run <code>cf-ready scan</code> in CI on every pull request. Upload SARIF security findings and fail when blockers are present.</p>
-        <h2>Quick start</h2>
+        <p>Run <code>cf-ready scan</code> in CI on every pull request. Upload SARIF security findings to GitHub code scanning and surface readiness scores as step outputs.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#quick-start">Quick start</a></li>
+            <li><a href="#permissions">Permissions</a></li>
+            <li><a href="#inputs">Inputs</a></li>
+            <li><a href="#outputs">Outputs</a></li>
+            <li><a href="#fail-on-blocker">fail-on-blocker</a></li>
+            <li><a href="#dogfood">Dogfood note</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="quick-start">Quick start</h2>
         <pre><code>name: CF Ready
 
 on:
@@ -62,19 +77,71 @@ jobs:
         with:
           cwd: .
           fail-on-blocker: "true"</code></pre>
-        <h2>Inputs</h2>
+        <p>The composite action builds cf-ready from source (<code>npm ci && npm run build</code>), runs <code>scan --json</code>, uploads SARIF, and exposes parsed outputs.</p>
+
+        <h2 id="permissions">Permissions</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Permission</th><th>Required</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>contents: read</code></td><td>Yes</td><td>Checkout and read repository files for scanning</td></tr>
+            <tr><td><code>security-events: write</code></td><td>Yes (for SARIF)</td><td>Upload <code>security-findings.sarif</code> to GitHub code scanning</td></tr>
+            <tr><td><code>pull-requests: write</code></td><td>Optional</td><td>Only needed if your workflow posts PR comments (see dogfood workflow)</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="inputs">Inputs</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Input</th><th>Default</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>cwd</code></td><td><code>.</code></td><td>Project directory to scan (relative to repo root)</td></tr>
+            <tr><td><code>config</code></td><td><code>""</code></td><td>Optional path to <code>cf-ready.config.json</code></td></tr>
+            <tr><td><code>fail-on-blocker</code></td><td><code>"true"</code></td><td>Fail the step when scan exit code is 1 (blockers found)</td></tr>
+            <tr><td><code>cf-ready-root</code></td><td><code>.</code></td><td>Directory containing cf-ready <code>package.json</code> when vendoring the action source</td></tr>
+            <tr><td><code>node-version</code></td><td><code>"22"</code></td><td>Node.js version for building cf-ready</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="outputs">Outputs</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Output</th><th>Values</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>exit-code</code></td><td><code>0</code>, <code>1</code>, <code>2</code></td><td><code>0</code> = ready, <code>1</code> = blockers, <code>2</code> = runtime error</td></tr>
+            <tr><td><code>production-ready</code></td><td><code>true</code> / <code>false</code></td><td>From <code>productionReady</code> in scan JSON</td></tr>
+            <tr><td><code>blocker-count</code></td><td>Integer</td><td>Length of <code>blockers</code> array in scan JSON</td></tr>
+            <tr><td><code>overall-score</code></td><td>0–100</td><td>Weighted readiness score from <code>scores.overall</code></td></tr>
+          </tbody>
+        </table>
+        <p>Artifacts uploaded on success (exit code ≠ 2):</p>
         <ul>
-          <li><code>cwd</code> — project directory to scan (default <code>.</code>)</li>
-          <li><code>config</code> — optional path to <code>cf-ready.config.json</code></li>
-          <li><code>fail-on-blocker</code> — fail when blockers exist (default <code>true</code>)</li>
-          <li><code>cf-ready-root</code> — path to cf-ready package when vendoring (default repo root)</li>
+          <li><code>security-findings.sarif</code> → GitHub code scanning (category <code>cf-ready</code>)</li>
+          <li><code>cf-ready-scan.json</code> → Actions artifact (14-day retention)</li>
         </ul>
-        <h2>Outputs</h2>
+
+        <h2 id="fail-on-blocker">fail-on-blocker</h2>
+        <p>When <code>fail-on-blocker: "true"</code> (default), the action exits with code 1 if cf-ready finds blockers, failing the CI step. Set to <code>"false"</code> to report findings without failing — useful for gradual adoption or fixture scans with expected blockers.</p>
+        <div class="docs-callout docs-callout--warn">
+          <strong>Exit code 2 always fails.</strong> Runtime errors (missing config, build failure) exit 2 regardless of <code>fail-on-blocker</code>.
+        </div>
+
+        <h2 id="dogfood">Dogfood note</h2>
+        <p>The cf-ready repository runs its own action on every pull request via <code>.github/workflows/cf-ready-pr.yml</code>:</p>
         <ul>
-          <li><code>exit-code</code> — 0 ready, 1 blockers, 2 error</li>
-          <li><code>production-ready</code>, <code>blocker-count</code>, <code>overall-score</code></li>
+          <li>Scans <code>tests/fixtures/nextjs-app</code> (a Next.js fixture with intentional blockers)</li>
+          <li>Uses <code>fail-on-blocker: "false"</code> because blockers are expected in the fixture</li>
+          <li>Posts a PR comment with overall score, category breakdown, and blocker count</li>
+          <li>Uploads SARIF when the scan completes successfully</li>
         </ul>
-        <p>The action uploads <code>security-findings.sarif</code> and a JSON scan artifact when the scan completes.</p>
+        <p>This dogfood workflow validates the action itself. In your repo, point <code>cwd</code> at your application root and keep <code>fail-on-blocker: "true"</code> for strict gates.</p>
+        <pre><code>- uses: ./action          # Local path when developing cf-ready
+  with:
+    cwd: tests/fixtures/nextjs-app
+    fail-on-blocker: "false"</code></pre>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

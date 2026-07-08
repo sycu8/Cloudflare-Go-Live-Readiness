@@ -24,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html" class="active">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -37,19 +39,81 @@
       </nav>
       <article class="docs-content">
         <h1>Security readiness before go-live</h1>
-        <p>Security checks run read-only against your source tree and dependencies.</p>
-        <h2>Checks include</h2>
+        <p>Security checks run read-only against your source tree, public build output, and package manager audit. Security findings account for <strong>30%</strong> of the overall score.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#secret-patterns">Secret patterns</a></li>
+            <li><a href="#env-files">Environment files</a></li>
+            <li><a href="#cors">CORS</a></li>
+            <li><a href="#source-maps">Source maps</a></li>
+            <li><a href="#npm-audit">Dependency audit</a></li>
+            <li><a href="#sarif">SARIF output</a></li>
+            <li><a href="#commands">Commands</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="secret-patterns">Secret patterns</h2>
+        <p>Up to 300 files matching <code>**/*.{ts,tsx,js,jsx,json,env,yml,yaml,toml}</code> are scanned (lockfiles excluded). Test files, fixtures, and lines containing placeholder text (<code>example</code>, <code>changeme</code>, <code>your_key</code>, etc.) are skipped.</p>
+
+        <table class="docs-table">
+          <thead>
+            <tr><th>Pattern ID</th><th>Name</th><th>Severity</th><th>Example match</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>cf-api-token</code></td><td>Cloudflare API token</td><td>High</td><td><code>cf_…</code> (20+ chars)</td></tr>
+            <tr><td><code>aws-access-key</code></td><td>AWS access key</td><td>High</td><td><code>AKIA</code> + 16 alphanumeric</td></tr>
+            <tr><td><code>private-key</code></td><td>Private key</td><td><strong>Blocker</strong></td><td><code>-----BEGIN … PRIVATE KEY-----</code></td></tr>
+            <tr><td><code>jwt-secret</code></td><td>JWT secret</td><td>High</td><td><code>jwt_secret = "…"</code></td></tr>
+            <tr><td><code>api-key-generic</code></td><td>API key</td><td>High</td><td><code>api_key = "…"</code> (16+ chars)</td></tr>
+            <tr><td><code>stripe-secret</code></td><td>Stripe secret key</td><td><strong>Blocker</strong></td><td><code>sk_live_…</code></td></tr>
+            <tr><td><code>database-url</code></td><td>Database URL</td><td>High</td><td><code>postgres://user:pass@…</code></td></tr>
+            <tr><td><code>github-token</code></td><td>GitHub token</td><td>High</td><td><code>ghp_…</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="docs-callout docs-callout--warn">
+          <strong>Rotate exposed credentials immediately.</strong> Move secrets to Cloudflare dashboard secrets, <code>wrangler secret</code>, or your CI secret store. Never commit live keys.
+        </div>
+
+        <h2 id="env-files">Environment files</h2>
+        <p>CF Ready flags these files when present in the repository:</p>
         <ul>
-          <li>Exposed <code>.env</code> files and missing <code>.gitignore</code> rules</li>
-          <li>Hardcoded secrets, API keys, JWT secrets, database URLs</li>
-          <li>Unsafe CORS patterns and risky public files</li>
-          <li>Source maps in public output</li>
-          <li>Dependency audit when <code>npm audit</code> is available</li>
+          <li><code>.env</code>, <code>.env.local</code>, <code>.env.production</code>, <code>.env.development</code> — medium severity</li>
+          <li>Missing <code>.env*</code> rules in <code>.gitignore</code> when env files exist — <strong>high</strong> severity</li>
         </ul>
-        <h2>Commands</h2>
-        <pre><code>cf-ready security-scan
-cf-ready scan</code></pre>
-        <p>Outputs SARIF at <code>security-findings.sarif</code> for CI and GitHub code scanning.</p>
+        <p>Production secrets should live in the Cloudflare dashboard or Wrangler bindings, not in committed files.</p>
+
+        <h2 id="cors">CORS</h2>
+        <p>The scanner looks for <code>Access-Control-Allow-Origin: *</code> combined with <code>credentials: true</code> in up to 100 TypeScript/JavaScript files. This wildcard-with-credentials pattern is flagged as <strong>high</strong> severity.</p>
+
+        <h2 id="source-maps">Source maps</h2>
+        <p>Files matching <code>public/**/*.map</code>, <code>dist/**/*.map</code>, or <code>build/**/*.map</code> trigger a <strong>medium</strong> finding. Exclude <code>.map</code> files from production deployments or restrict access to prevent source disclosure.</p>
+
+        <h2 id="npm-audit">Dependency audit</h2>
+        <p>When available, CF Ready runs the package manager audit command:</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Package manager</th><th>Command</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>npm</td><td><code>npm audit --json</code></td></tr>
+            <tr><td>pnpm</td><td><code>pnpm audit --json</code></td></tr>
+            <tr><td>yarn</td><td><code>yarn npm audit --json</code></td></tr>
+            <tr><td>bun</td><td><code>bun pm audit</code></td></tr>
+          </tbody>
+        </table>
+        <p>Critical vulnerabilities set finding ID <code>security-critical-dependencies</code>. When <code>security.blockOnCriticalDependencies</code> is <code>true</code> (default), this can block production-ready status even without blocker severity.</p>
+
+        <h2 id="sarif">SARIF output</h2>
+        <p>Every <code>scan</code> writes <code>security-findings.sarif</code> (SARIF 2.1.0) containing all open security-category findings. Severity maps to SARIF levels: blocker/high → <code>error</code>, medium → <code>warning</code>, low/info → <code>note</code>.</p>
+        <p>The <a href="github-action.html">GitHub Action</a> uploads this file to GitHub code scanning via <code>github/codeql-action/upload-sarif@v3</code>.</p>
+
+        <h2 id="commands">Commands</h2>
+        <pre><code>cf-ready security-scan    # Security checks only
+cf-ready scan             # Full scan including security + SARIF</code></pre>
+        <p>Configure <code>security.blockOnSecrets</code> and <code>security.blockOnCriticalDependencies</code> in <a href="configuration.html">Configuration</a>.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

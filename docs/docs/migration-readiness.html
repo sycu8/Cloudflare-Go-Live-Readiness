@@ -24,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html" class="active">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -37,20 +39,92 @@
       </nav>
       <article class="docs-content">
         <h1>Migration readiness for Cloudflare deployments</h1>
-        <p>CF Ready inspects your repository for Cloudflare runtime blockers and framework-specific migration paths.</p>
-        <h2>What we detect</h2>
+        <p>CF Ready inspects your repository for Cloudflare Workers runtime blockers and framework-specific migration paths. Migration findings account for <strong>35%</strong> of the overall readiness score — see <a href="readiness-categories.html">Scoring</a>.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#runtime-blockers">Runtime blockers</a></li>
+            <li><a href="#framework-detection">Framework detection</a></li>
+            <li><a href="#nextjs">Next.js: vinext and OpenNext</a></li>
+            <li><a href="#other-frameworks">Other frameworks</a></li>
+            <li><a href="#commands">Commands</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="runtime-blockers">Runtime blockers</h2>
+        <p>The scanner walks up to <strong>500</strong> source files matching <code>**/*.{ts,tsx,js,jsx,mjs,cjs}</code>, excluding <code>node_modules</code>, <code>dist</code>, <code>.next</code>, <code>coverage</code>, <code>.git</code>, <code>build</code>, <code>.turbo</code>, <code>.vercel</code>, and <code>.cf-ready-cache</code>. If your repo has more eligible files, an info finding notes that the scan was truncated.</p>
+
+        <table class="docs-table">
+          <thead>
+            <tr><th>Module</th><th>Severity</th><th>What triggers a finding</th><th>Workers alternative</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>fs</code></td><td>Blocker</td><td><code>import</code>/<code>require</code> of <code>fs</code> or <code>node:fs</code>; calls to <code>readFile</code>, <code>writeFile</code>, <code>mkdir</code>, streams, etc.</td><td>R2, KV, D1, or fetch external storage</td></tr>
+            <tr><td><code>child_process</code></td><td>Blocker</td><td>Imports or <code>exec</code>/<code>spawn</code> usage</td><td>Queues, Workflows, or external compute</td></tr>
+            <tr><td><code>net</code></td><td>Blocker</td><td>TCP socket imports</td><td><code>fetch</code>, Workers sockets, or Durable Objects</td></tr>
+            <tr><td><code>tls</code></td><td>Blocker</td><td>TLS module imports</td><td>Cloudflare terminates TLS at the edge</td></tr>
+            <tr><td><code>cluster</code></td><td>Blocker</td><td>Node cluster module</td><td>Workers scale horizontally by default</td></tr>
+            <tr><td><code>worker_threads</code></td><td>Blocker</td><td>Worker thread imports</td><td>Durable Objects or parallel <code>fetch</code></td></tr>
+            <tr><td>Native modules (<code>.node</code>)</td><td>Blocker</td><td><code>require('./foo.node')</code> or ESM import of <code>.node</code> binaries</td><td>Wasm or external service</td></tr>
+            <tr><td><code>process.env</code></td><td>Info</td><td>Direct <code>process.env.VAR</code> reads (not a blocker)</td><td>Document vars in <code>wrangler.toml</code> / dashboard bindings</td></tr>
+          </tbody>
+        </table>
+
+        <div class="docs-callout docs-callout--warn">
+          <strong>Blockers zero out the migration category score.</strong> Any open blocker severity finding sets the migration category to 0 and prevents a production-ready status. Resolve or refactor before go-live.
+        </div>
+
+        <h2 id="framework-detection">Framework detection</h2>
+        <p>Detection runs from <code>package.json</code> dependencies, config files, and directory layout. Supported frameworks:</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Framework</th><th>Detection signals</th><th>Confidence</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>nextjs</code></td><td><code>next</code> dependency, <code>next.config.*</code>, <code>app/</code> or <code>pages/</code> directories</td><td>High when <code>next</code> is a dependency</td></tr>
+            <tr><td><code>vite</code></td><td><code>vite</code> dependency or <code>vite.config.*</code></td><td>High / medium</td></tr>
+            <tr><td><code>react-spa</code></td><td><code>react</code> + <code>react-scripts</code> or <code>react-dom</code></td><td>Medium</td></tr>
+            <tr><td><code>astro</code>, <code>remix</code>, <code>nuxt</code></td><td>Matching framework dependency</td><td>High</td></tr>
+            <tr><td><code>express</code></td><td><code>express</code> dependency</td><td>High</td></tr>
+            <tr><td><code>nodejs</code></td><td><code>createServer</code> patterns in entry files</td><td>Medium / low</td></tr>
+            <tr><td><code>static</code></td><td>HTML files without a JS framework</td><td>High / medium</td></tr>
+            <tr><td><code>unknown</code></td><td>No confident match</td><td>Low — legacy migration hints apply</td></tr>
+          </tbody>
+        </table>
+        <p>Current hosting is inferred from <code>vercel.json</code>, <code>netlify.toml</code>, <code>wrangler.toml</code>, and similar config files.</p>
+
+        <h2 id="nextjs">Next.js: vinext and OpenNext</h2>
+        <p>For Next.js projects, CF Ready detects App Router vs Pages Router, middleware, and API routes, then recommends a migration path from <code>cf-ready.config.json</code>:</p>
         <ul>
-          <li>Node.js APIs incompatible with Workers (<code>fs</code>, <code>child_process</code>, native modules)</li>
-          <li>Next.js router patterns, middleware, and vinext / OpenNext recommendations</li>
-          <li>Vite and React SPA → Cloudflare Pages or Workers Assets</li>
-          <li>Express and Node servers → progressive migration via Hono</li>
-          <li>Current hosting target (Vercel, Netlify, etc.)</li>
+          <li><strong>Preferred path</strong> (default <code>vinext</code>) — suitable when middleware, heavy API surface, or runtime blockers are absent</li>
+          <li><strong>Fallback path</strong> (default <code>opennext</code>) — suggested when middleware is present, API routes exceed five, or blockers were found</li>
         </ul>
-        <h2>Commands</h2>
-        <pre><code>cf-ready scan
-cf-ready migration-plan
-cf-ready inspect --json</code></pre>
-        <p>Migration findings are weighted at <strong>35%</strong> of the overall score. See <a href="readiness-categories.html">Scoring</a>.</p>
+        <p>Suggested manual commands (never executed by cf-ready):</p>
+        <pre><code>npx vinext check
+npx vinext init --platform=cloudflare
+npm run build:vinext
+npx @vinext/cloudflare deploy --dry-run</code></pre>
+        <p>Middleware triggers a medium-severity finding because edge runtime constraints may differ on Cloudflare.</p>
+
+        <h2 id="other-frameworks">Other frameworks</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Framework</th><th>Migration guidance</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Vite / React SPA</td><td>Cloudflare Pages or Workers Assets static deploy</td></tr>
+            <tr><td>Express / Node.js</td><td>Progressive rewrite toward Hono or Workers-compatible handlers</td></tr>
+            <tr><td>Astro, Remix, Nuxt</td><td>Official Cloudflare adapter documentation</td></tr>
+            <tr><td>Static HTML</td><td>Direct Pages deploy — no runtime blockers expected</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="commands">Commands</h2>
+        <pre><code>cf-ready scan              # Full scan including migration checks
+cf-ready migration-plan    # Write migration-plan.md only
+cf-ready inspect --json    # Framework and route detection without scoring</code></pre>
+        <p>See <a href="examples.html">Examples</a> for Next.js, Vite, and Node.js walkthroughs using the repo test fixtures.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

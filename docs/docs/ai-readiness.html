@@ -24,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html" class="active">AI readiness</a>
@@ -37,20 +39,77 @@
       </nav>
       <article class="docs-content">
         <h1>AI readiness for the agent-driven web</h1>
-        <p>Prepare your site for AI crawlers, agents, and discoverability tooling.</p>
-        <h2>Checks and generators</h2>
-        <ul>
-          <li><code>robots.txt</code> and AI crawler policy hints</li>
-          <li><code>llms.txt</code> and <code>llms-full.txt</code> drafts</li>
-          <li>OpenAPI specification drafts</li>
-          <li>MCP server card JSON</li>
-          <li>Agent-friendly auth documentation</li>
-        </ul>
-        <h2>Commands</h2>
-        <pre><code>cf-ready ai-ready
-cf-ready fix --ai-readiness
-cf-ready ai-optimize</code></pre>
-        <p>Fix commands only run when explicitly invoked. Existing files are skipped unless <code>--force</code>.</p>
+        <p>Prepare your site for AI crawlers, agents, and discoverability tooling. AI readiness findings account for <strong>20%</strong> of the overall score.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#files-checked">Files checked</a></li>
+            <li><a href="#fix-output">fix --ai-readiness output</a></li>
+            <li><a href="#ai-policy">aiPolicy setting</a></li>
+            <li><a href="#commands">Commands</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="files-checked">Files checked</h2>
+        <p>CF Ready looks for public assets in <code>public/</code>, project root, or <code>static/</code> (first match wins):</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>File</th><th>Search paths</th><th>Severity if missing</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>robots.txt</code></td><td><code>public/robots.txt</code>, <code>robots.txt</code>, <code>static/robots.txt</code></td><td>Medium</td></tr>
+            <tr><td><code>sitemap.xml</code></td><td><code>public/sitemap.xml</code>, <code>sitemap.xml</code>, <code>static/sitemap.xml</code></td><td>Medium</td></tr>
+            <tr><td><code>llms.txt</code></td><td><code>public/llms.txt</code>, <code>llms.txt</code></td><td>Medium</td></tr>
+            <tr><td><code>llms-full.txt</code></td><td><code>public/llms-full.txt</code>, <code>llms-full.txt</code></td><td>Medium</td></tr>
+            <tr><td><code>openapi.json</code> / <code>openapi.yaml</code></td><td>Project root or <code>public/openapi.json</code></td><td>Medium (when API routes exist)</td></tr>
+            <tr><td><code>mcp-server-card.json</code></td><td>Project root</td><td>Low (when API routes exist)</td></tr>
+            <tr><td><code>auth.md</code></td><td>Project root</td><td>Low (when auth patterns detected)</td></tr>
+          </tbody>
+        </table>
+        <p>Auth patterns are detected by scanning for <code>next-auth</code>, Clerk, Auth0, Lucia, JWT signing, session handling, and similar libraries in up to 200 source files.</p>
+
+        <h2 id="fix-output">fix --ai-readiness output</h2>
+        <p><code>cf-ready fix --ai-readiness</code> generates draft assets. Existing files are <strong>skipped</strong> unless you pass <code>--force</code>.</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Output file</th><th>When generated</th><th>Contents</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>public/robots.txt</code></td><td>Always</td><td>Crawler rules, sitemap link, GPTBot/ClaudeBot/PerplexityBot hints</td></tr>
+            <tr><td><code>public/llms.txt</code></td><td>Always</td><td>Project summary, key pages, API section, usage policy</td></tr>
+            <tr><td><code>public/llms-full.txt</code></td><td>Always</td><td>Extended llms.txt with framework and package manager context</td></tr>
+            <tr><td><code>public/sitemap.xml</code></td><td>Always</td><td>URL set from detected routes + <code>criticalRoutes</code> (up to 20)</td></tr>
+            <tr><td><code>openapi.json</code></td><td>When API routes detected</td><td>OpenAPI 3.0.3 draft with one GET per route</td></tr>
+            <tr><td><code>mcp-server-card.json</code></td><td>When API routes or auth patterns exist</td><td>Agent discovery card with endpoints list</td></tr>
+            <tr><td><code>auth.md</code></td><td>When auth patterns detected</td><td>Agent-friendly auth documentation template</td></tr>
+          </tbody>
+        </table>
+
+        <div class="docs-callout">
+          <strong>Review before publishing.</strong> Generated files are starting points. Update <code>productionUrl</code> in config, verify crawler policy, and flesh out OpenAPI schemas before go-live.
+        </div>
+
+        <h2 id="ai-policy">aiPolicy setting</h2>
+        <p>Set in <code>cf-ready.config.json</code> (default <code>allow-assistive-agents</code>):</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Value</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>allow-assistive-agents</code></td><td>Default — robots.txt allows common AI crawlers; llms.txt encourages agent use</td></tr>
+            <tr><td><code>restrict</code></td><td>Limit agent access — tighten robots.txt rules after generation</td></tr>
+            <tr><td><code>block</code></td><td>Disallow AI crawlers — update generated robots.txt accordingly</td></tr>
+          </tbody>
+        </table>
+        <p>The <code>aiPolicy</code> value is recorded in <code>ai-readiness-report.md</code>. Adjust generated <code>robots.txt</code> crawler sections to match your policy.</p>
+
+        <h2 id="commands">Commands</h2>
+        <pre><code>cf-ready ai-ready              # Run AI readiness checks only
+cf-ready fix --ai-readiness    # Generate draft AI assets
+cf-ready fix --ai-readiness --force   # Overwrite existing files
+cf-ready ai-optimize           # LLM-assisted content optimization (requires Workers AI config)</code></pre>
+        <p>Fix commands only run when explicitly invoked — a <code>scan</code> never writes files. See <a href="configuration.html">Configuration</a> for <code>productionUrl</code> and <code>criticalRoutes</code>.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

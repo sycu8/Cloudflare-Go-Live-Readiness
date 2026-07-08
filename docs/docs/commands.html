@@ -3,17 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Commands — CF Ready</title>
-    <meta name="description" content="cf-ready CLI command reference for Cloudflare go-live readiness." />
+    <title>CLI Commands — CF Ready Docs</title>
+    <meta name="description" content="Complete cf-ready CLI command reference: scan, inspect, security-scan, fix, smoke-test, exit codes, and global flags." />
     <link rel="canonical" href="https://ready.orangecloud.vn/docs/commands.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/commands.html" />
-    <meta property="og:title" content="Commands — CF Ready" />
-    <meta property="og:description" content="cf-ready CLI command reference for Cloudflare go-live readiness." />
+    <meta property="og:title" content="CLI Commands — CF Ready" />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Commands — CF Ready" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -29,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html" class="active">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -41,28 +38,111 @@
         <a href="roadmap.html">Roadmap</a>
       </nav>
       <article class="docs-content">
-        <h1>Commands</h1>
-        <p>Global flags: <code>--cwd</code>, <code>--config</code>, <code>--json</code>, <code>--verbose</code>, <code>--no-color</code></p>
-        <h2>Core</h2>
-        <ul>
-          <li><code>scan</code> — full readiness scan + all reports</li>
-          <li><code>inspect</code> — detect framework, package manager, deployment target</li>
-          <li><code>report</code> — regenerate reports from a fresh scan</li>
-        </ul>
-        <h2>Category scans</h2>
-        <ul>
-          <li><code>migration-plan</code> — Cloudflare migration plan markdown</li>
-          <li><code>security-scan</code> — security checks + SARIF</li>
-          <li><code>ai-ready</code> — AI readiness (robots.txt, llms.txt, OpenAPI, MCP)</li>
-          <li><code>seo-ready</code> — SEO readiness</li>
-          <li><code>deploy-check</code> — deployment + migration + security subset</li>
-        </ul>
-        <h2>Actions</h2>
-        <ul>
-          <li><code>fix --ai-readiness</code> / <code>fix --seo</code> — generate assets (explicit flags only)</li>
-          <li><code>ai-optimize</code> — Workers AI refactor suggestions</li>
-          <li><code>smoke-test --url &lt;url&gt;</code> — HTTP checks against live URL</li>
-        </ul>
+        <h1>CLI commands</h1>
+        <p>All commands support global flags and read the project at <code>--cwd</code> (default: current directory).</p>
+
+        <h2>Global flags</h2>
+        <table class="docs-table">
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>--cwd &lt;path&gt;</code></td><td>Project root to scan (required for monorepos)</td></tr>
+            <tr><td><code>--config &lt;path&gt;</code></td><td>Path to <code>cf-ready.config.json</code> (optional)</td></tr>
+            <tr><td><code>--json</code></td><td>JSON-only stdout (no headings or colors)</td></tr>
+            <tr><td><code>--verbose</code></td><td>Extra logging</td></tr>
+            <tr><td><code>--no-color</code></td><td>Disable ANSI colors</td></tr>
+            <tr><td><code>--version</code></td><td>Print version and exit</td></tr>
+            <tr><td><code>--help</code></td><td>Command help</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="scan">scan</h2>
+        <p>Run the <strong>full readiness pipeline</strong> and write all reports.</p>
+        <pre><code>cf-ready scan [--cwd .] [--config ./cf-ready.config.json] [--json]</code></pre>
+        <table class="docs-table">
+          <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr><td>Modules</td><td>Migration, security, AI readiness, SEO, deployment</td></tr>
+            <tr><td>Output</td><td>9 files — see <a href="reports.html">Reports</a></td></tr>
+            <tr><td>Exit <code>0</code></td><td><code>productionReady: true</code></td></tr>
+            <tr><td>Exit <code>1</code></td><td>Blockers or security policy failure</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="inspect">inspect</h2>
+        <p>Repository metadata only — no category scans, no report files.</p>
+        <pre><code>cf-ready inspect --json</code></pre>
+        <p>Detects framework, package manager, deployment target, API routes, and key config files. Output is always JSON (even without <code>--json</code> for structured fields).</p>
+
+        <h2 id="migration-plan">migration-plan</h2>
+        <pre><code>cf-ready migration-plan</code></pre>
+        <p>Runs migration checks and writes <code>migration-plan.md</code> with framework-specific steps (e.g. Next.js vinext path, Vite → Pages).</p>
+
+        <h2 id="security-scan">security-scan</h2>
+        <pre><code>cf-ready security-scan [--json]</code></pre>
+        <p>Security module only. Writes <code>security-findings.sarif</code> for GitHub code scanning and CI.</p>
+        <p>Checks: env files, secret patterns, CORS, source maps in public output, security headers config, <code>npm audit</code> when available.</p>
+
+        <h2 id="ai-ready">ai-ready</h2>
+        <pre><code>cf-ready ai-ready</code></pre>
+        <p>AI readiness category only. Writes <code>ai-readiness-report.md</code>. Checks <code>robots.txt</code>, <code>llms.txt</code>, sitemap, OpenAPI, MCP card.</p>
+
+        <h2 id="seo-ready">seo-ready</h2>
+        <pre><code>cf-ready seo-ready</code></pre>
+        <p>SEO category only. Writes <code>seo-readiness-report.md</code>. Checks titles, meta, OG, Twitter cards, canonical, JSON-LD, sitemap, robots.</p>
+
+        <h2 id="deploy-check">deploy-check</h2>
+        <pre><code>cf-ready deploy-check</code></pre>
+        <p>Subset for deploy gates: deployment + migration + security findings. Useful in release pipelines before <code>wrangler deploy</code>.</p>
+
+        <h2 id="report">report</h2>
+        <pre><code>cf-ready report</code></pre>
+        <p>Re-runs a full scan and regenerates all report files (same as <code>scan</code> for output).</p>
+
+        <h2 id="fix">fix</h2>
+        <p>Generate <strong>draft assets</strong> only when flags are explicit. Never runs without a flag.</p>
+        <pre><code>cf-ready fix --ai-readiness [--force]
+cf-ready fix --seo [--force]
+cf-ready fix --ai-readiness --seo [--force]</code></pre>
+        <table class="docs-table">
+          <thead><tr><th>Flag</th><th>Generates</th></tr></thead>
+          <tbody>
+            <tr><td><code>--ai-readiness</code></td><td><code>public/robots.txt</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>sitemap.xml</code>, <code>openapi.json</code>, <code>mcp-server-card.json</code>, <code>auth.md</code></td></tr>
+            <tr><td><code>--seo</code></td><td>SEO suggestions markdown, optional meta snippets</td></tr>
+            <tr><td><code>--force</code></td><td>Overwrite existing generated files (default: skip)</td></tr>
+          </tbody>
+        </table>
+        <p>Exit <code>2</code> if neither <code>--ai-readiness</code> nor <code>--seo</code> is set.</p>
+
+        <h2 id="ai-optimize">ai-optimize</h2>
+        <p>Call Cloudflare Workers AI (via configured worker URL) for migration/refactor suggestions.</p>
+        <pre><code>cf-ready ai-optimize [--focus migration|security|all]
+  [--worker-url https://your-worker.workers.dev]
+  [--model openai/gpt-4o-mini]
+  [--ai-token TOKEN]
+  [--dry-run]</code></pre>
+        <p>Writes <code>cf-ready-ai-optimize.md</code>. Requires <code>ai.workerUrl</code> in config or <code>--worker-url</code>. Use <code>--dry-run</code> to preview the payload without calling AI.</p>
+
+        <h2 id="smoke-test">smoke-test</h2>
+        <pre><code>cf-ready smoke-test --url https://your-app.example.com [--json]</code></pre>
+        <p>HTTP checks against live URL using <code>criticalRoutes</code> from config (default: <code>/</code>). Reports status codes and response times. <code>--url</code> is required.</p>
+
+        <h2>Command summary</h2>
+        <table class="docs-table">
+          <thead><tr><th>Command</th><th>Writes reports</th><th>CI exit codes</th></tr></thead>
+          <tbody>
+            <tr><td><code>scan</code></td><td>All 9</td><td>0 / 1 / 2</td></tr>
+            <tr><td><code>inspect</code></td><td>No</td><td>0 / 2</td></tr>
+            <tr><td><code>migration-plan</code></td><td>migration-plan.md</td><td>0 / 2</td></tr>
+            <tr><td><code>security-scan</code></td><td>SARIF</td><td>0 / 1 / 2</td></tr>
+            <tr><td><code>ai-ready</code></td><td>ai-readiness-report.md</td><td>0 / 2</td></tr>
+            <tr><td><code>seo-ready</code></td><td>seo-readiness-report.md</td><td>0 / 2</td></tr>
+            <tr><td><code>deploy-check</code></td><td>No (stdout)</td><td>0 / 1 / 2</td></tr>
+            <tr><td><code>report</code></td><td>All 9</td><td>0 / 1 / 2</td></tr>
+            <tr><td><code>fix</code></td><td>Generated assets</td><td>0 / 2</td></tr>
+            <tr><td><code>ai-optimize</code></td><td>cf-ready-ai-optimize.md</td><td>0 / 2</td></tr>
+            <tr><td><code>smoke-test</code></td><td>No (stdout)</td><td>0 / 1 / 2</td></tr>
+          </tbody>
+        </table>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

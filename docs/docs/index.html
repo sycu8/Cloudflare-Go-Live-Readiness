@@ -25,8 +25,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html" class="active">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -38,19 +40,74 @@
       </nav>
       <article class="docs-content">
         <h1>CF Ready documentation</h1>
-        <p><strong>CF Ready</strong> (<code>cf-ready</code>) is an open-source CLI that helps developers check whether a website or application is ready to go live on Cloudflare.</p>
-        <h2>Quick start</h2>
+        <p><strong>CF Ready</strong> (<code>cf-ready</code>) is an open-source CLI that scans a local repository and reports whether a website or application is ready to go live on Cloudflare Workers, Pages, and related platform services.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#quick-start">Quick start</a></li>
+            <li><a href="#what-it-checks">What it checks</a></li>
+            <li><a href="#docs-sections">Documentation sections</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="quick-start">Quick start</h2>
         <pre><code>npx @orangecloud/cf-ready scan</code></pre>
-        <p>See <a href="getting-started.html">Getting started</a> for install options and <a href="/app/">Web Agent</a> for browser-based scans.</p>
-        <h2>Topics</h2>
-        <ul>
-          <li><a href="migration-readiness.html">Migration readiness</a> — runtime blockers, Next.js, Vite, Node.js</li>
-          <li><a href="security-readiness.html">Security readiness</a> — secrets, CORS, dependencies</li>
-          <li><a href="ai-readiness.html">AI readiness</a> — robots.txt, llms.txt, OpenAPI, MCP</li>
-          <li><a href="seo-readiness.html">SEO readiness</a> — metadata, sitemap, structured data</li>
-          <li><a href="reports.html">Reports</a> — migration plan, SARIF, go-live checklist</li>
-          <li><a href="github-action.html">GitHub Action</a> — PR readiness checks</li>
-        </ul>
+        <p>This runs all readiness inspectors and writes nine report files (see <a href="reports.html">Reports</a>). Add <code>--json</code> for machine-readable stdout output.</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Command</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>cf-ready scan</code></td><td>Full go-live readiness scan + reports</td></tr>
+            <tr><td><code>cf-ready inspect --json</code></td><td>Framework and route detection only</td></tr>
+            <tr><td><code>cf-ready fix --ai-readiness --seo</code></td><td>Generate draft AI and SEO assets</td></tr>
+            <tr><td><code>cf-ready security-scan</code></td><td>Security checks + SARIF output</td></tr>
+          </tbody>
+        </table>
+        <p>New to cf-ready? Start with <a href="getting-started.html">Getting started</a>. Prefer a browser UI? Use the <a href="web-agent.html">Web Agent</a> at <a href="/app/">/app/</a>.</p>
+
+        <h2 id="what-it-checks">What it checks</h2>
+        <p>Five weighted categories contribute to an overall 0–100 score. Blockers prevent production-ready status.</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Category</th><th>Weight</th><th>Doc</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Migration</td><td>35%</td><td><a href="migration-readiness.html">Runtime blockers, Next.js vinext/OpenNext</a></td></tr>
+            <tr><td>Security</td><td>30%</td><td><a href="security-readiness.html">Secrets, CORS, npm audit, SARIF</a></td></tr>
+            <tr><td>AI readiness</td><td>20%</td><td><a href="ai-readiness.html">robots.txt, llms.txt, OpenAPI, MCP</a></td></tr>
+            <tr><td>SEO</td><td>10%</td><td><a href="seo-readiness.html">Metadata, sitemap, structured data</a></td></tr>
+            <tr><td>Deployment</td><td>5%</td><td><a href="configuration.html">wrangler, CI, rollback</a></td></tr>
+          </tbody>
+        </table>
+        <p>Scoring rules and production-ready gates: <a href="readiness-categories.html">Scoring</a>.</p>
+
+        <h2 id="docs-sections">Documentation sections</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Section</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><a href="getting-started.html">Getting started</a></td><td>Install, first scan, interpreting results</td></tr>
+            <tr><td><a href="examples.html">Examples</a></td><td>Next.js, Vite, and Node.js walkthroughs</td></tr>
+            <tr><td><a href="commands.html">Commands</a></td><td>Full CLI reference</td></tr>
+            <tr><td><a href="configuration.html">Configuration</a></td><td><code>cf-ready.config.json</code> options</td></tr>
+            <tr><td><a href="web-agent.html">Web Agent</a></td><td>Browser-based scans via GitHub OAuth</td></tr>
+            <tr><td><a href="migration-readiness.html">Migration</a></td><td>Workers runtime blockers and framework paths</td></tr>
+            <tr><td><a href="security-readiness.html">Security</a></td><td>Secret scanning, env files, dependency audit</td></tr>
+            <tr><td><a href="ai-readiness.html">AI readiness</a></td><td>Agent discoverability assets and <code>aiPolicy</code></td></tr>
+            <tr><td><a href="seo-readiness.html">SEO readiness</a></td><td>Metadata and crawlability checks</td></tr>
+            <tr><td><a href="reports.html">Reports</a></td><td>All nine output files and JSON schema</td></tr>
+            <tr><td><a href="readiness-categories.html">Scoring</a></td><td>Weights, deductions, production-ready rules</td></tr>
+            <tr><td><a href="github-action.html">GitHub Action</a></td><td>CI integration, SARIF upload, PR checks</td></tr>
+            <tr><td><a href="roadmap.html">Roadmap</a></td><td>Planned features and observability</td></tr>
+          </tbody>
+        </table>
+
+        <div class="docs-callout">
+          <strong>CI integration.</strong> Add the composite action to pull requests for automated readiness checks. The cf-ready repo dogfoods its own action on <code>tests/fixtures/nextjs-app</code> — see <a href="github-action.html">GitHub Action</a>.
+        </div>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

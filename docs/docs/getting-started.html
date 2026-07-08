@@ -3,18 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Getting started — CF Ready</title>
-    <meta name="description" content="Install and run your first CF Ready scan for Cloudflare go-live readiness." />
+    <title>Getting started — CF Ready Docs</title>
+    <meta name="description" content="Install cf-ready, run your first Cloudflare go-live readiness scan, and interpret results." />
     <link rel="canonical" href="https://ready.orangecloud.vn/docs/getting-started.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/getting-started.html" />
     <meta property="og:title" content="Getting started — CF Ready" />
-    <meta property="og:description" content="Install and run your first CF Ready scan for Cloudflare go-live readiness." />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Getting started — CF Ready" />
-    <meta name="twitter:description" content="Install and run your first CF Ready scan." />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -30,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html" class="active">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -43,25 +39,114 @@
       </nav>
       <article class="docs-content">
         <h1>Getting started</h1>
-        <p>CF Ready (<code>cf-ready</code>) is an open-source CLI for Cloudflare go-live readiness checks.</p>
-        <h2>Quick scan</h2>
-        <pre><code>npx @orangecloud/cf-ready scan</code></pre>
-        <p><em>Package coming to npm.</em> Install from source today:</p>
-        <pre><code>git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
-cd Cloudflare-Go-Live-Readiness && npm ci && npm run build
-node dist/index.js scan --cwd /path/to/your-app</code></pre>
-        <h2>Requirements</h2>
+        <p><strong>CF Ready</strong> (<code>cf-ready</code>) scans a local project directory and produces a go-live readiness report for Cloudflare Workers, Pages, and related platform services.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#requirements">Requirements</a></li>
+            <li><a href="#install">Install</a></li>
+            <li><a href="#first-scan">Your first scan</a></li>
+            <li><a href="#inspect">Inspect without scanning</a></li>
+            <li><a href="#exit-codes">Exit codes</a></li>
+            <li><a href="#workflows">Common workflows</a></li>
+            <li><a href="#web-agent">Web Agent (no install)</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="requirements">Requirements</h2>
         <ul>
-          <li>Node.js 18 or later</li>
-          <li>A project directory (local path, ZIP upload, or GitHub import in Web Agent)</li>
+          <li><strong>Node.js 18+</strong> for the CLI</li>
+          <li>A project directory with source code (monorepo: point <code>--cwd</code> at the app package)</li>
+          <li>Optional: <code>cf-ready.config.json</code> for project metadata — see <a href="configuration.html">Configuration</a></li>
         </ul>
-        <h2>Install globally</h2>
+
+        <h2 id="install">Install</h2>
+        <h3>npm (when published)</h3>
+        <pre><code>npx @orangecloud/cf-ready scan --cwd ./my-app</code></pre>
+        <p>Or install globally:</p>
         <pre><code>npm install -g @orangecloud/cf-ready
 cf-ready scan --cwd ./my-app</code></pre>
-        <h2>Web Agent</h2>
-        <p>No local install needed: <a href="/app/">open the Web Agent</a>, upload source or import a public GitHub repo, then run <code>scan</code>.</p>
-        <h2>Output</h2>
-        <p>Scan generates up to 9 report files in your configured output directory (default: project root), including markdown report, JSON, SARIF, and migration plan.</p>
+
+        <div class="docs-callout docs-callout--warn">
+          <strong>npm pending.</strong> Until <code>@orangecloud/cf-ready</code> is on npm, build from source:
+        </div>
+        <pre><code>git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
+cd Cloudflare-Go-Live-Readiness
+npm ci && npm run build
+node dist/index.js scan --cwd /path/to/your-app</code></pre>
+
+        <h2 id="first-scan">Your first scan</h2>
+        <p>From your application root:</p>
+        <pre><code>cf-ready scan --cwd .</code></pre>
+        <p>The CLI will:</p>
+        <ol>
+          <li>Detect framework, package manager, and deployment target</li>
+          <li>Run migration, security, AI, SEO, and deployment checks</li>
+          <li>Calculate weighted readiness scores</li>
+          <li>Write up to <strong>9 report files</strong> to <code>outputDir</code> (default: project root)</li>
+        </ol>
+        <p>Human-readable summary prints to the terminal. For CI or scripting:</p>
+        <pre><code>cf-ready scan --cwd . --json</code></pre>
+        <p>JSON stdout includes <code>scores</code>, <code>blockers</code>, <code>findings</code>, and <code>productionReady</code>. See <a href="reports.html">Reports</a> and <a href="readiness-categories.html">Scoring</a>.</p>
+
+        <h3>Example output (fixture)</h3>
+        <pre><code>$ cf-ready scan --cwd tests/fixtures/nextjs-app
+
+Cloudflare Go-Live Readiness Scan
+────────────────────────────────
+Framework:     nextjs
+Package mgr:   npm
+Target:        vercel
+
+Overall:       78/100
+Migration:     72  Security: 85
+AI readiness:  64  SEO: 70  Deploy: 80
+
+Status:        Not production ready
+Blockers:      2
+
+Reports generated
+✓ cf-ready-report.md
+✓ cf-ready-report.json
+…</code></pre>
+
+        <h2 id="inspect">Inspect without scanning</h2>
+        <p>Quick metadata-only pass (always JSON to stdout):</p>
+        <pre><code>cf-ready inspect --cwd . --json</code></pre>
+        <p>Returns detected <code>framework</code>, <code>packageManager</code>, <code>deploymentTarget</code>, routes, and important files — useful before a full scan.</p>
+
+        <h2 id="exit-codes">Exit codes</h2>
+        <table class="docs-table">
+          <thead><tr><th>Code</th><th>Meaning</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td><code>0</code></td><td>Production ready (no blockers)</td><td>CI pass</td></tr>
+            <tr><td><code>1</code></td><td>Findings present — blockers or policy failures</td><td>CI warn / gate</td></tr>
+            <tr><td><code>2</code></td><td>Runtime error (invalid path, config, etc.)</td><td>CI fail</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="workflows">Common workflows</h2>
+        <table class="docs-table">
+          <thead><tr><th>Goal</th><th>Command</th></tr></thead>
+          <tbody>
+            <tr><td>Full go-live report</td><td><code>cf-ready scan</code></td></tr>
+            <tr><td>Security only + SARIF</td><td><code>cf-ready security-scan</code></td></tr>
+            <tr><td>Migration plan markdown</td><td><code>cf-ready migration-plan</code></td></tr>
+            <tr><td>Generate AI/SEO drafts</td><td><code>cf-ready fix --ai-readiness</code> / <code>--seo</code></td></tr>
+            <tr><td>Pre-deploy gate</td><td><code>cf-ready deploy-check</code></td></tr>
+            <tr><td>Post-deploy HTTP checks</td><td><code>cf-ready smoke-test --url https://…</code></td></tr>
+            <tr><td>PR CI</td><td><a href="github-action.html">GitHub Action</a></td></tr>
+          </tbody>
+        </table>
+        <p>Full reference: <a href="commands.html">Commands</a>. Framework walkthroughs: <a href="examples.html">Examples</a>.</p>
+
+        <h2 id="web-agent">Web Agent (no install)</h2>
+        <p>Open <a href="/app/">ready.orangecloud.vn/app</a> to upload a ZIP, import GitHub (public or private via OAuth), and run scans in a browser terminal. See <a href="web-agent.html">Web Agent</a>.</p>
+
+        <div class="docs-callout">
+          <strong>Safe by default.</strong> Scans are read-only. Source files change only when you run <code>fix</code> with explicit flags.
+        </div>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

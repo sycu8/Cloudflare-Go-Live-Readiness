@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Roadmap — CF Ready</title>
-    <meta name="description" content="Open-source roadmap for Cloudflare Go-Live Readiness: GitHub Action, framework adapters, Web Agent, npm publish." />
+    <title>Roadmap — CF Ready Docs</title>
+    <meta name="description" content="Open-source roadmap for Cloudflare Go-Live Readiness: npm publish, framework adapters, dashboard, deploy assistant." />
     <link rel="canonical" href="https://ready.orangecloud.vn/docs/roadmap.html" />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
@@ -22,8 +22,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -35,21 +37,48 @@
       </nav>
       <article class="docs-content">
         <h1>Open-source roadmap</h1>
-        <p>CF Ready is MIT-licensed. See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/ROADMAP.md">ROADMAP.md</a> on GitHub for full detail.</p>
-        <h2>Shipped (v0.1)</h2>
+        <p>CF Ready follows a five-phase plan. Full tracking: <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/ROADMAP.md">ROADMAP.md</a> on GitHub.</p>
+
+        <h2>Phase 1 — Production CLI (shipped)</h2>
         <ul>
-          <li>Production CLI with scan, security, AI/SEO readiness, reports</li>
-          <li>Web Agent at <a href="/app/">/app/</a></li>
-          <li>GitHub Action composite for PR checks</li>
-          <li>Private GitHub repo import (OAuth)</li>
+          <li>Full scan, category commands, SARIF, fix generators, smoke-test</li>
+          <li>Marketing site + documentation</li>
+          <li>Web Agent MVP</li>
         </ul>
-        <h2>Next</h2>
+
+        <h2>Phase 2 — GitHub Action (shipped)</h2>
         <ul>
-          <li>npm publish <code>@orangecloud/cf-ready</code></li>
-          <li>Deep adapters for Astro, Remix, Hono</li>
-          <li>Auto-fix PR workflow</li>
-          <li>Persistent scan history dashboard</li>
+          <li>Composite action: scan, SARIF upload, artifacts</li>
+          <li>PR comment with scores — see <a href="github-action.html">GitHub Action</a></li>
         </ul>
+
+        <h2>Phase 3 — Auto-fix PR (planned)</h2>
+        <ul>
+          <li>Branch + PR with safe <code>fix</code> outputs</li>
+          <li>Review required for risky changes</li>
+        </ul>
+
+        <h2>Phase 4 — Web dashboard (planned)</h2>
+        <ul>
+          <li>Persistent repos and scan history</li>
+          <li>Report viewer and team reporting</li>
+        </ul>
+
+        <h2>Phase 5 — Deployment assistant (planned)</h2>
+        <ul>
+          <li>Wrangler validation, opt-in Cloudflare API checks</li>
+          <li>Post-deploy smoke orchestration</li>
+        </ul>
+
+        <h2>Near-term items</h2>
+        <table class="docs-table">
+          <thead><tr><th>Item</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>npm publish <code>@orangecloud/cf-ready</code></td><td>Workflow ready; needs NPM_TOKEN</td></tr>
+            <tr><td>Astro / Remix / Hono deep adapters</td><td>Detection only</td></tr>
+            <tr><td>Session persistence in Web Agent</td><td>Planned</td></tr>
+          </tbody>
+        </table>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

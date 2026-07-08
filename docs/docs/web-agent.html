@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Agent — CF Ready Docs</title>
+    <meta name="description" content="Run cf-ready in the browser: upload ZIP, import GitHub repos, web terminal, chat, and results panel." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/web-agent.html" />
+    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Open Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="index.html">Overview</a>
+        <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
+        <a href="commands.html">Commands</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html" class="active">Web Agent</a>
+        <a href="migration-readiness.html">Migration</a>
+        <a href="security-readiness.html">Security</a>
+        <a href="ai-readiness.html">AI readiness</a>
+        <a href="seo-readiness.html">SEO readiness</a>
+        <a href="reports.html">Reports</a>
+        <a href="readiness-categories.html">Scoring</a>
+        <a href="github-action.html">GitHub Action</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+      <article class="docs-content">
+        <h1>CF Ready Web Agent</h1>
+        <p>Browser UI at <a href="/app/">ready.orangecloud.vn/app</a>. No local Node install required — scans run in a Cloudflare Sandbox container.</p>
+
+        <h2>Layout</h2>
+        <table class="docs-table">
+          <thead><tr><th>Panel</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Project</strong></td><td>Upload ZIP, import GitHub, repo picker (OAuth)</td></tr>
+            <tr><td><strong>Workspace</strong></td><td>Chat (natural language → commands) + CLI terminal</td></tr>
+            <tr><td><strong>Results</strong></td><td>Score rings, blockers, filterable findings</td></tr>
+          </tbody>
+        </table>
+
+        <h2>Import source</h2>
+        <h3>ZIP upload</h3>
+        <ul>
+          <li>Max <strong>50MB</strong></li>
+          <li>Exclude <code>node_modules</code> — upload source only</li>
+          <li>Drag-and-drop or file picker</li>
+        </ul>
+
+        <h3>GitHub</h3>
+        <ul>
+          <li><strong>Public URL</strong> — paste <code>https://github.com/owner/repo</code> and Import</li>
+          <li><strong>Private repos</strong> — Connect GitHub (OAuth), then <strong>My repos</strong> → Import per repo</li>
+        </ul>
+        <div class="docs-callout docs-callout--warn">
+          Private import requires Worker secrets: <code>GITHUB_CLIENT_ID</code>, <code>GITHUB_CLIENT_SECRET</code>, <code>GITHUB_REDIRECT_URI</code>. See repository <code>DEPLOY.md</code>.
+        </div>
+
+        <h2>Running commands</h2>
+        <p><strong>CLI tab</strong> — type commands directly:</p>
+        <pre><code>scan
+inspect
+security-scan
+ai-ready
+seo-ready
+deploy-check
+migration-plan
+ai-optimize</code></pre>
+        <p><strong>Chat tab</strong> — examples:</p>
+        <ul>
+          <li>“scan project” → runs <code>scan</code></li>
+          <li>“kiểm tra bảo mật” → <code>security-scan</code></li>
+        </ul>
+
+        <h2>Session API</h2>
+        <p>For integrations, the worker exposes REST endpoints:</p>
+        <table class="docs-table">
+          <thead><tr><th>Endpoint</th><th>Method</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>/api/sessions</code></td><td>POST</td><td>Create session</td></tr>
+            <tr><td><code>/api/sessions/:id/upload</code></td><td>POST</td><td>Multipart ZIP</td></tr>
+            <tr><td><code>/api/sessions/:id/import/github</code></td><td>POST</td><td><code>{ "repoUrl": "…" }</code></td></tr>
+            <tr><td><code>/api/sessions/:id/exec</code></td><td>POST</td><td><code>{ "line": "scan" }</code></td></tr>
+            <tr><td><code>/api/sessions/:id/chat</code></td><td>POST</td><td>Natural language</td></tr>
+            <tr><td><code>/api/sessions/:id/results</code></td><td>GET</td><td>Last scan JSON</td></tr>
+            <tr><td><code>/api/health</code></td><td>GET</td><td>Worker health</td></tr>
+          </tbody>
+        </table>
+
+        <h2>Limitations</h2>
+        <ul>
+          <li>Ephemeral sessions — no persistent scan history yet (see <a href="roadmap.html">Roadmap</a>)</li>
+          <li>Sandbox cold start may add latency on first command</li>
+          <li>Same read-only safety model as CLI</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

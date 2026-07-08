@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Examples — CF Ready Docs</title>
+    <meta name="description" content="Step-by-step cf-ready workflows for Next.js, Vite, and Node.js apps migrating to Cloudflare." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/examples.html" />
+    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="index.html">Overview</a>
+        <a href="getting-started.html">Getting started</a>
+        <a href="examples.html" class="active">Examples</a>
+        <a href="commands.html">Commands</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
+        <a href="migration-readiness.html">Migration</a>
+        <a href="security-readiness.html">Security</a>
+        <a href="ai-readiness.html">AI readiness</a>
+        <a href="seo-readiness.html">SEO readiness</a>
+        <a href="reports.html">Reports</a>
+        <a href="readiness-categories.html">Scoring</a>
+        <a href="github-action.html">GitHub Action</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+      <article class="docs-content">
+        <h1>Examples</h1>
+        <p>End-to-end workflows for common Cloudflare migration scenarios. Test fixtures in the repo mirror these patterns.</p>
+
+        <h2 id="nextjs">Next.js → Cloudflare Workers</h2>
+        <ol>
+          <li>Copy <a href="configuration.html">config</a> from <code>examples/nextjs/cf-ready.config.json</code></li>
+          <li>Run <code>cf-ready inspect --json</code> to confirm <code>framework: "nextjs"</code></li>
+          <li>Run full scan: <code>cf-ready scan --cwd .</code></li>
+          <li>Review <code>migration-plan.md</code> for vinext vs OpenNext guidance</li>
+          <li>Fix blockers (e.g. <code>fs</code> in API routes) before deploy</li>
+          <li>Optional: <code>cf-ready fix --ai-readiness</code> for public AI assets</li>
+        </ol>
+        <pre><code># Expected: blockers when fs/child_process present in app code
+cf-ready scan --cwd ./my-next-app --json | jq '.blockers'</code></pre>
+
+        <h2 id="vite">Vite / React SPA → Cloudflare Pages</h2>
+        <ol>
+          <li>Use <code>examples/vite/cf-ready.config.json</code> as template</li>
+          <li>Set <code>target: "cloudflare-pages"</code></li>
+          <li><code>cf-ready scan</code> — migration score focuses on static output and build script</li>
+          <li>Ensure <code>npm run build</code> produces <code>dist/</code></li>
+          <li>Generate SEO/AI files if missing: <code>cf-ready fix --seo --ai-readiness</code></li>
+        </ol>
+
+        <h2 id="node">Express / Node API → progressive migration</h2>
+        <ol>
+          <li>Scan surfaces Node runtime blockers and suggests Hono refactor path</li>
+          <li>Put Cloudflare in front (DNS, CDN, WAF) while refactoring APIs</li>
+          <li>Re-scan after each migration phase</li>
+        </ol>
+        <pre><code>cf-ready migration-plan --cwd ./legacy-api
+cf-ready deploy-check --cwd ./legacy-api</code></pre>
+
+        <h2 id="ci">CI pipeline (GitHub Actions)</h2>
+        <pre><code>jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sycu8/Cloudflare-Go-Live-Readiness/action@main
+        with:
+          cwd: .
+          fail-on-blocker: "true"</code></pre>
+        <p>See <a href="github-action.html">GitHub Action</a> for inputs and SARIF upload.</p>
+
+        <h2 id="post-deploy">Post-deploy smoke test</h2>
+        <pre><code>cf-ready smoke-test --url https://my-app.pages.dev \
+  --config ./cf-ready.config.json</code></pre>
+        <p>Hits each path in <code>criticalRoutes</code> and reports HTTP status and latency.</p>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

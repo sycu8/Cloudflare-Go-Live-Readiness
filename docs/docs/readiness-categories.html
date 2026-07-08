@@ -29,8 +29,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -41,19 +43,68 @@
         <a href="roadmap.html">Roadmap</a>
       </nav>
       <article class="docs-content">
-        <h1>Readiness categories</h1>
-        <p>Overall score is weighted across five categories. Blockers prevent a production-ready status.</p>
-        <h2>Weights</h2>
-        <ul>
-          <li><strong>Migration (35%)</strong> — framework compatibility, Node/edge patterns, Cloudflare blockers</li>
-          <li><strong>Security (30%)</strong> — headers, secrets, npm audit, CORS, env documentation</li>
-          <li><strong>AI readiness (20%)</strong> — robots.txt, llms.txt, OpenAPI, MCP server card</li>
-          <li><strong>SEO (10%)</strong> — metadata, sitemap, structured data</li>
-          <li><strong>Deployment (5%)</strong> — wrangler, CI, scripts, rollback plan</li>
-        </ul>
-        <h2>Severity levels</h2>
-        <p><span class="badge badge--blocker">Blocker</span> must be resolved before production ready.</p>
-        <p><span class="badge badge--warn">High</span> <span class="badge badge--muted">Medium</span> <span class="badge badge--muted">Low</span> — prioritized recommendations.</p>
+        <h1>Readiness categories and scoring</h1>
+        <p>CF Ready computes a weighted overall score from five active categories. Open findings deduct points by severity; blockers zero out their category and prevent production-ready status.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#weights">Category weights</a></li>
+            <li><a href="#deductions">Severity deductions</a></li>
+            <li><a href="#production-ready">Production ready rules</a></li>
+            <li><a href="#observability">Observability</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="weights">Category weights</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Category</th><th>Weight</th><th>What it covers</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Migration</td><td>35%</td><td>Runtime blockers, framework compatibility, vinext/OpenNext paths, hosting target</td></tr>
+            <tr><td>Security</td><td>30%</td><td>Secrets, env files, CORS, source maps, headers, npm audit</td></tr>
+            <tr><td>AI readiness</td><td>20%</td><td>robots.txt, llms.txt, OpenAPI, MCP server card, auth.md</td></tr>
+            <tr><td>SEO</td><td>10%</td><td>Metadata, sitemap, structured data, alt text, headings</td></tr>
+            <tr><td>Deployment</td><td>5%</td><td>wrangler config, CI workflows, deploy scripts, rollback plan</td></tr>
+            <tr><td>Observability</td><td><strong>0%</strong></td><td>Reserved — not included in overall score today</td></tr>
+          </tbody>
+        </table>
+        <p>Overall score = sum of (category score × weight), rounded to an integer. Categories with weight 0 are skipped entirely.</p>
+
+        <h2 id="deductions">Severity deductions</h2>
+        <p>Each open finding deducts from its category score starting at 100:</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Severity</th><th>Deduction</th><th>Category effect</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="badge badge--blocker">Blocker</span></td><td>100</td><td>Category score forced to <strong>0</strong> (regardless of other findings)</td></tr>
+            <tr><td><span class="badge badge--warn">High</span></td><td>25</td><td>Subtract 25 per open finding</td></tr>
+            <tr><td>Medium</td><td>10</td><td>Subtract 10 per open finding</td></tr>
+            <tr><td>Low</td><td>5</td><td>Subtract 5 per open finding</td></tr>
+            <tr><td>Info / Passed</td><td>0</td><td>No deduction</td></tr>
+          </tbody>
+        </table>
+        <p>Category scores are clamped to 0–100 after deductions. Findings with status <code>fixed</code>, <code>accepted-risk</code>, or <code>ignored</code> do not deduct.</p>
+
+        <div class="docs-callout docs-callout--warn">
+          <strong>One blocker zeros the category.</strong> A single open blocker in migration sets migration to 0/100, which contributes 0 weighted points (0 × 0.35 = 0) regardless of how many medium or low findings exist.
+        </div>
+
+        <h2 id="production-ready">Production ready rules</h2>
+        <p><code>productionReady</code> is <code>false</code> when any of these conditions apply:</p>
+        <ol>
+          <li>Any open finding with <strong>blocker</strong> severity (any category)</li>
+          <li>When <code>security.blockOnSecrets</code> is <code>true</code> (default): any open security finding with blocker <strong>or</strong> high severity</li>
+          <li>When <code>security.blockOnCriticalDependencies</code> is <code>true</code> (default): finding ID <code>security-critical-dependencies</code> is open</li>
+        </ol>
+        <p>A high overall score does not imply production ready if blockers or security gates fail. The markdown report shows ✅ or ❌ based on these rules.</p>
+
+        <h2 id="observability">Observability</h2>
+        <p>The <code>observability</code> category exists in the schema with <strong>weight 0</strong>. Findings can be tagged to this category in future releases, but they do not affect the overall score today. See <a href="roadmap.html">Roadmap</a> for planned observability checks.</p>
+
+        <p>Category details: <a href="migration-readiness.html">Migration</a> · <a href="security-readiness.html">Security</a> · <a href="ai-readiness.html">AI readiness</a> · <a href="seo-readiness.html">SEO</a> · <a href="reports.html">Reports</a></p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

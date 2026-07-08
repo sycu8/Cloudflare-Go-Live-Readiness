@@ -1,20 +1,24 @@
 /**
  * CF Ready design tokens — source of truth for docs site + web agent.
- * Generated from cf-ready-brandkit/brand/design-tokens.json
+ * Synced from cf-ready-brandkit/brand/design-tokens.json
  */
 :root {
   /* Navy */
   --cf-navy-900: #060d18;
-  --cf-navy-800: #0b1628;
+  --cf-navy-800: #0f172a;
   --cf-navy-700: #0f1b33;
   --cf-navy-600: #152238;
   --cf-navy-500: #1e3050;
 
   /* Orange */
-  --cf-orange-500: #f38020;
-  --cf-orange-400: #ff9a47;
-  --cf-orange-300: #ffb36e;
-  --cf-orange-soft: rgba(243, 128, 32, 0.14);
+  --cf-orange-500: #f97316;
+  --cf-orange-400: #fb923c;
+  --cf-orange-300: #fdba74;
+  --cf-orange-soft: rgba(249, 115, 22, 0.14);
+
+  /* Slate */
+  --cf-slate-600: #334155;
+  --cf-slate-500: #475569;
 
   /* Surfaces */
   --cf-surface-light: #f8fafc;
@@ -23,19 +27,20 @@
 
   /* Text */
   --cf-text-primary: #0f172a;
-  --cf-text-secondary: #475569;
+  --cf-text-secondary: #334155;
   --cf-text-inverse: #f8fafc;
   --cf-text-muted: #94a3b8;
 
   /* Status */
   --cf-success: #22c55e;
-  --cf-warning: #eab308;
+  --cf-warning: #f59e0b;
   --cf-danger: #ef4444;
   --cf-info: #38bdf8;
+  --cf-high: #f97316;
 
   /* Typography */
-  --cf-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --cf-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  --cf-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --cf-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 
   /* Radius */
   --cf-radius-sm: 8px;
@@ -44,6 +49,6 @@
   --cf-radius-pill: 999px;
 
   /* Shadows */
-  --cf-shadow-card: 0 4px 24px rgba(11, 22, 40, 0.08);
+  --cf-shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08);
   --cf-shadow-hero: 0 24px 64px rgba(6, 13, 24, 0.45);
 }

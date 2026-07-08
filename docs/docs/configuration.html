@@ -3,17 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuration — CF Ready</title>
-    <meta name="description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
+    <title>Configuration — CF Ready Docs</title>
+    <meta name="description" content="cf-ready.config.json reference: project metadata, migration paths, SEO defaults, security policy, and AI worker settings." />
     <link rel="canonical" href="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/configuration.html" />
     <meta property="og:title" content="Configuration — CF Ready" />
-    <meta property="og:description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Configuration — CF Ready" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -29,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html" class="active">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -42,18 +39,99 @@
       </nav>
       <article class="docs-content">
         <h1>Configuration</h1>
-        <p>Optional <code>cf-ready.config.json</code> in your project root. Override with <code>--config</code>.</p>
+        <p>Optional <code>cf-ready.config.json</code> in your project root. Override path with <code>--config</code>. All fields are optional — CF Ready auto-detects framework and target when omitted.</p>
+
+        <h2>Full example (Next.js)</h2>
         <pre><code>{
-  "projectName": "my-app",
+  "projectName": "Next.js Cloudflare App",
+  "productionUrl": "https://example.com",
   "framework": "nextjs",
-  "deploymentTarget": "cloudflare-pages",
+  "target": "cloudflare-workers",
   "outputDir": ".",
+  "migration": {
+    "preferredPath": "vinext",
+    "fallbackPath": "opennext",
+    "allowAutoMigration": false
+  },
+  "aiPolicy": "allow-assistive-agents",
+  "seo": {
+    "defaultTitle": "Next.js Cloudflare App",
+    "defaultDescription": "A production-ready Next.js app for Cloudflare.",
+    "defaultImage": "/og.png",
+    "organizationName": "OrangeCloud"
+  },
+  "criticalRoutes": ["/", "/login", "/dashboard", "/api/health"],
+  "security": {
+    "blockOnSecrets": true,
+    "blockOnCriticalDependencies": true
+  },
   "ai": {
     "workerUrl": "https://your-worker.workers.dev",
-    "model": "openai/gpt-4o-mini"
+    "model": "openai/gpt-4o-mini",
+    "gatewayId": "default"
   }
 }</code></pre>
-        <p>See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/nextjs/cf-ready.config.json">examples/nextjs/cf-ready.config.json</a> in the repository.</p>
+        <p>Repository copies: <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/nextjs/cf-ready.config.json">examples/nextjs</a>, <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/vite/cf-ready.config.json">examples/vite</a>.</p>
+
+        <h2>Field reference</h2>
+        <table class="docs-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>projectName</code></td><td>string</td><td>Display name in reports and generated assets</td></tr>
+            <tr><td><code>productionUrl</code></td><td>URL</td><td>Canonical production URL for sitemap, llms.txt, smoke tests</td></tr>
+            <tr><td><code>framework</code></td><td>enum</td><td><code>nextjs</code>, <code>vite</code>, <code>react-spa</code>, <code>astro</code>, <code>remix</code>, <code>express</code>, <code>nodejs</code>, <code>static</code>, …</td></tr>
+            <tr><td><code>target</code></td><td>enum</td><td><code>cloudflare-workers</code>, <code>cloudflare-pages</code>, <code>vercel</code>, <code>netlify</code>, …</td></tr>
+            <tr><td><code>outputDir</code></td><td>string</td><td>Where reports are written (default: <code>.</code>)</td></tr>
+            <tr><td><code>aiPolicy</code></td><td>enum</td><td><code>allow-assistive-agents</code> | <code>restrict</code> | <code>block</code> — affects robots.txt drafts</td></tr>
+            <tr><td><code>criticalRoutes</code></td><td>string[]</td><td>Paths for smoke-test and sitemap generation (default: <code>["/"]</code>)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>migration</h3>
+        <table class="docs-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>preferredPath</code></td><td>e.g. <code>vinext</code>, <code>cloudflare-pages</code></td></tr>
+            <tr><td><code>fallbackPath</code></td><td>e.g. <code>opennext</code> when vinext is risky</td></tr>
+            <tr><td><code>allowAutoMigration</code></td><td>Always <code>false</code> in MVP — CF Ready never auto-migrates</td></tr>
+          </tbody>
+        </table>
+
+        <h3>seo</h3>
+        <p>Defaults used by <code>fix --seo</code> and SEO finding recommendations.</p>
+        <table class="docs-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>defaultTitle</code></td><td>Suggested page title</td></tr>
+            <tr><td><code>defaultDescription</code></td><td>Meta description draft</td></tr>
+            <tr><td><code>defaultImage</code></td><td>OG image path (e.g. <code>/og.png</code>)</td></tr>
+            <tr><td><code>organizationName</code></td><td>JSON-LD Organization name</td></tr>
+          </tbody>
+        </table>
+
+        <h3>security</h3>
+        <table class="docs-table">
+          <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>blockOnSecrets</code></td><td><code>true</code></td><td>Fail production-ready on high/blocker security findings</td></tr>
+            <tr><td><code>blockOnCriticalDependencies</code></td><td><code>true</code></td><td>Fail on critical npm audit issues</td></tr>
+          </tbody>
+        </table>
+
+        <h3>ai</h3>
+        <table class="docs-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>workerUrl</code></td><td>CF Ready worker for <code>ai-optimize</code> (e.g. deployed Web Agent worker)</td></tr>
+            <tr><td><code>model</code></td><td>Workers AI model id (default: <code>openai/gpt-4o-mini</code>)</td></tr>
+            <tr><td><code>apiToken</code></td><td>Optional Bearer token for worker auth</td></tr>
+            <tr><td><code>gatewayId</code></td><td>AI Gateway id (default: <code>default</code>)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="docs-callout">
+          <strong>Config discovery.</strong> CF Ready looks for <code>cf-ready.config.json</code> in <code>--cwd</code>. Missing config is valid. Explicit <code>--config</code> to a missing file throws an error.
+        </div>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

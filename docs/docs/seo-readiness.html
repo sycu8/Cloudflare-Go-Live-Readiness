@@ -24,8 +24,10 @@
       <nav class="docs-nav" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
+        <a href="examples.html">Examples</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -37,18 +39,81 @@
       </nav>
       <article class="docs-content">
         <h1>SEO readiness before production</h1>
-        <p>Technical SEO checks for metadata, crawlability, and social previews.</p>
-        <h2>Checks include</h2>
-        <ul>
-          <li>Title, description, and canonical URLs</li>
-          <li>Open Graph and Twitter card metadata</li>
-          <li>Structured data (JSON-LD) presence</li>
-          <li>Heading hierarchy and image alt text</li>
-          <li><code>robots.txt</code> and <code>sitemap.xml</code></li>
-        </ul>
-        <h2>Commands</h2>
-        <pre><code>cf-ready seo-ready
-cf-ready fix --seo</code></pre>
+        <p>Technical SEO checks for metadata, crawlability, accessibility signals, and social previews. SEO findings account for <strong>10%</strong> of the overall score.</p>
+
+        <nav class="docs-toc" aria-label="On this page">
+          <strong>On this page</strong>
+          <ol>
+            <li><a href="#metadata">Metadata checks</a></li>
+            <li><a href="#content">Content checks</a></li>
+            <li><a href="#public-assets">Public assets</a></li>
+            <li><a href="#fix-seo">fix --seo output</a></li>
+            <li><a href="#commands">Commands</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="metadata">Metadata checks</h2>
+        <p>Up to 50 HTML, TSX, JSX, Vue, and layout files are scanned for these signals:</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Check</th><th>Detection pattern</th><th>Severity if missing</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Page title</td><td><code>&lt;title&gt;</code> or Next.js <code>title:</code> export</td><td>Medium</td></tr>
+            <tr><td>Meta description</td><td><code>meta description</code> or <code>description:</code> export</td><td>Medium</td></tr>
+            <tr><td>Open Graph</td><td><code>og:title</code>, <code>property="og:…"</code></td><td>Medium</td></tr>
+            <tr><td>Twitter/X card</td><td><code>twitter:card</code>, <code>name="twitter:…"</code></td><td>Medium</td></tr>
+            <tr><td>Canonical URL</td><td><code>rel="canonical"</code> or <code>canonical:</code> export</td><td>Medium</td></tr>
+            <tr><td>JSON-LD structured data</td><td><code>application/ld+json</code> script blocks</td><td>Medium</td></tr>
+          </tbody>
+        </table>
+        <p>When <code>seo.defaultTitle</code> is set in config, missing-metadata recommendations include your configured title as a hint.</p>
+
+        <h2 id="content">Content checks</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Check</th><th>Scope</th><th>Severity</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Image alt text</td><td><code>&lt;img&gt;</code> tags without <code>alt</code> in up to 30 files</td><td>Low</td></tr>
+            <tr><td>Heading hierarchy</td><td>HTML pages missing <code>&lt;h1&gt;</code> (more than 2 pages)</td><td>Low</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="public-assets">Public assets</h2>
+        <p>CF Ready searches the same candidate paths as AI readiness checks:</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Asset</th><th>Candidate paths</th><th>Severity if missing</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>sitemap.xml</code></td><td><code>public/sitemap.xml</code>, <code>sitemap.xml</code>, <code>static/sitemap.xml</code></td><td>Medium</td></tr>
+            <tr><td><code>robots.txt</code></td><td><code>public/robots.txt</code>, <code>robots.txt</code>, <code>static/robots.txt</code></td><td>Low</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="fix-seo">fix --seo output</h2>
+        <p><code>cf-ready fix --seo</code> generates:</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>File</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>public/sitemap.xml</code></td><td>URL set from detected routes + <code>criticalRoutes</code> (up to 30 URLs)</td></tr>
+            <tr><td><code>cf-ready-seo-suggestions.md</code></td><td>Copy-paste HTML metadata, JSON-LD Organization schema, and Next.js App Router <code>metadata</code> export using <code>seo.*</code> config values</td></tr>
+          </tbody>
+        </table>
+        <p>Existing files are skipped unless <code>--force</code> is passed. The suggestions file is meant for manual application — cf-ready does not modify your page components automatically.</p>
+
+        <div class="docs-callout">
+          <strong>Combine with AI readiness.</strong> <code>cf-ready fix --ai-readiness</code> also generates <code>public/robots.txt</code> and <code>public/sitemap.xml</code>. Run both flags together or use <code>--force</code> to refresh.
+        </div>
+
+        <h2 id="commands">Commands</h2>
+        <pre><code>cf-ready seo-ready           # Run SEO checks only
+cf-ready fix --seo           # Generate sitemap + suggestions
+cf-ready scan                # Full scan including SEO category</code></pre>
+        <p>Configure defaults in <a href="configuration.html">Configuration</a> under the <code>seo</code> block: <code>defaultTitle</code>, <code>defaultDescription</code>, <code>defaultImage</code>, <code>organizationName</code>.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
