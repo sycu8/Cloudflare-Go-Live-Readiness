@@ -33,7 +33,7 @@ async function waitForSessionStatus(
 async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Promise<void> {
   await waitForSessionStatus(
     sessionId,
-    (status) => status.status === "idle",
+    (status) => status.status === "idle" || status.status === "done",
     timeoutMs,
     "Import timed out. The repository may be large — try again.",
   );

@@ -26,6 +26,12 @@ See `tests/qa/INVENTORY.md` for full feature matrix (docs, auth, web agent, API,
 | BUG-010 | Low | Test accuracy | Web agent test name said "nextjs" but used static-site | Renamed test description |
 | BUG-011 | Low | W3 GitHub import | `/owner/repo` shorthand not expanded to https URL | Strip leading slashes before owner/repo match |
 
+## Bugs found — QA pass 4 (import fix)
+
+| ID | Severity | Feature | Reproduction | Fix |
+|----|----------|---------|--------------|-----|
+| BUG-012 | High | W3 GitHub import | Import fails with cryptic "file error" / timeout; pipe tar fragile; HEAD ref; auto-scan blocks idle | Download archive to file then extract; resolve HEAD→default branch; use commit SHA; shell-quote tokens; RPC transport; background auto-scan; client accepts `done` status |
+
 ## Bugs found — RESOLVED in QA pass 2
 
 | ID | Status | Fix |
