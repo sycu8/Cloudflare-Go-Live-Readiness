@@ -51,6 +51,28 @@
       }
       ul { padding-left: 1.25rem; }
       li { margin: 0.35rem 0; }
+      .site-footer {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #333;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .site-footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .site-footer a:hover {
+        text-decoration: underline;
+      }
+      .site-footer .links {
+        margin-top: 0.5rem;
+      }
+      .site-footer .links a + a::before {
+        content: "·";
+        margin: 0 0.5rem;
+        color: #525252;
+      }
     </style>
   </head>
   <body>
@@ -93,5 +115,13 @@ cf-ready scan</code></pre>
       ·
       <a href="https://www.npmjs.com/package/@orangecloud/cf-ready">npm</a>
     </p>
+
+    <footer class="site-footer">
+      <p>Made by Lê Sỹ Cường</p>
+      <p class="links">
+        <a href="https://www.linkedin.com/in/sycule/" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+        <a href="https://github.com/sycu8/" rel="noopener noreferrer" target="_blank">GitHub</a>
+      </p>
+    </footer>
   </body>
 </html>
