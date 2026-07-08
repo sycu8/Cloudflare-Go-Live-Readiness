@@ -1207,6 +1207,18 @@ button.full {
   color: var(--text);
 }
 
+.auth-btn--open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+}
+
+.auth-btn--open:hover {
+  filter: brightness(1.05);
+}
+
 .auth-footnote {
   margin: 1rem 0 0;
   font-size: 0.78rem;
@@ -1268,6 +1280,29 @@ button.full {
 .auth-card--loading {
   text-align: center;
   color: var(--muted);
+}
+
+.open-mode-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 1rem;
+  background: var(--warning-soft, rgba(249, 115, 22, 0.12));
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.open-mode-banner strong {
+  color: var(--accent);
+}
+
+.open-mode-banner__callback {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  word-break: break-all;
 }
 
 /* User menu */

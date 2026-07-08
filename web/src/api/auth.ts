@@ -15,6 +15,8 @@ export type AuthState = {
 export type AuthProviderConfig = {
   google: boolean;
   github: boolean;
+  authEnforced: boolean;
+  openMode: boolean;
   publicUrl: string;
   githubCallbackUrl: string;
   googleCallbackUrl: string;
@@ -29,6 +31,8 @@ export async function getAuthConfig(): Promise<AuthProviderConfig> {
     return {
       google: false,
       github: false,
+      authEnforced: false,
+      openMode: true,
       publicUrl: "https://ready.orangecloud.vn",
       githubCallbackUrl: "https://ready.orangecloud.vn/api/auth/github/callback",
       googleCallbackUrl: "https://ready.orangecloud.vn/api/auth/google/callback",

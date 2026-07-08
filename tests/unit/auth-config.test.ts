@@ -13,17 +13,21 @@ describe("auth config", () => {
 
     expect(full.github).toBe(true);
     expect(full.google).toBe(true);
+    expect(full.authEnforced).toBe(true);
+    expect(full.openMode).toBe(false);
     expect(full.githubCallbackUrl).toBe(
       "https://ready.orangecloud.vn/api/auth/github/callback",
     );
   });
 
-  it("reports missing secrets", () => {
+  it("reports missing secrets and enables open mode", () => {
     const empty = getAuthProviderConfig({
       WORKER_PUBLIC_URL: "https://ready.orangecloud.vn",
     } as never);
 
     expect(empty.github).toBe(false);
     expect(empty.google).toBe(false);
+    expect(empty.authEnforced).toBe(false);
+    expect(empty.openMode).toBe(true);
   });
 });
