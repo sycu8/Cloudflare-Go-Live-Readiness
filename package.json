@@ -51,6 +51,8 @@
     "test:watch": "vitest",
     "test:integration": "vitest run tests/integration",
     "test:web-agent": "vitest run tests/integration/web-agent-commands.test.ts",
+    "test:cli": "node scripts/test-cli.mjs",
+    "test:cli:vitest": "vitest run tests/integration/cli-all-commands.test.ts",
     "test:e2e": "node scripts/e2e-web-agent.mjs",
     "prepublishOnly": "npm run build",
     "pages:deploy": "npm run build:all && wrangler deploy"
