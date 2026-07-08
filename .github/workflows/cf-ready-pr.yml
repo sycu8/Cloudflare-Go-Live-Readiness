@@ -1,0 +1,85 @@
+name: CF Ready PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: cf-ready-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  readiness-fixture:
+    name: Scan fixture (dogfood)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run cf-ready scan
+        id: cf-ready
+        uses: ./action
+        with:
+          cwd: tests/fixtures/nextjs-app
+          fail-on-blocker: "false"
+
+      - name: Comment PR summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('cf-ready-scan.json', 'utf8'));
+            const scores = data.scores || {};
+            const blockers = (data.blockers || []).length;
+            const ready = data.productionReady ? '✅ Production ready' : '❌ Not production ready';
+            const body = [
+              '## CF Ready — fixture scan',
+              '',
+              `Dogfood scan on \`tests/fixtures/nextjs-app\` (expected blockers).`,
+              '',
+              `| | |`,
+              `|---|---|`,
+              `| Status | ${ready} |`,
+              `| Overall | **${scores.overall ?? '—'}/100** |`,
+              `| Blockers | ${blockers} |`,
+              `| Migration | ${scores.migration ?? '—'} |`,
+              `| Security | ${scores.security ?? '—'} |`,
+              '',
+              'SARIF uploaded when available. Use the composite action in your repo:',
+              '',
+              '```yaml',
+              '- uses: sycu8/Cloudflare-Go-Live-Readiness/action@main',
+              '  with:',
+              '    cwd: .',
+              '```',
+              '',
+              `<!-- cf-ready-pr-check -->`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes('<!-- cf-ready-pr-check -->'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

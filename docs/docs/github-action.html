@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Action — CF Ready</title>
+    <meta name="description" content="Run cf-ready on pull requests with SARIF upload and readiness summaries." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/github-action.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://ready.orangecloud.vn/docs/github-action.html" />
+    <meta property="og:title" content="GitHub Action — CF Ready" />
+    <meta property="og:description" content="Run cf-ready on pull requests with SARIF upload and readiness summaries." />
+    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GitHub Action — CF Ready" />
+    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="getting-started.html">Getting started</a>
+        <a href="commands.html">Commands</a>
+        <a href="readiness-categories.html">Readiness categories</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="github-action.html" class="active">GitHub Action</a>
+      </nav>
+      <article class="docs-content">
+        <h1>GitHub Action</h1>
+        <p>Run <code>cf-ready scan</code> in CI on every pull request. Upload SARIF security findings and fail when blockers are present.</p>
+        <h2>Quick start</h2>
+        <pre><code>name: CF Ready
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sycu8/Cloudflare-Go-Live-Readiness/action@main
+        with:
+          cwd: .
+          fail-on-blocker: "true"</code></pre>
+        <h2>Inputs</h2>
+        <ul>
+          <li><code>cwd</code> — project directory to scan (default <code>.</code>)</li>
+          <li><code>config</code> — optional path to <code>cf-ready.config.json</code></li>
+          <li><code>fail-on-blocker</code> — fail when blockers exist (default <code>true</code>)</li>
+          <li><code>cf-ready-root</code> — path to cf-ready package when vendoring (default repo root)</li>
+        </ul>
+        <h2>Outputs</h2>
+        <ul>
+          <li><code>exit-code</code> — 0 ready, 1 blockers, 2 error</li>
+          <li><code>production-ready</code>, <code>blocker-count</code>, <code>overall-score</code></li>
+        </ul>
+        <p>The action uploads <code>security-findings.sarif</code> and a JSON scan artifact when the scan completes.</p>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

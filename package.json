@@ -42,6 +42,7 @@
     "build": "tsup",
     "build:web": "node scripts/build-public.mjs",
     "build:all": "npm run build && npm run build:web",
+    "generate:og": "node scripts/generate-og.mjs",
     "dev": "tsup --watch",
     "dev:web": "npm run build:web && wrangler dev",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.workers.json",
