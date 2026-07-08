@@ -1149,3 +1149,5 @@ MIT License.
 The CLI is read-only by default. It does not deploy, does not automatically migrate projects, and only modifies files when explicit `fix` commands are used.
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.
+
+Deploy the docs site to Cloudflare Pages: [DEPLOY.md](DEPLOY.md)
