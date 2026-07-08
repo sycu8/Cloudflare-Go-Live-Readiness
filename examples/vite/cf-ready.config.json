@@ -1,0 +1,22 @@
+{
+  "projectName": "Vite Cloudflare Site",
+  "productionUrl": "https://example.com",
+  "framework": "vite",
+  "target": "cloudflare-pages",
+  "migration": {
+    "preferredPath": "cloudflare-pages",
+    "allowAutoMigration": false
+  },
+  "aiPolicy": "allow-assistive-agents",
+  "seo": {
+    "defaultTitle": "Vite Cloudflare Site",
+    "defaultDescription": "A fast static website prepared for Cloudflare Pages.",
+    "defaultImage": "/og.png",
+    "organizationName": "OrangeCloud"
+  },
+  "criticalRoutes": ["/", "/about", "/contact"],
+  "security": {
+    "blockOnSecrets": true,
+    "blockOnCriticalDependencies": true
+  }
+}

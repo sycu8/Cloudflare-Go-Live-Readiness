@@ -1144,6 +1144,8 @@ MIT License.
 
 ## Status
 
-This project is in early design and MVP planning.
+**v0.1.0** — Production CLI MVP
 
-The initial goal is to build a reliable open-source CLI before adding GitHub Action, auto-fix PRs, or a web dashboard.
+The CLI is read-only by default. It does not deploy, does not automatically migrate projects, and only modifies files when explicit `fix` commands are used.
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.

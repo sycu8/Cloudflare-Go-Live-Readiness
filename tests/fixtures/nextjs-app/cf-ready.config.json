@@ -1,0 +1,12 @@
+{
+  "projectName": "Next.js Fixture App",
+  "productionUrl": "https://nextjs-fixture.example.com",
+  "framework": "nextjs",
+  "target": "cloudflare-workers",
+  "migration": {
+    "preferredPath": "vinext",
+    "fallbackPath": "opennext",
+    "allowAutoMigration": false
+  },
+  "criticalRoutes": ["/", "/api/upload"]
+}
