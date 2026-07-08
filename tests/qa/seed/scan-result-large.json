@@ -1,0 +1,531 @@
+{
+  "version": "0.1.0",
+  "scannedAt": "2026-07-08T12:00:00.000Z",
+  "projectName": "QA Scale Fixture",
+  "framework": "nextjs",
+  "productionReady": false,
+  "scores": {
+    "overall": 48,
+    "migration": 12,
+    "security": 72,
+    "aiReadiness": 41,
+    "seo": 35,
+    "deployment": 88
+  },
+  "inspection": {
+    "projectName": "QA Scale Fixture",
+    "framework": "nextjs",
+    "packageManager": "npm",
+    "deploymentTarget": "workers"
+  },
+  "findings": [
+    {
+      "id": "qa-finding-1",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #1",
+      "description": "Sanitized description for migration check 1.",
+      "recommendation": "Remediation step 1."
+    },
+    {
+      "id": "qa-finding-2",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #2",
+      "description": "Sanitized description for security check 2.",
+      "recommendation": "Remediation step 2."
+    },
+    {
+      "id": "qa-finding-3",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #3",
+      "description": "Sanitized description for ai-readiness check 3.",
+      "recommendation": "Remediation step 3."
+    },
+    {
+      "id": "qa-finding-4",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #4",
+      "description": "Sanitized description for seo check 4.",
+      "recommendation": "Remediation step 4."
+    },
+    {
+      "id": "qa-finding-5",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #5",
+      "description": "Sanitized description for deployment check 5.",
+      "recommendation": "Remediation step 5."
+    },
+    {
+      "id": "qa-finding-6",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #6",
+      "description": "Sanitized description for migration check 6.",
+      "recommendation": "Remediation step 6."
+    },
+    {
+      "id": "qa-finding-7",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #7",
+      "description": "Sanitized description for security check 7.",
+      "recommendation": "Remediation step 7."
+    },
+    {
+      "id": "qa-finding-8",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #8",
+      "description": "Sanitized description for ai-readiness check 8.",
+      "recommendation": "Remediation step 8."
+    },
+    {
+      "id": "qa-finding-9",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #9",
+      "description": "Sanitized description for seo check 9.",
+      "recommendation": "Remediation step 9."
+    },
+    {
+      "id": "qa-finding-10",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #10",
+      "description": "Sanitized description for deployment check 10.",
+      "recommendation": "Remediation step 10."
+    },
+    {
+      "id": "qa-finding-11",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #11",
+      "description": "Sanitized description for migration check 11.",
+      "recommendation": "Remediation step 11."
+    },
+    {
+      "id": "qa-finding-12",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #12",
+      "description": "Sanitized description for security check 12.",
+      "recommendation": "Remediation step 12."
+    },
+    {
+      "id": "qa-finding-13",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #13",
+      "description": "Sanitized description for ai-readiness check 13.",
+      "recommendation": "Remediation step 13."
+    },
+    {
+      "id": "qa-finding-14",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #14",
+      "description": "Sanitized description for seo check 14.",
+      "recommendation": "Remediation step 14."
+    },
+    {
+      "id": "qa-finding-15",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #15",
+      "description": "Sanitized description for deployment check 15.",
+      "recommendation": "Remediation step 15."
+    },
+    {
+      "id": "qa-finding-16",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #16",
+      "description": "Sanitized description for migration check 16.",
+      "recommendation": "Remediation step 16."
+    },
+    {
+      "id": "qa-finding-17",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #17",
+      "description": "Sanitized description for security check 17.",
+      "recommendation": "Remediation step 17."
+    },
+    {
+      "id": "qa-finding-18",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #18",
+      "description": "Sanitized description for ai-readiness check 18.",
+      "recommendation": "Remediation step 18."
+    },
+    {
+      "id": "qa-finding-19",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #19",
+      "description": "Sanitized description for seo check 19.",
+      "recommendation": "Remediation step 19."
+    },
+    {
+      "id": "qa-finding-20",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #20",
+      "description": "Sanitized description for deployment check 20.",
+      "recommendation": "Remediation step 20."
+    },
+    {
+      "id": "qa-finding-21",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #21",
+      "description": "Sanitized description for migration check 21.",
+      "recommendation": "Remediation step 21."
+    },
+    {
+      "id": "qa-finding-22",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #22",
+      "description": "Sanitized description for security check 22.",
+      "recommendation": "Remediation step 22."
+    },
+    {
+      "id": "qa-finding-23",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #23",
+      "description": "Sanitized description for ai-readiness check 23.",
+      "recommendation": "Remediation step 23."
+    },
+    {
+      "id": "qa-finding-24",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #24",
+      "description": "Sanitized description for seo check 24.",
+      "recommendation": "Remediation step 24."
+    },
+    {
+      "id": "qa-finding-25",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #25",
+      "description": "Sanitized description for deployment check 25.",
+      "recommendation": "Remediation step 25."
+    },
+    {
+      "id": "qa-finding-26",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #26",
+      "description": "Sanitized description for migration check 26.",
+      "recommendation": "Remediation step 26."
+    },
+    {
+      "id": "qa-finding-27",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #27",
+      "description": "Sanitized description for security check 27.",
+      "recommendation": "Remediation step 27."
+    },
+    {
+      "id": "qa-finding-28",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #28",
+      "description": "Sanitized description for ai-readiness check 28.",
+      "recommendation": "Remediation step 28."
+    },
+    {
+      "id": "qa-finding-29",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #29",
+      "description": "Sanitized description for seo check 29.",
+      "recommendation": "Remediation step 29."
+    },
+    {
+      "id": "qa-finding-30",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #30",
+      "description": "Sanitized description for deployment check 30.",
+      "recommendation": "Remediation step 30."
+    },
+    {
+      "id": "qa-finding-31",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #31",
+      "description": "Sanitized description for migration check 31.",
+      "recommendation": "Remediation step 31."
+    },
+    {
+      "id": "qa-finding-32",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #32",
+      "description": "Sanitized description for security check 32.",
+      "recommendation": "Remediation step 32."
+    },
+    {
+      "id": "qa-finding-33",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #33",
+      "description": "Sanitized description for ai-readiness check 33.",
+      "recommendation": "Remediation step 33."
+    },
+    {
+      "id": "qa-finding-34",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #34",
+      "description": "Sanitized description for seo check 34.",
+      "recommendation": "Remediation step 34."
+    },
+    {
+      "id": "qa-finding-35",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #35",
+      "description": "Sanitized description for deployment check 35.",
+      "recommendation": "Remediation step 35."
+    },
+    {
+      "id": "qa-finding-36",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #36",
+      "description": "Sanitized description for migration check 36.",
+      "recommendation": "Remediation step 36."
+    },
+    {
+      "id": "qa-finding-37",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #37",
+      "description": "Sanitized description for security check 37.",
+      "recommendation": "Remediation step 37."
+    },
+    {
+      "id": "qa-finding-38",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #38",
+      "description": "Sanitized description for ai-readiness check 38.",
+      "recommendation": "Remediation step 38."
+    },
+    {
+      "id": "qa-finding-39",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #39",
+      "description": "Sanitized description for seo check 39.",
+      "recommendation": "Remediation step 39."
+    },
+    {
+      "id": "qa-finding-40",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #40",
+      "description": "Sanitized description for deployment check 40.",
+      "recommendation": "Remediation step 40."
+    },
+    {
+      "id": "qa-finding-41",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #41",
+      "description": "Sanitized description for migration check 41.",
+      "recommendation": "Remediation step 41."
+    },
+    {
+      "id": "qa-finding-42",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #42",
+      "description": "Sanitized description for security check 42.",
+      "recommendation": "Remediation step 42."
+    },
+    {
+      "id": "qa-finding-43",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #43",
+      "description": "Sanitized description for ai-readiness check 43.",
+      "recommendation": "Remediation step 43."
+    },
+    {
+      "id": "qa-finding-44",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #44",
+      "description": "Sanitized description for seo check 44.",
+      "recommendation": "Remediation step 44."
+    },
+    {
+      "id": "qa-finding-45",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #45",
+      "description": "Sanitized description for deployment check 45.",
+      "recommendation": "Remediation step 45."
+    },
+    {
+      "id": "qa-finding-46",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #46",
+      "description": "Sanitized description for migration check 46.",
+      "recommendation": "Remediation step 46."
+    },
+    {
+      "id": "qa-finding-47",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #47",
+      "description": "Sanitized description for security check 47.",
+      "recommendation": "Remediation step 47."
+    },
+    {
+      "id": "qa-finding-48",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #48",
+      "description": "Sanitized description for ai-readiness check 48.",
+      "recommendation": "Remediation step 48."
+    },
+    {
+      "id": "qa-finding-49",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #49",
+      "description": "Sanitized description for seo check 49.",
+      "recommendation": "Remediation step 49."
+    },
+    {
+      "id": "qa-finding-50",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #50",
+      "description": "Sanitized description for deployment check 50.",
+      "recommendation": "Remediation step 50."
+    },
+    {
+      "id": "qa-finding-51",
+      "status": "open",
+      "category": "migration",
+      "severity": "blocker",
+      "title": "QA synthetic finding #51",
+      "description": "Sanitized description for migration check 51.",
+      "recommendation": "Remediation step 51."
+    },
+    {
+      "id": "qa-finding-52",
+      "status": "open",
+      "category": "security",
+      "severity": "high",
+      "title": "QA synthetic finding #52",
+      "description": "Sanitized description for security check 52.",
+      "recommendation": "Remediation step 52."
+    },
+    {
+      "id": "qa-finding-53",
+      "status": "open",
+      "category": "ai-readiness",
+      "severity": "medium",
+      "title": "QA synthetic finding #53",
+      "description": "Sanitized description for ai-readiness check 53.",
+      "recommendation": "Remediation step 53."
+    },
+    {
+      "id": "qa-finding-54",
+      "status": "open",
+      "category": "seo",
+      "severity": "low",
+      "title": "QA synthetic finding #54",
+      "description": "Sanitized description for seo check 54.",
+      "recommendation": "Remediation step 54."
+    },
+    {
+      "id": "qa-finding-55",
+      "status": "passed",
+      "category": "deployment",
+      "severity": "info",
+      "title": "QA synthetic finding #55",
+      "description": "Sanitized description for deployment check 55.",
+      "recommendation": "Remediation step 55."
+    }
+  ],
+  "blockers": [
+    "qa-finding-1",
+    "qa-finding-6",
+    "qa-finding-11",
+    "qa-finding-16",
+    "qa-finding-21",
+    "qa-finding-26",
+    "qa-finding-31",
+    "qa-finding-36",
+    "qa-finding-41",
+    "qa-finding-46",
+    "qa-finding-51"
+  ]
+}

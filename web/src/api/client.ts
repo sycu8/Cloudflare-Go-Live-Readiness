@@ -7,7 +7,8 @@ export function normalizeGitHubRepoUrl(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) return trimmed;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^[\w.-]+\/[\w.-]+/.test(trimmed)) return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
+  const stripped = trimmed.replace(/^\/+/, "");
+  if (/^[\w.-]+\/[\w.-]+/.test(stripped)) return `https://github.com/${stripped}`;
   return trimmed;
 }
 
@@ -67,6 +68,35 @@ export type Finding = {
   description?: string;
 };
 
+export type SessionResults = {
+  result?: ScanResultData;
+  markdown?: string;
+  error?: string | null;
+};
+
+export type ChatResponse = {
+  reply?: string;
+  command?: string;
+  result?: {
+    data?: ScanResultData;
+    stdout?: string;
+  };
+};
+
+export type ScanResultData = {
+  productionReady?: boolean;
+  scores?: ScanScores;
+  blockers?: Finding[];
+  findings?: Finding[];
+  inspection?: {
+    projectName?: string;
+    framework?: string;
+    deploymentTarget?: string;
+    packageManager?: string;
+  };
+  markdown?: string;
+};
+
 export async function createSession(): Promise<string> {
   const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
   if (!res.ok) {
@@ -97,7 +127,7 @@ export async function ensureWorkspaceSession(): Promise<string> {
   return sessionId;
 }
 
-export async function getStatus(sessionId: string) {
+export async function getStatus(sessionId: string): Promise<{ status?: SessionStatus; lastError?: string }> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
   if (!res.ok) {
     throw new Error(await readApiError(res, "Failed to load session status"));
@@ -133,7 +163,17 @@ export async function importGitHub(sessionId: string, repoUrl: string) {
   return data;
 }
 
-export async function execCommand(sessionId: string, line: string) {
+export type ExecCommandResult = {
+  status?: string;
+  exitCode?: number;
+  stdout?: string;
+  stderr?: string;
+  data?: unknown;
+  error?: string;
+  markdown?: string;
+};
+
+export async function execCommand(sessionId: string, line: string): Promise<ExecCommandResult> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/exec`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -141,21 +181,10 @@ export async function execCommand(sessionId: string, line: string) {
     credentials: "include",
   });
   if (!res.ok) throw new Error(await readApiError(res, "Command failed"));
-  const data = await readApiJson<{
-    status?: string;
-    exitCode?: number;
-    stdout?: string;
-    stderr?: string;
-    data?: unknown;
-    error?: string;
-  }>(res);
+  const data = await readApiJson<ExecCommandResult>(res);
 
   if (data.status === "running") {
-    const results = (await waitForExecComplete(sessionId)) as {
-      result?: unknown;
-      markdown?: string;
-      error?: string | null;
-    };
+    const results = await waitForExecComplete(sessionId);
     if (results.error) throw new Error(results.error);
     const payload = results.result ?? null;
     return {
@@ -170,10 +199,10 @@ export async function execCommand(sessionId: string, line: string) {
   return data;
 }
 
-export async function getResults(sessionId: string) {
+export async function getResults(sessionId: string): Promise<SessionResults> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/results`, fetchOpts);
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load results"));
-  return readApiJson(res);
+  return readApiJson<SessionResults>(res);
 }
 
 export function reportPdfUrl(sessionId: string): string {
@@ -195,7 +224,7 @@ export async function listFiles(sessionId: string) {
   return readApiJson<{ files: string[] }>(res);
 }
 
-export async function chat(sessionId: string, message: string) {
+export async function chat(sessionId: string, message: string): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -203,7 +232,7 @@ export async function chat(sessionId: string, message: string) {
     credentials: "include",
   });
   if (!res.ok) throw new Error(await readApiError(res, "Chat request failed"));
-  return readApiJson(res);
+  return readApiJson<ChatResponse>(res);
 }
 
 export function githubAuthUrl(sessionId: string): string {

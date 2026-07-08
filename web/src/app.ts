@@ -18,6 +18,7 @@ import { getAuthState, getAuthConfig, logout, type AuthState, type AuthProviderC
 import {
   renderEmptyResults,
   renderResults,
+  escapeHtml,
   type ScanResultData,
 } from "./ui/render.js";
 import {
@@ -400,7 +401,7 @@ async function mountAgentApp(
       fileCountLabel.textContent = `${fileCount} files`;
       fileList.innerHTML = files
         .slice(0, 80)
-        .map((f) => `<li title="${f}">${f}</li>`)
+        .map((f) => `<li title="${escapeHtml(f)}">${escapeHtml(f)}</li>`)
         .join("");
       fileTree.hidden = files.length === 0;
     } catch {

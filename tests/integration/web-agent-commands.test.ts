@@ -40,7 +40,7 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string;
 
 describe("web agent commands (CLI in sandbox)", () => {
   for (const command of WEB_AGENT_COMMANDS) {
-    it(`runs ${command} on nextjs fixture with --json`, async () => {
+    it(`runs ${command} on static-site fixture with --json`, async () => {
       const { stdout, stderr, code } = await runCli([
         command,
         "--cwd",
