@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "web/**"
+      - "workers/**"
+      - "src/**"
+      - "scripts/**"
+      - "Dockerfile"
       - "wrangler.jsonc"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -32,7 +37,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Deploy docs to Cloudflare Workers (static assets)
+      - name: Build CLI and Web Agent assets
+        run: npm run build:all
+
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

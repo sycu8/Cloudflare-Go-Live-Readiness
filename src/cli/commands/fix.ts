@@ -1,7 +1,5 @@
 import type { Command } from "commander";
-import { createScanContext } from "../../core/context.js";
-import { generateAiAssets } from "../../generators/ai-assets.js";
-import { generateSeoAssets } from "../../generators/seo-assets.js";
+import { runCommand } from "../../service/run-command.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -24,30 +22,20 @@ export function registerFixCommand(program: Command): void {
       }
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("fix", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: [],
+          aiReadiness: fixOpts.aiReadiness,
+          seo: fixOpts.seo,
+          force: fixOpts.force,
         });
 
-        const results: Array<{ file: string; status: string }> = [];
-
-        if (fixOpts.aiReadiness) {
-          logger.heading("Generating AI readiness assets");
-          const aiResults = await generateAiAssets(context, { force: fixOpts.force });
-          results.push(...aiResults);
-        }
-
-        if (fixOpts.seo) {
-          logger.heading("Generating SEO assets");
-          const seoResults = await generateSeoAssets(context, { force: fixOpts.force });
-          results.push(...seoResults);
-        }
+        const data = result.data as { results: Array<{ file: string; status: string }> };
 
         if (opts.json) {
-          console.log(JSON.stringify({ results }, null, 2));
+          console.log(JSON.stringify(data, null, 2));
         } else {
-          for (const r of results) {
+          for (const r of data.results) {
             const label = r.status === "skipped" ? "skipped (exists)" : r.status;
             logger.success(`${r.file}: ${label}`);
           }

@@ -1,6 +1,5 @@
 import type { Command } from "commander";
-import { createScanContext } from "../../core/context.js";
-import { writeAllReports } from "../../core/report.js";
+import { runCommand } from "../../service/run-command.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -14,19 +13,19 @@ export function registerReportCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("report", {
           rootDir: opts.cwd,
           configPath: opts.config,
         });
 
-        const reports = await writeAllReports(context);
+        const data = result.data as { reports: string[] };
 
         if (opts.json) {
-          console.log(JSON.stringify({ reports: reports.map((r) => r.name) }, null, 2));
+          console.log(JSON.stringify(data, null, 2));
         } else {
           logger.heading("Reports generated");
-          for (const r of reports) {
-            logger.success(r.name);
+          for (const name of data.reports) {
+            logger.success(name);
           }
         }
       } catch (error) {

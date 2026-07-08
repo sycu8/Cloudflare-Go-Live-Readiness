@@ -1,9 +1,6 @@
 import type { Command } from "commander";
-import path from "node:path";
-import { createScanContext, getOutputDir } from "../../core/context.js";
-import { writeTextFile } from "../../core/filesystem.js";
-import { generateSarif } from "../../generators/sarif.js";
-import { getGlobalOptions, getExitCode } from "../options.js";
+import { runCommand } from "../../service/run-command.js";
+import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerSecurityScanCommand(program: Command): void {
@@ -16,28 +13,27 @@ export function registerSecurityScanCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("security-scan", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: ["security"],
         });
 
-        const sarif = generateSarif(context.findings, context.rootDir);
-        const outputPath = path.join(getOutputDir(context), "security-findings.sarif");
-        await writeTextFile(outputPath, sarif, { force: true });
-
-        const securityFindings = context.findings.filter((f) => f.category === "security");
+        const data = result.data as {
+          findings: unknown[];
+          sarif: string;
+          score: number;
+        };
 
         if (opts.json) {
-          console.log(JSON.stringify({ findings: securityFindings, sarif: outputPath }, null, 2));
+          console.log(JSON.stringify({ findings: data.findings, sarif: data.sarif }, null, 2));
         } else {
           logger.heading("Security Scan");
-          console.log(`Findings: ${securityFindings.length}`);
-          console.log(`Security score: ${context.scores.security}/100`);
-          logger.success(`SARIF written to ${outputPath}`);
+          console.log(`Findings: ${data.findings.length}`);
+          console.log(`Security score: ${data.score}/100`);
+          logger.success(`SARIF written to ${data.sarif}`);
         }
 
-        process.exit(getExitCode(context.productionReady, false));
+        process.exit(result.exitCode);
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));
         process.exit(2);

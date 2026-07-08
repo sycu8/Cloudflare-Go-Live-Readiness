@@ -1,8 +1,5 @@
 import type { Command } from "commander";
-import path from "node:path";
-import { createScanContext, getOutputDir } from "../../core/context.js";
-import { writeTextFile } from "../../core/filesystem.js";
-import { generateSeoReadinessReport } from "../../modules/seo/index.js";
+import { runCommand } from "../../service/run-command.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -16,30 +13,19 @@ export function registerSeoReadyCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("seo-ready", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: ["seo"],
         });
 
-        const content = generateSeoReadinessReport(context.inspection, context.findings);
-        const outputPath = path.join(getOutputDir(context), "seo-readiness-report.md");
-        await writeTextFile(outputPath, content, { force: true });
+        const data = result.data as { score: number; report: string };
 
         if (opts.json) {
-          console.log(
-            JSON.stringify({
-              score: context.scores.seo,
-              findings: context.findings,
-              report: outputPath,
-            },
-            null,
-            2,
-          ));
+          console.log(JSON.stringify(result.data, null, 2));
         } else {
           logger.heading("SEO Readiness");
-          console.log(`Score: ${context.scores.seo}/100`);
-          logger.success(`Report: ${outputPath}`);
+          console.log(`Score: ${data.score}/100`);
+          logger.success(`Report: ${data.report}`);
         }
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));

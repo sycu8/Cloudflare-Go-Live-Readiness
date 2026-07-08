@@ -29,6 +29,36 @@ export type AiOptimizeResponse = {
   markdown: string;
 };
 
+export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
+
+export type SessionState = {
+  id: string;
+  status: SessionStatus;
+  projectName?: string;
+  source?: "upload" | "github";
+  lastCommand?: string;
+  lastError?: string;
+  lastResult?: unknown;
+  lastMarkdown?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExecRequest = {
+  command: string;
+  args?: string[];
+  flags?: Record<string, string | boolean>;
+};
+
+export type GitHubImportRequest = {
+  repoUrl: string;
+  ref?: string;
+};
+
+export type ChatRequest = {
+  message: string;
+};
+
 export type Env = {
   AI: {
     run(
@@ -38,8 +68,16 @@ export type Env = {
     ): Promise<Record<string, unknown>>;
   };
   ASSETS: { fetch: (request: Request) => Promise<Response> };
+  SESSION: DurableObjectNamespace;
+  Sandbox: DurableObjectNamespace;
+  UPLOADS?: R2Bucket;
+  SESSIONS?: KVNamespace;
   DEFAULT_AI_MODEL: string;
   FALLBACK_AI_MODEL: string;
   AI_GATEWAY_ID: string;
   AI_API_KEY?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  GITHUB_REDIRECT_URI?: string;
+  WORKER_PUBLIC_URL?: string;
 };

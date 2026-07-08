@@ -1,9 +1,6 @@
 import type { Command } from "commander";
-import { loadConfig } from "../../inspectors/repository.js";
-import { inspectRepository } from "../../inspectors/repository.js";
-import { runSmokeTest } from "../../modules/smoke-test/index.js";
-import { validateProjectRoot } from "../../core/validate.js";
-import { getGlobalOptions, getExitCode } from "../options.js";
+import { runCommand } from "../../service/run-command.js";
+import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerSmokeTestCommand(program: Command): void {
@@ -17,19 +14,26 @@ export function registerSmokeTestCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const rootDir = await validateProjectRoot(opts.cwd);
-        const config = await loadConfig(rootDir, opts.config);
-        const inspection = await inspectRepository(rootDir);
-        const report = await runSmokeTest(options.url, config, inspection);
+        const result = await runCommand("smoke-test", {
+          rootDir: opts.cwd,
+          configPath: opts.config,
+          url: options.url,
+        });
+
+        const report = result.data as {
+          baseUrl: string;
+          results: Array<{ ok: boolean; path: string; status?: number; responseTimeMs: number }>;
+          findings: Array<{ severity: string; title: string }>;
+        };
 
         if (opts.json) {
           console.log(JSON.stringify(report, null, 2));
         } else {
           logger.heading(`Smoke test: ${report.baseUrl}`);
-          for (const result of report.results) {
-            const status = result.ok ? "OK" : "FAIL";
+          for (const r of report.results) {
+            const status = r.ok ? "OK" : "FAIL";
             console.log(
-              `${status} ${result.path} — ${result.status ?? "error"} (${result.responseTimeMs}ms)`,
+              `${status} ${r.path} — ${r.status ?? "error"} (${r.responseTimeMs}ms)`,
             );
           }
           if (report.findings.length > 0) {
@@ -40,8 +44,7 @@ export function registerSmokeTestCommand(program: Command): void {
           }
         }
 
-        const hasBlocker = report.findings.some((f) => f.severity === "blocker");
-        process.exit(getExitCode(!hasBlocker, false));
+        process.exit(result.exitCode);
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));
         process.exit(2);
