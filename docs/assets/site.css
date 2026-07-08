@@ -17,6 +17,14 @@ body {
 }
 
 a { color: var(--cf-orange-500); }
+a:focus-visible,
+.btn:focus-visible,
+.chip:focus-visible,
+.filter-btn:focus-visible {
+  outline: 2px solid var(--cf-orange-500);
+  outline-offset: 2px;
+}
+
 a:hover { color: var(--cf-orange-400); }
 
 img, svg { max-width: 100%; height: auto; }

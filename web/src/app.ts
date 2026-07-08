@@ -50,7 +50,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       <div class="brand">
         <div class="brand__logo" aria-hidden="true">☁</div>
         <div class="brand__text">
-          <h1>cf-ready Agent</h1>
+          <h1>CF Ready Agent</h1>
           <p>Cloudflare Go-Live Readiness</p>
         </div>
       </div>

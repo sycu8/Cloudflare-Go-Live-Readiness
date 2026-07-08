@@ -95,7 +95,7 @@
                 <span>Primary command</span>
               </div>
               <pre><code>npx @orangecloud/cf-ready scan</code></pre>
-              <p class="copy-hint">No install required · Node.js 18+</p>
+              <p class="copy-hint">Node.js 18+ · Install from <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness" style="color:var(--cf-orange-400)">GitHub</a> until npm publish</p>
             </div>
           </div>
           <div class="hero-visual">
@@ -149,17 +149,17 @@
           <p class="section-intro">Five weighted categories produce an overall readiness score and actionable findings.</p>
           <div class="grid-3">
             <article class="card">
-              <span class="badge badge--warn">35%</span>
+              <span class="badge badge--muted">35%</span>
               <h3>Migration</h3>
               <p>Framework detection, Cloudflare compatibility, Next.js/Vite/Node patterns, and migration blockers.</p>
             </article>
             <article class="card">
-              <span class="badge badge--blocker">30%</span>
+              <span class="badge badge--muted">30%</span>
               <h3>Security</h3>
               <p>Headers, secrets scanning, dependency audit, CORS, and environment variable hygiene. SARIF export included.</p>
             </article>
             <article class="card">
-              <span class="badge badge--ok">20%</span>
+              <span class="badge badge--muted">20%</span>
               <h3>AI readiness</h3>
               <p>robots.txt, llms.txt, OpenAPI, and MCP-related assets for AI-assisted discovery.</p>
             </article>
@@ -245,7 +245,7 @@ cf-ready scan</code></pre>
           <div class="grid-3">
             <article class="card">
               <h3>Read-only scans</h3>
-              <p><code>scan</code>, <code>inspect</code>, and report commands never modify your source tree.</p>
+              <p><code>scan</code> and <code>inspect</code> analyze your project; reports are written to the configured output directory, not your app source files.</p>
             </article>
             <article class="card">
               <h3>Explicit fixes only</h3>
@@ -292,7 +292,7 @@ cf-ready scan</code></pre>
             <li>GitHub Action for PR readiness checks</li>
             <li>Expanded framework adapters (Remix, Astro, Hono)</li>
             <li>Private repo support in Web Agent (GitHub OAuth)</li>
-            <li>npm publish <code>@orangecloud/cf-ready</code></li>
+            <li>npm publish <code>@orangecloud/cf-ready</code> to registry</li>
           </ul>
           <p style="margin-top:1rem">
             <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">View repository →</a>
@@ -316,6 +316,7 @@ cf-ready scan</code></pre>
         <div>
           <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
           <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường · OrangeCloud</p>
+          <p style="margin:0.35rem 0 0;font-size:0.8rem">Community open-source tool; not affiliated with Cloudflare, Inc.</p>
         </div>
         <div>
           <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a>
