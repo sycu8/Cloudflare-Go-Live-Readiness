@@ -75,7 +75,11 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   if (pathname === "/api/auth/google" && request.method === "GET") {
-    return googleLoginRedirect(env, url.searchParams.get("returnTo") ?? undefined);
+    return googleLoginRedirect(
+      env,
+      url.searchParams.get("returnTo") ?? undefined,
+      request.headers.get("Accept"),
+    );
   }
 
   if (pathname === "/api/auth/google/callback" && request.method === "GET") {
@@ -86,7 +90,11 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   if (pathname === "/api/auth/github/login" && request.method === "GET") {
-    return githubLoginRedirect(env, url.searchParams.get("returnTo") ?? undefined);
+    return githubLoginRedirect(
+      env,
+      url.searchParams.get("returnTo") ?? undefined,
+      request.headers.get("Accept"),
+    );
   }
 
   if (pathname === "/api/auth/github/callback" && request.method === "GET") {
@@ -100,7 +108,11 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   if (pathname === "/api/auth/github" && request.method === "GET") {
     const workspaceSessionId = url.searchParams.get("session");
     if (!workspaceSessionId) {
-      return githubLoginRedirect(env, url.searchParams.get("returnTo") ?? undefined);
+      return githubLoginRedirect(
+        env,
+        url.searchParams.get("returnTo") ?? undefined,
+        request.headers.get("Accept"),
+      );
     }
     return resolveGitHubConnectRedirect(env, request, workspaceSessionId);
   }

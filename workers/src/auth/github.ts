@@ -8,6 +8,7 @@ import {
   assertWorkspaceSessionOwner,
 } from "./session.js";
 import { forbiddenResponse } from "./handlers.js";
+import { oauthNotConfiguredResponse } from "./errors.js";
 import { storeGitHubTokenForUser, upsertUserFromProvider, getUserById } from "./users.js";
 
 const GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize";
@@ -24,12 +25,10 @@ function appBaseUrl(env: Env): string {
 export async function githubLoginRedirect(
   env: Env,
   returnTo?: string,
+  accept?: string | null,
 ): Promise<Response> {
-  if (!env.GITHUB_CLIENT_ID) {
-    return Response.json(
-      { error: "GitHub OAuth not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET." },
-      { status: 501 },
-    );
+  if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+    return oauthNotConfiguredResponse(env, "github", accept ?? null);
   }
 
   const state = await createOAuthState(env, {

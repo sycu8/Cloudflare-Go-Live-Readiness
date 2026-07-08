@@ -59,9 +59,14 @@ const TERMINAL_THEMES = {
 export async function mountApp(root: HTMLElement): Promise<void> {
   const auth = await getAuthState();
   if (!auth.authenticated || !auth.user) {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get("auth_error");
     root.innerHTML = renderLoginLoading();
     const config = await getAuthConfig();
-    root.innerHTML = renderLoginScreen(config);
+    root.innerHTML = renderLoginScreen(config, authError);
+    if (authError) {
+      window.history.replaceState({}, "", "/app/");
+    }
     return;
   }
   await mountAgentApp(root, auth);

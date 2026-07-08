@@ -2,6 +2,7 @@ import type { Env } from "../types.js";
 import { createOAuthState, consumeOAuthState } from "./oauth-state.js";
 import { authCookieHeader, createAuthSession } from "./session.js";
 import { upsertUserFromProvider } from "./users.js";
+import { oauthNotConfiguredResponse } from "./errors.js";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -18,12 +19,10 @@ function appBaseUrl(env: Env): string {
 export async function googleLoginRedirect(
   env: Env,
   returnTo?: string,
+  accept?: string | null,
 ): Promise<Response> {
-  if (!env.GOOGLE_CLIENT_ID) {
-    return Response.json(
-      { error: "Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET." },
-      { status: 501 },
-    );
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return oauthNotConfiguredResponse(env, "google", accept ?? null);
   }
 
   const state = await createOAuthState(env, {

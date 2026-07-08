@@ -1251,6 +1251,20 @@ button.full {
   margin: 0.65rem 0 0;
 }
 
+.auth-setup--error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.auth-setup__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.auth-setup__list li {
+  margin: 0.25rem 0;
+}
+
 .auth-card--loading {
   text-align: center;
   color: var(--muted);

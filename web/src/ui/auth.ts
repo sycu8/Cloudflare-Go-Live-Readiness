@@ -1,7 +1,14 @@
 import { githubLoginUrl, googleLoginUrl, type AuthProviderConfig } from "../api/auth.js";
 
-export function renderLoginScreen(config: AuthProviderConfig): string {
+export function renderLoginScreen(config: AuthProviderConfig, authError?: string | null): string {
   const hasProviders = config.google || config.github;
+
+  const errorBanner = authError
+    ? `<div class="auth-setup auth-setup--error" role="alert">
+        <strong>Sign-in unavailable</strong>
+        <p>${escapeHtml(authErrorMessage(authError))}</p>
+      </div>`
+    : "";
 
   const googleBtn = config.google
     ? `<a class="auth-btn auth-btn--google" href="${googleLoginUrl("/app/")}">
@@ -17,12 +24,18 @@ export function renderLoginScreen(config: AuthProviderConfig): string {
       </a>`
     : "";
 
-  const setupNotice = hasProviders
-    ? ""
-    : `<div class="auth-setup" role="alert">
+  const setupNotice =
+    hasProviders || authError
+      ? ""
+      : `<div class="auth-setup" role="alert">
         <strong>Sign-in is not configured yet</strong>
-        <p>Ask the site operator to set Worker secrets <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code> (and Google OAuth if needed).</p>
-        <p class="auth-setup__callback">GitHub callback URL:<br /><code>${escapeHtml(config.githubCallbackUrl)}</code></p>
+        <p>Add Worker secrets via GitHub Actions or <code>wrangler secret put</code>:</p>
+        <ul class="auth-setup__list">
+          <li><code>GITHUB_CLIENT_ID</code> + <code>GITHUB_CLIENT_SECRET</code></li>
+          <li><code>GOOGLE_CLIENT_ID</code> + <code>GOOGLE_CLIENT_SECRET</code></li>
+        </ul>
+        <p class="auth-setup__callback">GitHub callback:<br /><code>${escapeHtml(config.githubCallbackUrl)}</code></p>
+        <p class="auth-setup__callback">Google callback:<br /><code>${escapeHtml(config.googleCallbackUrl)}</code></p>
       </div>`;
 
   return `
@@ -34,6 +47,7 @@ export function renderLoginScreen(config: AuthProviderConfig): string {
           <p>Sign in to scan projects, save reports, and connect GitHub repos.</p>
         </div>
 
+        ${errorBanner}
         ${setupNotice}
 
         <div class="auth-actions">
@@ -84,6 +98,16 @@ export function renderUserMenu(name: string, email: string, avatarUrl: string | 
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function authErrorMessage(code: string): string {
+  if (code === "google_not_configured") {
+    return "Google sign-in is not configured on the server. The operator must set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.";
+  }
+  if (code === "github_not_configured") {
+    return "GitHub sign-in is not configured on the server. The operator must set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.";
+  }
+  return "Sign-in provider is not available.";
 }
 
 export function mountUserMenu(root: HTMLElement, onLogout: () => void): void {

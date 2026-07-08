@@ -90,9 +90,36 @@ Verify: `curl https://ready.orangecloud.vn/api/auth/config` should return `"gith
 
 ## Google OAuth (account sign-in)
 
-1. Create OAuth client in [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Authorized redirect URI: `https://<worker>/api/auth/google/callback`
-3. Store `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as Worker secrets
+1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Create project (if needed) → **Create credentials** → **OAuth client ID**
+3. Application type: **Web application**
+4. Set:
+   - **Authorized JavaScript origins:** `https://ready.orangecloud.vn`
+   - **Authorized redirect URIs:** `https://ready.orangecloud.vn/api/auth/google/callback`
+5. Copy **Client ID** and **Client secret**
+
+### Store Google secrets
+
+**GitHub Actions (recommended)** — add repository secrets:
+
+| Secret | Value |
+|--------|--------|
+| `GOOGLE_CLIENT_ID` | OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | OAuth client secret |
+
+**Or manually:**
+
+```bash
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
+```
+
+6. Re-deploy and verify:
+
+```bash
+curl https://ready.orangecloud.vn/api/auth/config
+# expect "google": true
+```
 
 ## User accounts
 
