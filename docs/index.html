@@ -17,12 +17,14 @@
     <meta property="og:url" content="https://ready.orangecloud.vn/" />
     <meta property="og:title" content="CF Ready — Cloudflare Go-Live Readiness" />
     <meta property="og:description" content="Scan your codebase for Cloudflare go-live readiness. Migration, security, AI, SEO, and deployment checks." />
-    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.svg" />
+    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="CF Ready — Cloudflare Go-Live Readiness" />
-    <meta name="twitter:description" content="Open-source CLI: npx @orangecloud/cf-ready scan" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.svg" />
+    <meta name="twitter:description" content="Scan your codebase for Cloudflare go-live readiness before deploy." />
+    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
 
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -86,16 +88,18 @@
               CF Ready scans your codebase for migration blockers, security gaps, AI readiness, SEO basics, and deployment config — before you go live on Workers or Pages.
             </p>
             <div class="hero-actions">
-              <a class="btn btn-primary" href="#quickstart">Run your first scan</a>
-              <a class="btn btn-ghost" href="/docs/getting-started.html">Read the docs</a>
+              <a class="btn btn-primary" href="/app/">Open Web Agent</a>
+              <a class="btn btn-ghost" href="/docs/getting-started.html">Install from GitHub</a>
             </div>
             <div class="install-card" id="quickstart">
               <div class="install-card__head">
                 <div class="install-card__dots" aria-hidden="true"><span></span><span></span><span></span></div>
-                <span>Primary command</span>
+                <span>Install from source</span>
               </div>
-              <pre><code>npx @orangecloud/cf-ready scan</code></pre>
-              <p class="copy-hint">Node.js 18+ · Install from <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness" style="color:var(--cf-orange-400)">GitHub</a> until npm publish</p>
+              <pre><code>git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
+cd Cloudflare-Go-Live-Readiness && npm ci && npm run build
+node dist/index.js scan --cwd /path/to/your-app</code></pre>
+              <p class="copy-hint">Node.js 18+ · <code>npx @orangecloud/cf-ready scan</code> after npm publish</p>
             </div>
           </div>
           <div class="hero-visual">
@@ -291,7 +295,7 @@ cf-ready scan</code></pre>
           <ul>
             <li>GitHub Action for PR readiness checks</li>
             <li>Expanded framework adapters (Remix, Astro, Hono)</li>
-            <li>Private repo support in Web Agent (GitHub OAuth)</li>
+            <li>Private repo import in Web Agent (GitHub OAuth)</li>
             <li>npm publish <code>@orangecloud/cf-ready</code> to registry</li>
           </ul>
           <p style="margin-top:1rem">
@@ -305,8 +309,8 @@ cf-ready scan</code></pre>
         <h2 id="cta-title">Ready to check your project?</h2>
         <p>Run a scan in seconds — locally or in the browser.</p>
         <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:center">
-          <a class="btn btn-primary" href="#quickstart">npx @orangecloud/cf-ready scan</a>
-          <a class="btn btn-ghost" href="/app/">Open Web Agent</a>
+          <a class="btn btn-primary" href="/app/">Open Web Agent</a>
+          <a class="btn btn-ghost" href="/docs/getting-started.html">Install CLI</a>
         </div>
       </section>
     </main>

@@ -1082,6 +1082,8 @@ package.json
 * upload reports;
 * block production readiness on blockers.
 
+**Status:** Composite action shipped in [`action/action.yml`](action/action.yml). See [docs/docs/github-action.html](docs/docs/github-action.html) and [ROADMAP.md](ROADMAP.md).
+
 ### Phase 3: Auto-fix pull request
 
 * create branch;

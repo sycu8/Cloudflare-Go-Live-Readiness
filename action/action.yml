@@ -1,0 +1,114 @@
+name: CF Ready Scan
+description: Run cf-ready scan, upload SARIF, and summarize readiness for CI or pull requests
+branding:
+  icon: cloud
+  color: orange
+
+inputs:
+  cwd:
+    description: Project directory to scan (relative to repository root)
+    required: false
+    default: "."
+  config:
+    description: Path to cf-ready.config.json (optional)
+    required: false
+    default: ""
+  fail-on-blocker:
+    description: Fail the step when blockers are found (exit code 1)
+    required: false
+    default: "true"
+  cf-ready-root:
+    description: Directory containing cf-ready package.json (defaults to repository root)
+    required: false
+    default: "."
+  node-version:
+    description: Node.js version for building cf-ready
+    required: false
+    default: "22"
+
+outputs:
+  exit-code:
+    description: cf-ready scan exit code (0 = ready, 1 = blockers, 2 = error)
+    value: ${{ steps.scan.outputs.exit_code }}
+  production-ready:
+    description: Whether the scan reported production ready
+    value: ${{ steps.parse.outputs.production_ready }}
+  blocker-count:
+    description: Number of blocker findings
+    value: ${{ steps.parse.outputs.blocker_count }}
+  overall-score:
+    description: Overall readiness score (0-100)
+    value: ${{ steps.parse.outputs.overall_score }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.cf-ready-root }}/package-lock.json
+
+    - name: Build cf-ready
+      shell: bash
+      working-directory: ${{ inputs.cf-ready-root }}
+      run: npm ci && npm run build
+
+    - name: Run cf-ready scan
+      id: scan
+      shell: bash
+      working-directory: ${{ inputs.cf-ready-root }}
+      run: |
+        set +e
+        ARGS=(scan --cwd "${{ inputs.cwd }}" --json)
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS+=(--config "${{ inputs.config }}")
+        fi
+        node dist/index.js "${ARGS[@]}" > "$RUNNER_TEMP/cf-ready-scan.json"
+        CODE=$?
+        set -e
+        echo "exit_code=$CODE" >> "$GITHUB_OUTPUT"
+        cp "$RUNNER_TEMP/cf-ready-scan.json" cf-ready-scan.json
+        if [ "$CODE" -eq 2 ]; then
+          echo "::error::cf-ready scan failed with a runtime error (exit 2)"
+          exit 2
+        fi
+        if [ "${{ inputs.fail-on-blocker }}" = "true" ] && [ "$CODE" -eq 1 ]; then
+          echo "::warning::cf-ready found blockers (exit 1)"
+          exit 1
+        fi
+        exit 0
+
+    - name: Parse scan summary
+      id: parse
+      shell: bash
+      working-directory: ${{ inputs.cf-ready-root }}
+      run: |
+        node -e "
+        const fs = require('fs');
+        const data = JSON.parse(fs.readFileSync('cf-ready-scan.json','utf8'));
+        const blockers = (data.blockers || []).length;
+        const overall = data.scores?.overall ?? 'n/a';
+        const ready = data.productionReady ? 'true' : 'false';
+        const out = process.env.GITHUB_OUTPUT;
+        fs.appendFileSync(out, 'blocker_count=' + blockers + '\n');
+        fs.appendFileSync(out, 'overall_score=' + overall + '\n');
+        fs.appendFileSync(out, 'production_ready=' + ready + '\n');
+        "
+
+    - name: Upload SARIF
+      if: always() && steps.scan.outputs.exit_code != '2'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.cwd }}/security-findings.sarif
+        category: cf-ready
+      continue-on-error: true
+
+    - name: Upload scan JSON artifact
+      if: always() && steps.scan.outputs.exit_code != '2'
+      uses: actions/upload-artifact@v4
+      with:
+        name: cf-ready-scan
+        path: ${{ inputs.cf-ready-root }}/cf-ready-scan.json
+        retention-days: 14

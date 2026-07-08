@@ -83,13 +83,20 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
             <p class="section-label">GitHub</p>
             <div class="field">
-              <label for="github-url">Repo URL (public)</label>
+              <label for="github-url">Repo URL</label>
               <input type="text" id="github-url" placeholder="https://github.com/owner/repo" autocomplete="off" />
             </div>
             <div class="btn-row">
-              <button type="button" class="primary" id="import-btn">Import</button>
+              <button type="button" class="primary" id="import-btn">Import URL</button>
               <button type="button" class="ghost" id="github-connect">Connect</button>
-              <button type="button" class="ghost" id="github-repos" disabled>Repos</button>
+              <button type="button" class="ghost" id="github-repos" disabled>My repos</button>
+            </div>
+            <div class="repo-list" id="repo-list" hidden>
+              <div class="repo-list__head">
+                <span>Your repositories</span>
+                <button type="button" class="ghost repo-list__refresh" id="github-repos-refresh">Refresh</button>
+              </div>
+              <ul class="repo-list__items" id="repo-list-items"></ul>
             </div>
 
             <div class="file-tree" id="file-tree" hidden>
@@ -178,6 +185,9 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const importBtn = $("#import-btn");
   const githubConnect = $("#github-connect");
   const githubReposBtn = $("#github-repos");
+  const githubReposRefresh = $("#github-repos-refresh");
+  const repoList = $("#repo-list");
+  const repoListItems = $("#repo-list-items");
   const fileList = $("#file-list");
   const fileTree = $("#file-tree");
   const fileCountEl = $("#file-count");
@@ -469,19 +479,61 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     window.location.href = githubAuthUrl(sessionId);
   };
 
-  githubReposBtn.onclick = async () => {
+  async function importRepoByName(fullName: string): Promise<void> {
+    const url = `https://github.com/${fullName}`;
+    setStatus("importing");
+    writeln(`Importing ${fullName}…`);
+    try {
+      await importGitHub(sessionId, url);
+      setProjectInfo(fullName, "GitHub import thành công — chạy scan để kiểm tra.");
+      writeln("✓ GitHub import complete.");
+      setStatus("idle");
+      await refreshFiles();
+      addChatBubble("agent", `Đã import ${fullName}. Thử lệnh scan.`);
+      setMobileTab("workspace");
+    } catch (err) {
+      writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
+      setStatus("error");
+    }
+  }
+
+  async function loadGitHubRepos(): Promise<void> {
     try {
       const { repos } = await listGitHubRepos(sessionId);
-      const pick = repos
-        .slice(0, 15)
-        .map((r) => `• ${r.full_name}${r.private ? " (private)" : ""}`)
-        .join("\n");
-      addChatBubble("agent", `Repos của bạn:\n${pick}`);
-      setMobileTab("workspace");
+      repoListItems.innerHTML = "";
+      if (repos.length === 0) {
+        repoListItems.innerHTML = '<li class="repo-list__empty">No repositories found.</li>';
+      } else {
+        for (const repo of repos.slice(0, 30)) {
+          const li = document.createElement("li");
+          li.className = "repo-list__item";
+          const label = document.createElement("span");
+          label.className = "repo-list__name";
+          label.textContent = repo.full_name;
+          if (repo.private) {
+            const badge = document.createElement("span");
+            badge.className = "repo-list__badge";
+            badge.textContent = "private";
+            label.appendChild(badge);
+          }
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ghost repo-list__import";
+          btn.textContent = "Import";
+          btn.onclick = () => void importRepoByName(repo.full_name);
+          li.append(label, btn);
+          repoListItems.appendChild(li);
+        }
+      }
+      repoList.hidden = false;
+      setMobileTab("project");
     } catch {
       addChatBubble("agent", "Hãy Connect GitHub trước.");
     }
-  };
+  }
+
+  githubReposBtn.onclick = () => void loadGitHubRepos();
+  githubReposRefresh.onclick = () => void loadGitHubRepos();
 
   async function sendChat() {
     const msg = chatInput.value.trim();
@@ -530,8 +582,9 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 
   const params = new URLSearchParams(window.location.search);
   if (params.get("github") === "connected") {
-    addChatBubble("agent", "GitHub đã kết nối. Bấm Repos hoặc dán URL repo.");
+    addChatBubble("agent", "GitHub đã kết nối. Bấm My repos để import private repo.");
     githubReposBtn.removeAttribute("disabled");
+    void loadGitHubRepos();
   }
 
   await pollStatus();
