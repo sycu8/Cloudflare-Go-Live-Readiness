@@ -38,8 +38,9 @@ for (const name of SECRETS) {
 
 if (configured === 0) {
   console.warn(
-    "No Worker secrets were set. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to GitHub repository secrets, or run: wrangler secret put GITHUB_CLIENT_ID",
+    "No Worker secrets were set. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to GitHub repository secrets (Settings → Secrets and variables → Actions), or run: wrangler secret put GITHUB_CLIENT_ID",
   );
 } else {
   console.log(`Configured ${configured} Worker secret(s).`);
+  console.log("Verify: curl https://ready.orangecloud.vn/api/auth/config");
 }
