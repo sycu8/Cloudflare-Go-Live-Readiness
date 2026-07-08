@@ -107,11 +107,9 @@ input {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), #e2590a);
-  display: grid;
-  place-items: center;
-  font-size: 1.1rem;
   flex-shrink: 0;
+  display: block;
+  object-fit: contain;
 }
 
 .brand__text h1 {
@@ -1157,10 +1155,8 @@ button.full {
   height: 52px;
   margin: 0 auto 0.75rem;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), #e2590a);
-  display: grid;
-  place-items: center;
-  font-size: 1.4rem;
+  display: block;
+  object-fit: contain;
 }
 
 .auth-card__brand h1 {

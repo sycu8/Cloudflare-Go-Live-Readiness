@@ -42,7 +42,7 @@ export function renderLoginScreen(config: AuthProviderConfig, authError?: string
     <div class="auth-screen">
       <div class="auth-card">
         <div class="auth-card__brand">
-          <div class="auth-card__logo" aria-hidden="true">☁</div>
+          <img class="auth-card__logo" src="/assets/logo-icon.svg" alt="" width="52" height="52" decoding="async" />
           <h1>CF Ready Agent</h1>
           <p>Sign in to scan projects, save reports, and connect GitHub repos.</p>
         </div>

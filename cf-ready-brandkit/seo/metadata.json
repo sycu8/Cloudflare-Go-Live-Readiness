@@ -7,7 +7,7 @@
     "url": "https://ready.orangecloud.vn",
     "title": "Cloudflare Go-Live Readiness",
     "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare.",
-    "image": "https://ready.orangecloud.vn/assets/og.png"
+    "image": "https://ready.orangecloud.vn/assets/og.svg"
   },
   "twitter": {
     "card": "summary_large_image",

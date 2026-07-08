@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="CF Ready - Cloudflare Go-Live Readiness">
-  <rect width="1200" height="630" fill="#0B1628"/>
-  <g transform="translate(72,183) scale(4)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" role="img" aria-label="CF Ready  Cloudflare Go-Live Readiness">
+  <g transform="translate(0,0)">
     <rect width="64" height="64" rx="14" fill="#FFFFFF"/>
     <path
       fill="none"
@@ -27,8 +26,6 @@
       d="M39.5 44.5l3.2 3.2 6.3-6.8"
     />
   </g>
-  <text x="360" y="290" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="800" fill="#F8FAFC" letter-spacing="-0.03em">CF Ready</text>
-  <text x="360" y="360" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="32" fill="#94A3B8">Cloudflare Go-Live Readiness</text>
-  <rect x="360" y="410" width="560" height="64" rx="12" fill="#152238" stroke="#F38020" stroke-width="2"/>
-  <text x="388" y="452" font-family="ui-monospace, monospace" font-size="26" fill="#FBBF24">npx @orangecloud/cf-ready scan</text>
+  <text x="76" y="30" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="24" font-weight="700" fill="#00112C" letter-spacing="-0.02em">CF Ready</text>
+  <text x="76" y="48" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#5B6370">Cloudflare Go-Live Readiness</text>
 </svg>

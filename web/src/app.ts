@@ -83,7 +83,7 @@ async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> 
   root.innerHTML = `
     <header class="app-header">
       <div class="brand">
-        <div class="brand__logo" aria-hidden="true">☁</div>
+        <img class="brand__logo" src="/assets/logo-icon.svg" alt="" width="36" height="36" decoding="async" />
         <div class="brand__text">
           <h1>CF Ready Agent</h1>
           <p>Cloudflare Go-Live Readiness</p>

@@ -75,12 +75,9 @@ img, svg { max-width: 100%; height: auto; }
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--cf-orange-500), #e2590a);
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 0.85rem;
-  color: #111;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
 }
 
 .logo-text strong {
