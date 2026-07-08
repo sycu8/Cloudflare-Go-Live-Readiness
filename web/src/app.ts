@@ -33,6 +33,21 @@ const COMMANDS: Array<{ name: string; desc: string }> = [
 type MobileTab = "project" | "workspace" | "results";
 type WorkspaceView = "chat" | "cli";
 
+const TERMINAL_THEMES = {
+  light: {
+    background: "#f8fafc",
+    foreground: "#0f172a",
+    cursor: "#f97316",
+    selectionBackground: "rgba(249, 115, 22, 0.25)",
+  },
+  dark: {
+    background: "#000000",
+    foreground: "#e4e4e7",
+    cursor: "#f38020",
+    selectionBackground: "rgba(243, 128, 32, 0.3)",
+  },
+} as const;
+
 export async function mountApp(root: HTMLElement): Promise<void> {
   let sessionId = sessionStorage.getItem("cf-ready-session") ?? "";
   if (!sessionId) {
@@ -202,13 +217,10 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const chatInput = $("#chat-input") as HTMLInputElement;
   const chatSend = $("#chat-send");
 
+  window.cfReadyTheme?.remount();
+
   const term = new Terminal({
-    theme: {
-      background: "#000000",
-      foreground: "#e4e4e7",
-      cursor: "#f38020",
-      selectionBackground: "rgba(243, 128, 32, 0.3)",
-    },
+    theme: { ...TERMINAL_THEMES.dark },
     fontFamily: "JetBrains Mono, ui-monospace, monospace",
     fontSize: 13,
     lineHeight: 1.35,
@@ -218,6 +230,17 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   const fitAddon = new FitAddon();
   term.loadAddon(fitAddon);
   term.open(terminalEl);
+
+  function syncTerminalTheme() {
+    const theme = window.cfReadyTheme?.get() ?? "dark";
+    term.options.theme = { ...TERMINAL_THEMES[theme === "light" ? "light" : "dark"] };
+  }
+
+  syncTerminalTheme();
+  window.addEventListener("cf-ready-theme-change", (event) => {
+    const theme = (event as CustomEvent<{ theme: string }>).detail.theme;
+    term.options.theme = { ...TERMINAL_THEMES[theme === "light" ? "light" : "dark"] };
+  });
 
   const prompt = "cf-ready> ";
   let inputBuffer = "";

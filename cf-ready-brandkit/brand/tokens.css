@@ -51,4 +51,28 @@
   /* Shadows */
   --cf-shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08);
   --cf-shadow-hero: 0 24px 64px rgba(6, 13, 24, 0.45);
+
+  /* Semantic theme (light default) */
+  --theme-body-bg: var(--cf-surface-light);
+  --theme-body-text: var(--cf-text-primary);
+  --theme-card-bg: var(--cf-surface-white);
+  --theme-card-border: var(--cf-surface-muted);
+  --theme-section-light: var(--cf-surface-white);
+  --theme-section-muted: var(--cf-surface-light);
+  --theme-code-bg: var(--cf-navy-900);
+  --theme-code-text: #fbbf24;
+  --theme-docs-table-head: var(--cf-surface-light);
+}
+
+html[data-theme="dark"] {
+  --theme-body-bg: var(--cf-navy-900);
+  --theme-body-text: var(--cf-text-inverse);
+  --theme-card-bg: var(--cf-navy-700);
+  --theme-card-border: rgba(255, 255, 255, 0.08);
+  --theme-section-light: var(--cf-navy-800);
+  --theme-section-muted: var(--cf-navy-900);
+  --theme-code-bg: #000000;
+  --theme-code-text: #fbbf24;
+  --theme-docs-table-head: var(--cf-navy-700);
+  --cf-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
 }
