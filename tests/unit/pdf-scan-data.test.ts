@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFileSync } from "node:fs";
 import { createScanContext } from "../../src/core/context.js";
 import { serializeScanContext } from "../../src/service/run-scan.js";
 import {
@@ -29,34 +28,34 @@ describe("pdfReportInputFromScanData", () => {
   });
 
   it("derives blockers from findings when blockers are id strings", () => {
-    const jsonReport = JSON.parse(
-      readFileSync(path.join(fixtures, "nextjs-app/cf-ready-report.json"), "utf8"),
-    ) as {
-      findings: Array<{
-        id: string;
-        severity: string;
-        title: string;
-        description: string;
-        recommendation: string;
-        status: string;
-      }>;
-      blockers: string[];
+    const jsonReport = {
+      productionReady: false,
+      scannedAt: "2026-07-08T00:00:00.000Z",
       scores: {
-        overall: number;
-        migration: number;
-        security: number;
-        aiReadiness: number;
-        seo: number;
-        deployment: number;
-      };
+        overall: 42,
+        migration: 0,
+        security: 85,
+        aiReadiness: 45,
+        seo: 25,
+        deployment: 90,
+      },
       inspection: {
-        projectName: string;
-        framework: string;
-        packageManager: string;
-        deploymentTarget: string;
-      };
-      productionReady: boolean;
-      scannedAt: string;
+        projectName: "Next.js Fixture App",
+        framework: "nextjs",
+        packageManager: "npm",
+        deploymentTarget: "unknown",
+      },
+      findings: [
+        {
+          id: "migration-1",
+          status: "open",
+          severity: "blocker",
+          title: "Runtime blocker: fs",
+          description: "Detected fs usage incompatible with Cloudflare Workers runtime.",
+          recommendation: "Refactor to use Workers-compatible APIs.",
+        },
+      ],
+      blockers: ["migration-1"],
     };
 
     const input = pdfReportInputFromScanData({

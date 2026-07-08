@@ -701,5 +701,10 @@ async function mountAgentApp(
     }
   }
 
-  await pollStatus();
+  try {
+    await pollStatus();
+  } catch {
+    // Session may be stale after deploy or sign-out; app still usable for import/scan.
+    setStatus("idle");
+  }
 }
