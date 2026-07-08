@@ -17,35 +17,22 @@ import {
   putCachedPdf,
   registerGitHubRepoSession,
 } from "./reports-cache.js";
+import {
+  readSourceStream,
+  stageGithubTarballToR2,
+  stageUploadZipToR2,
+} from "./sources-cache.js";
+import {
+  extractStagedArchive,
+  PROJECT_DIR,
+  projectDirHasFiles,
+} from "./import-extract.js";
 
 import { resolveSessionId } from "./session-id.js";
-import { shellQuote } from "./shell.js";
 
-const PROJECT_DIR = "/workspace/project";
-const ARCHIVE_PATH = "/tmp/repo-archive.tar.gz";
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 type SandboxHandle = ReturnType<typeof getSandbox>;
-
-type ExecResult = { success: boolean; stdout?: string; stderr?: string; exitCode?: number };
-
-function formatSandboxFailure(result: ExecResult, step: "download" | "extract" | "unzip"): string {
-  const detail = (result.stderr || result.stdout || "").trim();
-  if (detail.includes("<!DOCTYPE") || detail.includes("Not Found") || detail.includes(" 404")) {
-    return "GitHub archive download failed. For private repos, connect GitHub or check repository access.";
-  }
-  if (/file error|bad zipfile|End-of-central-directory/i.test(detail)) {
-    return step === "unzip"
-      ? "Invalid or corrupted ZIP file. Re-export the archive and try again."
-      : "Archive extraction failed. The download may be incomplete — try again.";
-  }
-  if (detail) return detail;
-  return step === "download"
-    ? "Failed to download repository archive from GitHub."
-    : step === "unzip"
-      ? "Failed to unzip upload."
-      : "Failed to extract repository archive.";
-}
 
 export class SessionDO implements DurableObject {
   private state: DurableObjectState;
@@ -82,44 +69,21 @@ export class SessionDO implements DurableObject {
     );
   }
 
-  private async ensureProjectDir(sandbox: SandboxHandle): Promise<void> {
-    await sandbox.exec(`rm -rf ${PROJECT_DIR} && mkdir -p ${PROJECT_DIR}`);
+  private async ensureProjectReady(sandbox: SandboxHandle): Promise<void> {
+    if (await projectDirHasFiles(sandbox)) return;
+    if (!this.session.sourceR2Key || !this.session.sourceFormat) {
+      throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
+    }
+    const stream = await readSourceStream(this.env, this.session.sourceR2Key);
+    await extractStagedArchive(sandbox, stream, this.session.sourceFormat);
   }
 
-  private async importTarball(
-    sandbox: SandboxHandle,
-    tarballUrl: string,
-    token?: string,
-  ): Promise<void> {
-    await sandbox.exec("mkdir -p /tmp", { timeout: 10000 });
-    await this.ensureProjectDir(sandbox);
-
-    const authFlag = token ? `-H ${shellQuote(`Authorization: Bearer ${token}`)}` : "";
-    const download = await sandbox.exec(
-      `curl -fsSL ${authFlag} -o ${ARCHIVE_PATH} ${shellQuote(tarballUrl)}`,
-      { timeout: 180000 },
-    );
-    if (!download.success) {
-      throw new Error(formatSandboxFailure(download, "download"));
+  private async materializeSourceFromR2(sandbox: SandboxHandle): Promise<void> {
+    if (!this.session.sourceR2Key || !this.session.sourceFormat) {
+      throw new Error("Source archive not staged in R2");
     }
-
-    const extract = await sandbox.exec(
-      `tar -xzf ${ARCHIVE_PATH} -C ${PROJECT_DIR} --strip-components=1 && rm -f ${ARCHIVE_PATH}`,
-      { timeout: 180000 },
-    );
-    if (!extract.success) {
-      throw new Error(formatSandboxFailure(extract, "extract"));
-    }
-
-    const verify = await sandbox.exec(
-      `test -n "$(ls -A ${PROJECT_DIR} 2>/dev/null | head -1)"`,
-      { timeout: 10000 },
-    );
-    if (!verify.success) {
-      throw new Error(
-        "Repository archive extracted but the project folder is empty. Check the branch or repository URL.",
-      );
-    }
+    const stream = await readSourceStream(this.env, this.session.sourceR2Key);
+    await extractStagedArchive(sandbox, stream, this.session.sourceFormat);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -166,6 +130,7 @@ export class SessionDO implements DurableObject {
 
       if (request.method === "GET" && path.endsWith("/files")) {
         const sandbox = this.sandbox();
+        await this.ensureProjectReady(sandbox).catch(() => undefined);
         const list = await sandbox.exec(`find ${PROJECT_DIR} -type f | head -200`, {
           timeout: 30000,
         });
@@ -219,32 +184,26 @@ export class SessionDO implements DurableObject {
     this.session.status = "importing";
     this.session.source = "upload";
     this.session.projectName = file.name.replace(/\.zip$/i, "");
+    this.session.lastError = undefined;
+    await this.save();
+
+    const buffer = await file.arrayBuffer();
+    const staged = await stageUploadZipToR2(this.env, this.session.id, buffer);
+    this.session.sourceR2Key = staged.r2Key;
+    this.session.sourceFormat = staged.format;
     await this.save();
 
     const sandbox = this.sandbox();
-    await sandbox.exec("mkdir -p /tmp", { timeout: 10000 });
-    await this.ensureProjectDir(sandbox);
-
-    const buffer = await file.arrayBuffer();
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(new Uint8Array(buffer));
-        controller.close();
-      },
-    });
-    await sandbox.writeFile("/tmp/upload.zip", stream);
-
-    const unzip = await sandbox.exec(
-      `unzip -q -o /tmp/upload.zip -d ${PROJECT_DIR} && rm -f /tmp/upload.zip`,
-      { timeout: 120000 },
-    );
-    if (!unzip.success) {
-      throw new Error(formatSandboxFailure(unzip, "unzip"));
-    }
+    await this.materializeSourceFromR2(sandbox);
 
     this.session.status = "idle";
     await this.save();
-    return Response.json({ ok: true, projectName: this.session.projectName });
+    return Response.json({
+      ok: true,
+      projectName: this.session.projectName,
+      sourceR2Key: staged.r2Key,
+      cached: false,
+    });
   }
 
   private async handleGitHubImport(request: Request): Promise<Response> {
@@ -280,6 +239,7 @@ export class SessionDO implements DurableObject {
 
     const tarballRef = commitSha ?? resolvedRef;
     const tarballUrl = githubTarballUrl(parsed.owner, parsed.repo, tarballRef);
+    const cacheKey = commitSha ?? resolvedRef;
     const previousSha = this.session.sourceCommitSha;
 
     this.session.status = "importing";
@@ -292,6 +252,9 @@ export class SessionDO implements DurableObject {
 
     this.state.waitUntil(
       this.finishGitHubImport({
+        owner: parsed.owner,
+        repo: parsed.repo,
+        cacheKey,
         tarballUrl,
         token: body.token,
         previousSha,
@@ -304,23 +267,39 @@ export class SessionDO implements DurableObject {
       status: "importing",
       projectName: this.session.projectName,
       commitSha: commitSha ?? null,
+      staging: "r2",
     });
   }
 
   private async finishGitHubImport(args: {
+    owner: string;
+    repo: string;
+    cacheKey: string;
     tarballUrl: string;
     token?: string;
     previousSha?: string;
     commitSha?: string;
   }): Promise<void> {
-    const { tarballUrl, token, previousSha, commitSha } = args;
+    const { owner, repo, cacheKey, tarballUrl, token, previousSha, commitSha } = args;
     const parsed = this.session.githubRepo;
     if (!parsed) return;
 
     try {
+      const staged = await stageGithubTarballToR2(this.env, {
+        owner,
+        repo,
+        refOrSha: cacheKey,
+        tarballUrl,
+        token,
+      });
+
+      this.session.sourceR2Key = staged.r2Key;
+      this.session.sourceFormat = staged.format;
+      await this.save();
+
       const sandbox = this.sandbox();
-      await this.importTarball(sandbox, tarballUrl, token);
-      await registerGitHubRepoSession(this.env, parsed.owner, parsed.repo, this.session.id);
+      await this.materializeSourceFromR2(sandbox);
+      await registerGitHubRepoSession(this.env, owner, repo, this.session.id);
 
       this.session.status = "idle";
       await this.save();
@@ -352,21 +331,42 @@ export class SessionDO implements DurableObject {
 
     const ref = body.ref ?? repo.ref;
     const token = await getGitHubToken(this.env, this.session.id);
-    const tarballUrl = githubTarballUrl(repo.owner, repo.repo, ref);
+    let commitSha = body.commitSha;
+    if (!commitSha) {
+      try {
+        commitSha = await fetchGitHubCommitSha(repo.owner, repo.repo, ref, token ?? undefined);
+      } catch {
+        commitSha = undefined;
+      }
+    }
+    const cacheKey = commitSha ?? ref;
+    const tarballUrl = githubTarballUrl(repo.owner, repo.repo, cacheKey);
 
     this.session.status = "importing";
-    if (body.commitSha) this.session.sourceCommitSha = body.commitSha;
+    if (commitSha) this.session.sourceCommitSha = commitSha;
+    await this.save();
+
+    const staged = await stageGithubTarballToR2(this.env, {
+      owner: repo.owner,
+      repo: repo.repo,
+      refOrSha: cacheKey,
+      tarballUrl,
+      token: token ?? undefined,
+    });
+    this.session.sourceR2Key = staged.r2Key;
+    this.session.sourceFormat = staged.format;
     await this.save();
 
     const sandbox = this.sandbox();
-    await this.importTarball(sandbox, tarballUrl, token ?? undefined);
+    await this.materializeSourceFromR2(sandbox);
     this.session.status = "idle";
     await this.save();
 
-    await this.runScanAndCacheReport(body.commitSha);
+    await this.runScanAndCacheReport(commitSha);
     return Response.json({
       ok: true,
       commitSha: this.session.sourceCommitSha ?? null,
+      sourceR2Key: this.session.sourceR2Key ?? null,
       report: this.session.reportCache ?? null,
     });
   }
@@ -574,6 +574,7 @@ export class SessionDO implements DurableObject {
   private async runExec(req: ExecRequest): Promise<void> {
     try {
       const sandbox = this.sandbox();
+      await this.ensureProjectReady(sandbox);
       const cliArgs = this.buildCfReadyArgs(req);
       const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
 

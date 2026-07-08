@@ -45,6 +45,8 @@ export type ReportCacheMeta = {
   format: "pdf";
 };
 
+export type SourceArchiveFormat = "tar.gz" | "zip";
+
 export type SessionState = {
   id: string;
   status: SessionStatus;
@@ -52,6 +54,9 @@ export type SessionState = {
   source?: "upload" | "github";
   githubRepo?: GitHubRepoRef;
   sourceCommitSha?: string;
+  /** R2 key for staged source archive (Model B). */
+  sourceR2Key?: string;
+  sourceFormat?: SourceArchiveFormat;
   reportCache?: ReportCacheMeta;
   lastCommand?: string;
   lastError?: string;
