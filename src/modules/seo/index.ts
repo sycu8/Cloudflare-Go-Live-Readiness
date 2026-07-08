@@ -5,6 +5,7 @@ import { readTextFile } from "../../core/filesystem.js";
 import { SCAN_EXCLUDE_DIRS } from "../../config/default-rules.js";
 import type { CfReadyConfig, Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
+import { publicAssetExists } from "../../utils/public-assets.js";
 
 export async function checkMetadata(
   inspection: RepositoryInspection,
@@ -73,12 +74,8 @@ export async function checkMetadata(
     }
   }
 
-  const hasSitemap =
-    inspection.detectedFiles.includes("public/sitemap.xml") ||
-    inspection.importantFiles["public/sitemap.xml"];
-  const hasRobots =
-    inspection.detectedFiles.includes("public/robots.txt") ||
-    inspection.importantFiles["public/robots.txt"];
+  const hasSitemap = await publicAssetExists(inspection.rootDir, "sitemap.xml");
+  const hasRobots = await publicAssetExists(inspection.rootDir, "robots.txt");
 
   if (!hasSitemap) {
     findings.push(

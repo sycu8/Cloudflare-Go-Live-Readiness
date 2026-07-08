@@ -47,6 +47,8 @@ export async function findDetectedFiles(rootDir: string): Promise<string[]> {
     "public/sitemap.xml",
     "public/llms.txt",
     "public/llms-full.txt",
+    "robots.txt",
+    "sitemap.xml",
     "cf-ready.config.json",
     "openapi.json",
     "openapi.yaml",
@@ -81,6 +83,8 @@ export async function buildImportantFilesMap(
     "public/sitemap.xml",
     "public/llms.txt",
     "public/llms-full.txt",
+    "robots.txt",
+    "sitemap.xml",
     "cf-ready.config.json",
   ];
 

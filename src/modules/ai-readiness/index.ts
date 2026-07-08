@@ -1,24 +1,20 @@
-import path from "node:path";
 import { createFinding, createPassedFinding } from "../../core/findings.js";
-import { fileExists } from "../../core/filesystem.js";
 import type { CfReadyConfig, Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
+import { publicAssetExists } from "../../utils/public-assets.js";
 
 const AI_FILES = [
-  { path: "public/robots.txt", title: "robots.txt" },
-  { path: "public/sitemap.xml", title: "sitemap.xml" },
-  { path: "public/llms.txt", title: "llms.txt" },
-  { path: "public/llms-full.txt", title: "llms-full.txt" },
+  { key: "robots.txt" as const, title: "robots.txt" },
+  { key: "sitemap.xml" as const, title: "sitemap.xml" },
+  { key: "llms.txt" as const, title: "llms.txt" },
+  { key: "llms-full.txt" as const, title: "llms-full.txt" },
 ];
 
 export async function checkAiFiles(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
 
-  for (const { path: filePath, title } of AI_FILES) {
-    const exists =
-      inspection.importantFiles[filePath] ||
-      inspection.detectedFiles.includes(filePath) ||
-      (await fileExists(path.join(inspection.rootDir, filePath)));
+  for (const { key, title } of AI_FILES) {
+    const exists = await publicAssetExists(inspection.rootDir, key);
 
     if (exists) {
       findings.push(

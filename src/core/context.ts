@@ -6,6 +6,7 @@ import type { ReadinessScores } from "./scoring.js";
 import { inspectRepository, loadConfig } from "../inspectors/repository.js";
 import { dedupeFindings, resetFindingCounter } from "./findings.js";
 import { calculateScores, isProductionReady } from "./scoring.js";
+import { validateProjectRoot } from "./validate.js";
 import { runMigrationChecks } from "../modules/migration/index.js";
 import { runSecurityChecks } from "../modules/security/index.js";
 import { runAiReadinessChecks } from "../modules/ai-readiness/index.js";
@@ -30,7 +31,7 @@ export type ScanOptions = {
 };
 
 export async function createScanContext(options: ScanOptions): Promise<ScanContext> {
-  const rootDir = path.resolve(options.rootDir);
+  const rootDir = await validateProjectRoot(options.rootDir);
   resetFindingCounter();
 
   const config = await loadConfig(rootDir, options.configPath);

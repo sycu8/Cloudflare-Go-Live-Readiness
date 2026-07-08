@@ -15,11 +15,14 @@ export function registerScanCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        logger.heading("Cloudflare Go-Live Readiness Scan");
         const context = await createScanContext({
           rootDir: opts.cwd,
           configPath: opts.config,
         });
+
+        if (!opts.json) {
+          logger.heading("Cloudflare Go-Live Readiness Scan");
+        }
 
         const reports = await writeAllReports(context);
 

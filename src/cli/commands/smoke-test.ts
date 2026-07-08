@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { loadConfig } from "../../inspectors/repository.js";
 import { inspectRepository } from "../../inspectors/repository.js";
 import { runSmokeTest } from "../../modules/smoke-test/index.js";
+import { validateProjectRoot } from "../../core/validate.js";
 import { getGlobalOptions, getExitCode } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -16,8 +17,9 @@ export function registerSmokeTestCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const config = await loadConfig(opts.cwd, opts.config);
-        const inspection = await inspectRepository(opts.cwd);
+        const rootDir = await validateProjectRoot(opts.cwd);
+        const config = await loadConfig(rootDir, opts.config);
+        const inspection = await inspectRepository(rootDir);
         const report = await runSmokeTest(options.url, config, inspection);
 
         if (opts.json) {

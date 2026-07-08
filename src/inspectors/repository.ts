@@ -1,5 +1,6 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
+import { ZodError } from "zod";
 import {
   CfReadyConfigSchema,
   DEFAULT_CONFIG,
@@ -24,11 +25,15 @@ export async function loadConfig(
   rootDir: string,
   configPath?: string,
 ): Promise<CfReadyConfig> {
+  const explicit = Boolean(configPath);
   const resolved = configPath
     ? path.resolve(configPath)
     : path.join(rootDir, "cf-ready.config.json");
 
   if (!(await fileExists(resolved))) {
+    if (explicit) {
+      throw new Error(`Config file not found: ${resolved}`);
+    }
     return { ...DEFAULT_CONFIG };
   }
 
@@ -36,6 +41,15 @@ export async function loadConfig(
     const raw = JSON.parse(await readFile(resolved, "utf8")) as unknown;
     return CfReadyConfigSchema.parse(raw);
   } catch (error) {
+    if (error instanceof ZodError) {
+      const details = error.issues
+        .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
+        .join("; ");
+      throw new Error(`Invalid cf-ready.config.json: ${details}`);
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(`Invalid cf-ready.config.json: ${error.message}`);
+    }
     throw new Error(
       `Invalid cf-ready.config.json: ${error instanceof Error ? error.message : String(error)}`,
     );
