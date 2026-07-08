@@ -4,6 +4,7 @@ import {
   fetchGitHubCommitSha,
   githubTarballUrl,
   parseGitHubRepoUrl,
+  resolveGitHubRef,
 } from "./github.js";
 import { getGitHubToken } from "./auth-github.js";
 import {
@@ -18,11 +19,33 @@ import {
 } from "./reports-cache.js";
 
 import { resolveSessionId } from "./session-id.js";
+import { shellQuote } from "./shell.js";
 
 const PROJECT_DIR = "/workspace/project";
+const ARCHIVE_PATH = "/tmp/repo-archive.tar.gz";
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 type SandboxHandle = ReturnType<typeof getSandbox>;
+
+type ExecResult = { success: boolean; stdout?: string; stderr?: string; exitCode?: number };
+
+function formatSandboxFailure(result: ExecResult, step: "download" | "extract" | "unzip"): string {
+  const detail = (result.stderr || result.stdout || "").trim();
+  if (detail.includes("<!DOCTYPE") || detail.includes("Not Found") || detail.includes(" 404")) {
+    return "GitHub archive download failed. For private repos, connect GitHub or check repository access.";
+  }
+  if (/file error|bad zipfile|End-of-central-directory/i.test(detail)) {
+    return step === "unzip"
+      ? "Invalid or corrupted ZIP file. Re-export the archive and try again."
+      : "Archive extraction failed. The download may be incomplete — try again.";
+  }
+  if (detail) return detail;
+  return step === "download"
+    ? "Failed to download repository archive from GitHub."
+    : step === "unzip"
+      ? "Failed to unzip upload."
+      : "Failed to extract repository archive.";
+}
 
 export class SessionDO implements DurableObject {
   private state: DurableObjectState;
@@ -68,20 +91,34 @@ export class SessionDO implements DurableObject {
     tarballUrl: string,
     token?: string,
   ): Promise<void> {
+    await sandbox.exec("mkdir -p /tmp", { timeout: 10000 });
     await this.ensureProjectDir(sandbox);
-    const authFlag = token ? `-H "Authorization: Bearer ${token}"` : "";
-    const result = await sandbox.exec(
-      `curl -fsSL ${authFlag} "${tarballUrl}" | tar -xz -C ${PROJECT_DIR} --strip-components=1`,
-      { timeout: 120000 },
+
+    const authFlag = token ? `-H ${shellQuote(`Authorization: Bearer ${token}`)}` : "";
+    const download = await sandbox.exec(
+      `curl -fsSL ${authFlag} -o ${ARCHIVE_PATH} ${shellQuote(tarballUrl)}`,
+      { timeout: 180000 },
     );
-    if (!result.success) {
-      const detail = (result.stderr || result.stdout || "").trim();
-      if (detail.includes("<!DOCTYPE") || detail.includes("Not Found")) {
-        throw new Error(
-          "GitHub archive download failed. For private repos, connect GitHub or check repository access.",
-        );
-      }
-      throw new Error(detail || "Failed to extract archive");
+    if (!download.success) {
+      throw new Error(formatSandboxFailure(download, "download"));
+    }
+
+    const extract = await sandbox.exec(
+      `tar -xzf ${ARCHIVE_PATH} -C ${PROJECT_DIR} --strip-components=1 && rm -f ${ARCHIVE_PATH}`,
+      { timeout: 180000 },
+    );
+    if (!extract.success) {
+      throw new Error(formatSandboxFailure(extract, "extract"));
+    }
+
+    const verify = await sandbox.exec(
+      `test -n "$(ls -A ${PROJECT_DIR} 2>/dev/null | head -1)"`,
+      { timeout: 10000 },
+    );
+    if (!verify.success) {
+      throw new Error(
+        "Repository archive extracted but the project folder is empty. Check the branch or repository URL.",
+      );
     }
   }
 
@@ -185,6 +222,7 @@ export class SessionDO implements DurableObject {
     await this.save();
 
     const sandbox = this.sandbox();
+    await sandbox.exec("mkdir -p /tmp", { timeout: 10000 });
     await this.ensureProjectDir(sandbox);
 
     const buffer = await file.arrayBuffer();
@@ -197,11 +235,11 @@ export class SessionDO implements DurableObject {
     await sandbox.writeFile("/tmp/upload.zip", stream);
 
     const unzip = await sandbox.exec(
-      `unzip -q -o /tmp/upload.zip -d ${PROJECT_DIR} && rm /tmp/upload.zip`,
+      `unzip -q -o /tmp/upload.zip -d ${PROJECT_DIR} && rm -f /tmp/upload.zip`,
       { timeout: 120000 },
     );
     if (!unzip.success) {
-      throw new Error(unzip.stderr || "Failed to unzip upload");
+      throw new Error(formatSandboxFailure(unzip, "unzip"));
     }
 
     this.session.status = "idle";
@@ -224,20 +262,30 @@ export class SessionDO implements DurableObject {
     }
 
     const ref = body.ref ?? parsed.ref;
-    const tarballUrl = githubTarballUrl(parsed.owner, parsed.repo, ref);
-    const previousSha = this.session.sourceCommitSha;
+    const token = body.token;
+
+    let resolvedRef = ref;
+    try {
+      resolvedRef = await resolveGitHubRef(parsed.owner, parsed.repo, ref, token);
+    } catch {
+      resolvedRef = ref === "HEAD" ? "main" : ref;
+    }
 
     let commitSha: string | undefined;
     try {
-      commitSha = await fetchGitHubCommitSha(parsed.owner, parsed.repo, ref, body.token);
+      commitSha = await fetchGitHubCommitSha(parsed.owner, parsed.repo, resolvedRef, token);
     } catch {
       commitSha = undefined;
     }
 
+    const tarballRef = commitSha ?? resolvedRef;
+    const tarballUrl = githubTarballUrl(parsed.owner, parsed.repo, tarballRef);
+    const previousSha = this.session.sourceCommitSha;
+
     this.session.status = "importing";
     this.session.source = "github";
     this.session.projectName = `${parsed.owner}/${parsed.repo}`;
-    this.session.githubRepo = { owner: parsed.owner, repo: parsed.repo, ref };
+    this.session.githubRepo = { owner: parsed.owner, repo: parsed.repo, ref: resolvedRef };
     this.session.lastError = undefined;
     if (commitSha) this.session.sourceCommitSha = commitSha;
     await this.save();
@@ -279,7 +327,14 @@ export class SessionDO implements DurableObject {
 
       const commitChanged = Boolean(commitSha && commitSha !== previousSha);
       if (commitChanged || !previousSha) {
-        await this.runScanAndCacheReport(commitSha);
+        this.state.waitUntil(
+          this.runScanAndCacheReport(commitSha).catch(async (err) => {
+            this.session.lastError =
+              err instanceof Error ? err.message : String(err);
+            this.session.status = "idle";
+            await this.save();
+          }),
+        );
       }
     } catch (error) {
       this.session.status = "error";
