@@ -47,7 +47,7 @@
     "test:watch": "vitest",
     "test:integration": "vitest run tests/integration",
     "prepublishOnly": "npm run build",
-    "pages:deploy": "wrangler pages deploy docs --project-name=cf-ready-docs"
+    "pages:deploy": "wrangler deploy"
   },
   "publishConfig": {
     "access": "public"

@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-pages-${{ github.ref }}
+  group: deploy-cloudflare-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -32,25 +32,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Ensure Cloudflare Pages project exists
+      - name: Deploy docs to Cloudflare Workers (static assets)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages project create cf-ready-docs --production-branch=main
-        continue-on-error: true
-
-      - name: Deploy docs to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy docs --project-name=cf-ready-docs --branch=main
+          command: deploy
 
       - name: Deployment summary
         run: |
-          echo "### Cloudflare Pages deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Cloudflare deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Project:** cf-ready-docs" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Directory:** docs/" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Custom domain:** ready.orangecloud.vn (configure in Cloudflare dashboard)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Worker:** cf-ready-docs" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Assets:** docs/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **URL:** https://cf-ready-docs.<account>.workers.dev" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Custom domain:** ready.orangecloud.vn (add in Workers dashboard)" >> "$GITHUB_STEP_SUMMARY"
