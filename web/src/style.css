@@ -1226,6 +1226,36 @@ button.full {
   color: var(--accent);
 }
 
+.auth-setup {
+  margin: 0 0 1rem;
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.auth-setup strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.auth-setup code {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.auth-setup__callback {
+  margin: 0.65rem 0 0;
+}
+
+.auth-card--loading {
+  text-align: center;
+  color: var(--muted);
+}
+
 /* User menu */
 .user-menu {
   position: relative;

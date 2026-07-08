@@ -56,11 +56,37 @@ Set in dashboard or `wrangler.jsonc` vars:
 - `GOOGLE_REDIRECT_URI` — `https://<worker>/api/auth/google/callback`
 - `WORKER_PUBLIC_URL` — public worker URL for AI optimize callbacks
 
-## GitHub OAuth App
+## GitHub OAuth App (required for sign-in + private repos)
 
-1. Create OAuth App at https://github.com/settings/developers
-2. Callback URL: `https://cf-ready-docs.<account>.workers.dev/api/auth/github/callback`
-3. Store `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Worker secrets
+1. Open https://github.com/settings/developers → **New OAuth App**
+2. Set:
+   - **Application name:** CF Ready Agent
+   - **Homepage URL:** `https://ready.orangecloud.vn`
+   - **Authorization callback URL:** `https://ready.orangecloud.vn/api/auth/github/callback`
+3. Copy the **Client ID** and generate a **Client secret**
+4. Store them on the Worker (choose one method):
+
+### Option A — GitHub repository secrets (recommended for CI)
+
+In your GitHub repo → **Settings → Secrets and variables → Actions**, add:
+
+| Secret | Value |
+|--------|--------|
+| `GITHUB_CLIENT_ID` | OAuth App client ID |
+| `GITHUB_CLIENT_SECRET` | OAuth App client secret |
+
+The deploy workflow runs `scripts/set-worker-secrets.mjs` and uploads these automatically.
+
+### Option B — Wrangler CLI (manual)
+
+```bash
+wrangler secret put GITHUB_CLIENT_ID
+wrangler secret put GITHUB_CLIENT_SECRET
+```
+
+5. Re-deploy (push to `main` or `npm run pages:deploy`)
+
+Verify: `curl https://ready.orangecloud.vn/api/auth/config` should return `"github": true`.
 
 ## Google OAuth (account sign-in)
 

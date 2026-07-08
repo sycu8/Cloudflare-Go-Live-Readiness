@@ -12,8 +12,30 @@ export type AuthState = {
   githubConnected: boolean;
 };
 
+export type AuthProviderConfig = {
+  google: boolean;
+  github: boolean;
+  publicUrl: string;
+  githubCallbackUrl: string;
+  googleCallbackUrl: string;
+};
+
 const API_BASE = "";
 const fetchOpts: RequestInit = { credentials: "include" };
+
+export async function getAuthConfig(): Promise<AuthProviderConfig> {
+  const res = await fetch(`${API_BASE}/api/auth/config`, fetchOpts);
+  if (!res.ok) {
+    return {
+      google: false,
+      github: false,
+      publicUrl: "https://ready.orangecloud.vn",
+      githubCallbackUrl: "https://ready.orangecloud.vn/api/auth/github/callback",
+      googleCallbackUrl: "https://ready.orangecloud.vn/api/auth/google/callback",
+    };
+  }
+  return res.json() as Promise<AuthProviderConfig>;
+}
 
 export async function getAuthState(): Promise<AuthState> {
   const res = await fetch(`${API_BASE}/api/auth/me`, fetchOpts);

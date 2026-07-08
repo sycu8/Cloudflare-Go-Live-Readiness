@@ -14,13 +14,18 @@ import {
   uploadZip,
   regenerateReport,
 } from "./api/client.js";
-import { getAuthState, logout, type AuthState } from "./api/auth.js";
+import { getAuthState, getAuthConfig, logout, type AuthState } from "./api/auth.js";
 import {
   renderEmptyResults,
   renderResults,
   type ScanResultData,
 } from "./ui/render.js";
-import { mountUserMenu, renderLoginScreen, renderUserMenu } from "./ui/auth.js";
+import {
+  mountUserMenu,
+  renderLoginLoading,
+  renderLoginScreen,
+  renderUserMenu,
+} from "./ui/auth.js";
 
 const COMMANDS: Array<{ name: string; desc: string }> = [
   { name: "scan", desc: "Full readiness scan" },
@@ -54,7 +59,9 @@ const TERMINAL_THEMES = {
 export async function mountApp(root: HTMLElement): Promise<void> {
   const auth = await getAuthState();
   if (!auth.authenticated || !auth.user) {
-    root.innerHTML = renderLoginScreen();
+    root.innerHTML = renderLoginLoading();
+    const config = await getAuthConfig();
+    root.innerHTML = renderLoginScreen(config);
     return;
   }
   await mountAgentApp(root, auth);

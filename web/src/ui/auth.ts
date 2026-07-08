@@ -1,6 +1,30 @@
-import { githubLoginUrl, googleLoginUrl } from "../api/auth.js";
+import { githubLoginUrl, googleLoginUrl, type AuthProviderConfig } from "../api/auth.js";
 
-export function renderLoginScreen(): string {
+export function renderLoginScreen(config: AuthProviderConfig): string {
+  const hasProviders = config.google || config.github;
+
+  const googleBtn = config.google
+    ? `<a class="auth-btn auth-btn--google" href="${googleLoginUrl("/app/")}">
+        <span class="auth-btn__icon" aria-hidden="true">G</span>
+        Continue with Google
+      </a>`
+    : "";
+
+  const githubBtn = config.github
+    ? `<a class="auth-btn auth-btn--github" href="${githubLoginUrl("/app/")}">
+        <span class="auth-btn__icon" aria-hidden="true">⌘</span>
+        Continue with GitHub
+      </a>`
+    : "";
+
+  const setupNotice = hasProviders
+    ? ""
+    : `<div class="auth-setup" role="alert">
+        <strong>Sign-in is not configured yet</strong>
+        <p>Ask the site operator to set Worker secrets <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code> (and Google OAuth if needed).</p>
+        <p class="auth-setup__callback">GitHub callback URL:<br /><code>${escapeHtml(config.githubCallbackUrl)}</code></p>
+      </div>`;
+
   return `
     <div class="auth-screen">
       <div class="auth-card">
@@ -10,15 +34,11 @@ export function renderLoginScreen(): string {
           <p>Sign in to scan projects, save reports, and connect GitHub repos.</p>
         </div>
 
+        ${setupNotice}
+
         <div class="auth-actions">
-          <a class="auth-btn auth-btn--google" href="${googleLoginUrl("/app/")}">
-            <span class="auth-btn__icon" aria-hidden="true">G</span>
-            Continue with Google
-          </a>
-          <a class="auth-btn auth-btn--github" href="${githubLoginUrl("/app/")}">
-            <span class="auth-btn__icon" aria-hidden="true">⌘</span>
-            Continue with GitHub
-          </a>
+          ${googleBtn}
+          ${githubBtn}
         </div>
 
         <p class="auth-footnote">
@@ -27,6 +47,16 @@ export function renderLoginScreen(): string {
         </p>
 
         <a class="auth-link" href="/">← Back to docs</a>
+      </div>
+    </div>
+  `;
+}
+
+export function renderLoginLoading(): string {
+  return `
+    <div class="auth-screen">
+      <div class="auth-card auth-card--loading">
+        <p>Loading sign-in options…</p>
       </div>
     </div>
   `;

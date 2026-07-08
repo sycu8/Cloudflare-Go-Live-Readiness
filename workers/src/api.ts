@@ -5,6 +5,7 @@ import {
   forbiddenResponse,
   requireAuth,
 } from "./auth/handlers.js";
+import { handleAuthConfig } from "./auth/config.js";
 import { googleAuthCallback, googleLoginRedirect } from "./auth/google.js";
 import {
   githubAuthCallback,
@@ -61,6 +62,10 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   // --- User authentication ---
+  if (pathname === "/api/auth/config" && request.method === "GET") {
+    return handleAuthConfig(env);
+  }
+
   if (pathname === "/api/auth/me" && request.method === "GET") {
     return handleAuthMe(request, env);
   }
