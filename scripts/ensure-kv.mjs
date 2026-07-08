@@ -2,27 +2,51 @@
 /**
  * Ensures a KV namespace exists and patches wrangler.jsonc before deploy.
  */
-import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const TITLE = "cf-ready-sessions";
 const PLACEHOLDER = "00000000000000000000000000000000";
+const token = process.env.CLOUDFLARE_API_TOKEN;
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
 
-function wranglerJson(cmd) {
-  return execSync(`npx wrangler ${cmd}`, { encoding: "utf8" });
+if (!token || !accountId) {
+  console.error("CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required");
+  process.exit(1);
 }
 
-let list = [];
-try {
-  list = JSON.parse(wranglerJson("kv namespace list --json"));
-} catch {
-  list = [];
+const headers = {
+  Authorization: `Bearer ${token}`,
+  "Content-Type": "application/json",
+};
+
+const listRes = await fetch(
+  `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces?per_page=100`,
+  { headers },
+);
+const listData = (await listRes.json()) as {
+  success: boolean;
+  result: Array<{ id: string; title: string }>;
+};
+if (!listData.success) {
+  console.error("Failed to list KV namespaces", listData);
+  process.exit(1);
 }
 
-let ns = list.find((n) => n.title === TITLE);
+let ns = listData.result.find((n) => n.title === TITLE);
 if (!ns) {
-  const created = JSON.parse(wranglerJson(`kv namespace create ${TITLE} --json`));
-  ns = created;
+  const createRes = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces`,
+    { method: "POST", headers, body: JSON.stringify({ title: TITLE }) },
+  );
+  const createData = (await createRes.json()) as {
+    success: boolean;
+    result: { id: string; title: string };
+  };
+  if (!createData.success) {
+    console.error("Failed to create KV namespace", createData);
+    process.exit(1);
+  }
+  ns = createData.result;
   console.log(`Created KV namespace ${TITLE}: ${ns.id}`);
 } else {
   console.log(`Using existing KV namespace ${TITLE}: ${ns.id}`);
