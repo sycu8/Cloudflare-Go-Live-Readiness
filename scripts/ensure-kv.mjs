@@ -23,10 +23,7 @@ const listRes = await fetch(
   `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces?per_page=100`,
   { headers },
 );
-const listData = (await listRes.json()) as {
-  success: boolean;
-  result: Array<{ id: string; title: string }>;
-};
+const listData = await listRes.json();
 if (!listData.success) {
   console.error("Failed to list KV namespaces", listData);
   process.exit(1);
@@ -38,10 +35,7 @@ if (!ns) {
     `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces`,
     { method: "POST", headers, body: JSON.stringify({ title: TITLE }) },
   );
-  const createData = (await createRes.json()) as {
-    success: boolean;
-    result: { id: string; title: string };
-  };
+  const createData = await createRes.json();
   if (!createData.success) {
     console.error("Failed to create KV namespace", createData);
     process.exit(1);
