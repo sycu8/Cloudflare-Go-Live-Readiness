@@ -135,6 +135,14 @@ async function handleOptimize(request: Request, env: Env): Promise<Response> {
   let parsed: { summary?: string; suggestions?: AiOptimizeResponse["suggestions"] } = {};
   try {
     parsed = JSON.parse(extractJsonFromModelResponse(raw)) as typeof parsed;
+    if (
+      typeof parsed.summary === "string" &&
+      parsed.summary.trim().startsWith("{") &&
+      (!parsed.suggestions || parsed.suggestions.length === 0)
+    ) {
+      const nested = JSON.parse(parsed.summary) as typeof parsed;
+      parsed = { ...nested, ...parsed, summary: nested.summary ?? parsed.summary };
+    }
   } catch {
     parsed = {
       summary: raw.slice(0, 500),
