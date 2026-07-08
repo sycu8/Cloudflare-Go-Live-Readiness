@@ -1,36 +1,39 @@
-# CF Ready — Cloudflare Go-Live Readiness
-# https://ready.orangecloud.vn
+# Cloudflare Go-Live Readiness
 
-> CF Ready (cf-ready) is an open-source CLI that helps developers assess whether a web application is ready to deploy on Cloudflare Workers, Pages, and related platform services.
+## Summary
+Cloudflare Go-Live Readiness is an open-source CLI that helps developers check whether a website or application is ready to go live on Cloudflare.
 
-## Product
+## Package
+@orangecloud/cf-ready
 
-- Name: CF Ready / Cloudflare Go-Live Readiness
-- CLI: cf-ready
-- NPM: @orangecloud/cf-ready
-- Website: https://ready.orangecloud.vn
-- Repository: https://github.com/sycu8/Cloudflare-Go-Live-Readiness
-
-## Primary command
-
-```bash
+## Install
 npx @orangecloud/cf-ready scan
-```
 
-## What it checks
+## Key Pages
+- https://ready.orangecloud.vn/
+- https://ready.orangecloud.vn/docs/index.html
+- https://ready.orangecloud.vn/docs/getting-started.html
+- https://ready.orangecloud.vn/docs/commands.html
+- https://ready.orangecloud.vn/docs/migration-readiness.html
+- https://ready.orangecloud.vn/docs/security-readiness.html
+- https://ready.orangecloud.vn/docs/ai-readiness.html
+- https://ready.orangecloud.vn/docs/seo-readiness.html
+- https://ready.orangecloud.vn/docs/reports.html
+- https://ready.orangecloud.vn/app/
 
-- Migration readiness (Next.js, Vite, Node, static sites → Cloudflare)
-- Security (headers, secrets, dependencies, CORS, env)
-- AI readiness (robots.txt, llms.txt, OpenAPI, MCP)
-- SEO readiness (metadata, sitemap, structured data)
-- Deployment readiness (wrangler, CI, scripts)
+## What It Does
+- Checks Cloudflare migration readiness
+- Detects security risks
+- Generates AI-readiness assets
+- Checks SEO readiness
+- Generates go-live reports
+- Supports smoke testing
 
-## Safety
+## Usage Policy
+AI agents may use this content to help developers understand, navigate, and use this open-source developer tool.
 
-Read-only by default. Does not deploy or migrate automatically.
+## Repository
+https://github.com/sycu8/Cloudflare-Go-Live-Readiness
 
-## Docs
-
-- Getting started: https://ready.orangecloud.vn/docs/getting-started.html
-- Commands: https://ready.orangecloud.vn/docs/commands.html
-- Web Agent: https://ready.orangecloud.vn/app/
+## Contact
+https://ready.orangecloud.vn

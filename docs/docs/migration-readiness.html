@@ -3,17 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuration — CF Ready</title>
-    <meta name="description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
-    <link rel="canonical" href="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:title" content="Configuration — CF Ready" />
-    <meta property="og:description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
+    <title>Cloudflare Migration Readiness Checks for Next.js, Vite, and Node.js</title>
+    <meta name="description" content="Detect Cloudflare runtime blockers, vinext readiness, OpenNext fallback paths, Workers compatibility, and Pages deployment options." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/migration-readiness.html" />
+    <meta property="og:title" content="Cloudflare Migration Readiness Checks" />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Configuration — CF Ready" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -30,8 +25,8 @@
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
         <a href="commands.html">Commands</a>
-        <a href="configuration.html" class="active">Configuration</a>
-        <a href="migration-readiness.html">Migration</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="migration-readiness.html" class="active">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
         <a href="seo-readiness.html">SEO readiness</a>
@@ -41,19 +36,21 @@
         <a href="roadmap.html">Roadmap</a>
       </nav>
       <article class="docs-content">
-        <h1>Configuration</h1>
-        <p>Optional <code>cf-ready.config.json</code> in your project root. Override with <code>--config</code>.</p>
-        <pre><code>{
-  "projectName": "my-app",
-  "framework": "nextjs",
-  "deploymentTarget": "cloudflare-pages",
-  "outputDir": ".",
-  "ai": {
-    "workerUrl": "https://your-worker.workers.dev",
-    "model": "openai/gpt-4o-mini"
-  }
-}</code></pre>
-        <p>See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/nextjs/cf-ready.config.json">examples/nextjs/cf-ready.config.json</a> in the repository.</p>
+        <h1>Migration readiness for Cloudflare deployments</h1>
+        <p>CF Ready inspects your repository for Cloudflare runtime blockers and framework-specific migration paths.</p>
+        <h2>What we detect</h2>
+        <ul>
+          <li>Node.js APIs incompatible with Workers (<code>fs</code>, <code>child_process</code>, native modules)</li>
+          <li>Next.js router patterns, middleware, and vinext / OpenNext recommendations</li>
+          <li>Vite and React SPA → Cloudflare Pages or Workers Assets</li>
+          <li>Express and Node servers → progressive migration via Hono</li>
+          <li>Current hosting target (Vercel, Netlify, etc.)</li>
+        </ul>
+        <h2>Commands</h2>
+        <pre><code>cf-ready scan
+cf-ready migration-plan
+cf-ready inspect --json</code></pre>
+        <p>Migration findings are weighted at <strong>35%</strong> of the overall score. See <a href="readiness-categories.html">Scoring</a>.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

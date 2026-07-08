@@ -3,17 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuration — CF Ready</title>
-    <meta name="description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
-    <link rel="canonical" href="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:title" content="Configuration — CF Ready" />
-    <meta property="og:description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
+    <title>Roadmap — CF Ready</title>
+    <meta name="description" content="Open-source roadmap for Cloudflare Go-Live Readiness: GitHub Action, framework adapters, Web Agent, npm publish." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/roadmap.html" />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Configuration — CF Ready" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -30,7 +23,7 @@
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
         <a href="commands.html">Commands</a>
-        <a href="configuration.html" class="active">Configuration</a>
+        <a href="configuration.html">Configuration</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
         <a href="ai-readiness.html">AI readiness</a>
@@ -38,22 +31,25 @@
         <a href="reports.html">Reports</a>
         <a href="readiness-categories.html">Scoring</a>
         <a href="github-action.html">GitHub Action</a>
-        <a href="roadmap.html">Roadmap</a>
+        <a href="roadmap.html" class="active">Roadmap</a>
       </nav>
       <article class="docs-content">
-        <h1>Configuration</h1>
-        <p>Optional <code>cf-ready.config.json</code> in your project root. Override with <code>--config</code>.</p>
-        <pre><code>{
-  "projectName": "my-app",
-  "framework": "nextjs",
-  "deploymentTarget": "cloudflare-pages",
-  "outputDir": ".",
-  "ai": {
-    "workerUrl": "https://your-worker.workers.dev",
-    "model": "openai/gpt-4o-mini"
-  }
-}</code></pre>
-        <p>See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/nextjs/cf-ready.config.json">examples/nextjs/cf-ready.config.json</a> in the repository.</p>
+        <h1>Open-source roadmap</h1>
+        <p>CF Ready is MIT-licensed. See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/ROADMAP.md">ROADMAP.md</a> on GitHub for full detail.</p>
+        <h2>Shipped (v0.1)</h2>
+        <ul>
+          <li>Production CLI with scan, security, AI/SEO readiness, reports</li>
+          <li>Web Agent at <a href="/app/">/app/</a></li>
+          <li>GitHub Action composite for PR checks</li>
+          <li>Private GitHub repo import (OAuth)</li>
+        </ul>
+        <h2>Next</h2>
+        <ul>
+          <li>npm publish <code>@orangecloud/cf-ready</code></li>
+          <li>Deep adapters for Astro, Remix, Hono</li>
+          <li>Auto-fix PR workflow</li>
+          <li>Persistent scan history dashboard</li>
+        </ul>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

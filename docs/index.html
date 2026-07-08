@@ -3,27 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>CF Ready — Cloudflare Go-Live Readiness CLI</title>
+    <title>Cloudflare Go-Live Readiness: Open-Source Deployment Readiness CLI</title>
     <meta
       name="description"
-      content="Open-source CLI that scans your app for Cloudflare migration, security, AI readiness, SEO, and deployment readiness before go-live."
+      content="Check migration, security, AI readiness, SEO, and deployment readiness before launching your website or application on Cloudflare."
     />
-    <meta name="keywords" content="cloudflare, workers, pages, go-live, readiness, migration, security, cli, cf-ready" />
+    <meta name="keywords" content="cloudflare go-live readiness, cloudflare deployment checklist, production readiness CLI, cloudflare migration checker, AI readiness checker, SEO readiness checker, cf-ready" />
     <link rel="canonical" href="https://ready.orangecloud.vn/" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#0B1628" />
+    <meta name="theme-color" content="#0F172A" />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://ready.orangecloud.vn/" />
-    <meta property="og:title" content="CF Ready — Cloudflare Go-Live Readiness" />
-    <meta property="og:description" content="Scan your codebase for Cloudflare go-live readiness. Migration, security, AI, SEO, and deployment checks." />
+    <meta property="og:title" content="Cloudflare Go-Live Readiness" />
+    <meta property="og:description" content="Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare." />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="CF Ready — Cloudflare Go-Live Readiness" />
-    <meta name="twitter:description" content="Scan your codebase for Cloudflare go-live readiness before deploy." />
+    <meta name="twitter:title" content="Cloudflare Go-Live Readiness" />
+    <meta name="twitter:description" content="Know before you deploy. Open-source Cloudflare go-live readiness CLI." />
     <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
 
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
@@ -35,21 +35,37 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "CF Ready",
-      "alternateName": "Cloudflare Go-Live Readiness",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "Cross-platform",
-      "description": "Open-source CLI that scans applications for Cloudflare migration, security, AI readiness, SEO, and deployment readiness before go-live.",
-      "url": "https://ready.orangecloud.vn",
-      "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
-      "softwareVersion": "0.1.0",
-      "license": "https://opensource.org/licenses/MIT",
-      "author": { "@type": "Organization", "name": "OrangeCloud" },
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
-      "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started.html",
-      "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "CF Ready",
+          "alternateName": "Cloudflare Go-Live Readiness",
+          "url": "https://ready.orangecloud.vn"
+        },
+        {
+          "@type": "Organization",
+          "name": "OrangeCloud",
+          "url": "https://ready.orangecloud.vn"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Cloudflare Go-Live Readiness",
+          "alternateName": "CF Ready",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "macOS, Linux, Windows",
+          "programmingLanguage": "TypeScript",
+          "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare.",
+          "url": "https://ready.orangecloud.vn",
+          "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+          "softwareVersion": "0.1.0",
+          "license": "https://opensource.org/licenses/MIT",
+          "author": { "@type": "Organization", "name": "OrangeCloud" },
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+          "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started.html",
+          "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+        }
+      ]
     }
     </script>
   </head>
@@ -62,13 +78,13 @@
           <span class="logo-mark" aria-hidden="true">CF</span>
           <span class="logo-text">
             <strong>CF Ready</strong>
-            <span>Go-Live Readiness</span>
+            <span>Cloudflare Go-Live Readiness</span>
           </span>
         </a>
         <nav class="nav-links" aria-label="Main">
           <a href="#checks" class="hide-mobile">Checks</a>
           <a href="#how" class="hide-mobile">How it works</a>
-          <a href="/docs/getting-started.html">Docs</a>
+          <a href="/docs/index.html">Docs</a>
           <a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a>
         </nav>
       </div>
@@ -82,24 +98,25 @@
             <p class="hero-eyebrow">
               <span class="badge badge--muted">Open source</span>
               <span class="badge badge--muted">MIT</span>
+              <span class="badge badge--muted">Know before you deploy.</span>
             </p>
-            <h1 id="hero-title">Ship to Cloudflare with confidence</h1>
+            <h1 id="hero-title">Cloudflare go-live checks before production.</h1>
             <p class="hero-lead">
-              CF Ready scans your codebase for migration blockers, security gaps, AI readiness, SEO basics, and deployment config — before you go live on Workers or Pages.
+              Open-source CLI for checking migration readiness, security risks, AI readiness, SEO readiness, and deployment readiness before launching on Cloudflare.
             </p>
             <div class="hero-actions">
-              <a class="btn btn-primary" href="/app/">Open Web Agent</a>
-              <a class="btn btn-ghost" href="/docs/getting-started.html">Install from GitHub</a>
+              <button type="button" class="btn btn-primary" id="copy-install-cmd">Copy command</button>
+              <a class="btn btn-ghost" href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">View on GitHub</a>
+              <a class="btn btn-ghost" href="/docs/getting-started.html">Read docs</a>
+              <a class="btn btn-ghost" href="/app/">Web Agent</a>
             </div>
             <div class="install-card" id="quickstart">
               <div class="install-card__head">
                 <div class="install-card__dots" aria-hidden="true"><span></span><span></span><span></span></div>
-                <span>Install from source</span>
+                <span>Primary command</span>
               </div>
-              <pre><code>git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
-cd Cloudflare-Go-Live-Readiness && npm ci && npm run build
-node dist/index.js scan --cwd /path/to/your-app</code></pre>
-              <p class="copy-hint">Node.js 18+ · <code>npx @orangecloud/cf-ready scan</code> after npm publish</p>
+              <pre><code id="install-cmd">npx @orangecloud/cf-ready scan</code></pre>
+              <p class="copy-hint">Node.js 18+ · Install from <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness" style="color:var(--cf-orange-400)">GitHub</a> until npm publish</p>
             </div>
           </div>
           <div class="hero-visual">
@@ -107,12 +124,12 @@ node dist/index.js scan --cwd /path/to/your-app</code></pre>
               <div class="terminal-mock__bar">cf-ready scan — example output</div>
               <div class="terminal-mock__body">
                 <div><span class="cmd">$</span> npx @orangecloud/cf-ready scan</div>
-                <div style="margin-top:0.75rem">Framework: nextjs · Target: vercel</div>
-                <div>Overall readiness: <span class="ok">78/100</span></div>
-                <div style="margin-top:0.5rem">Migration: 72 · Security: 85</div>
-                <div>AI readiness: 64 · SEO: 70 · Deploy: 80</div>
-                <div style="margin-top:0.75rem"><span class="warn">Not production ready</span></div>
-                <div>Blockers: 2 · Reports: 9 files generated</div>
+                <div style="margin-top:0.75rem">Framework: Next.js</div>
+                <div>Target: Cloudflare Workers</div>
+                <div style="margin-top:0.5rem">Migration: 68/100 · Security: 74/100</div>
+                <div>AI Ready: 40/100 · SEO: 65/100</div>
+                <div style="margin-top:0.75rem"><span class="warn">Blockers found: 2</span></div>
+                <div>Reports generated: 8</div>
               </div>
             </div>
           </div>
@@ -122,9 +139,9 @@ node dist/index.js scan --cwd /path/to/your-app</code></pre>
       <!-- Problem -->
       <section class="section section--light" aria-labelledby="problem-title">
         <div class="section-inner">
-          <h2 id="problem-title">Finished coding ≠ production ready on Cloudflare</h2>
+          <h2 id="problem-title">Shipping is not just building</h2>
           <p class="section-intro">
-            Moving from Vercel, Netlify, or a Node server to Cloudflare means new runtime constraints, security expectations, and platform-specific config. Teams often discover blockers late — during deploy or after launch.
+            Before production, you need to know whether your app can run well on Cloudflare, whether secrets are exposed, whether dependencies are risky, whether AI crawlers can understand your site, and whether SEO basics are in place. <strong>CF Ready turns those checks into one repeatable workflow.</strong>
           </p>
           <div class="grid-3">
             <article class="card">
@@ -154,28 +171,28 @@ node dist/index.js scan --cwd /path/to/your-app</code></pre>
           <div class="grid-3">
             <article class="card">
               <span class="badge badge--muted">35%</span>
-              <h3>Migration</h3>
-              <p>Framework detection, Cloudflare compatibility, Next.js/Vite/Node patterns, and migration blockers.</p>
+              <h3>Migration readiness</h3>
+              <p>Detect Cloudflare runtime blockers, Next.js migration paths, vinext readiness, OpenNext fallback, Pages compatibility, Workers compatibility, and risky Node.js patterns.</p>
             </article>
             <article class="card">
               <span class="badge badge--muted">30%</span>
-              <h3>Security</h3>
-              <p>Headers, secrets scanning, dependency audit, CORS, and environment variable hygiene. SARIF export included.</p>
+              <h3>Security readiness</h3>
+              <p>Find exposed env files, hardcoded secrets, unsafe CORS, risky public files, dependency audit gaps, and missing security basics. SARIF export included.</p>
             </article>
             <article class="card">
               <span class="badge badge--muted">20%</span>
               <h3>AI readiness</h3>
-              <p>robots.txt, llms.txt, OpenAPI, and MCP-related assets for AI-assisted discovery.</p>
+              <p>Generate <code>robots.txt</code>, <code>llms.txt</code>, sitemap drafts, OpenAPI drafts, MCP card drafts, and agent-friendly docs.</p>
             </article>
             <article class="card">
               <span class="badge badge--muted">10%</span>
-              <h3>SEO</h3>
-              <p>Metadata, sitemap, structured data, and public asset checks.</p>
+              <h3>SEO readiness</h3>
+              <p>Check metadata, canonical URLs, Open Graph tags, structured data, headings, image alt text, sitemap, robots, and crawlability basics.</p>
             </article>
             <article class="card">
               <span class="badge badge--muted">5%</span>
-              <h3>Deployment</h3>
-              <p>wrangler config, CI workflows, deploy scripts, and rollback documentation.</p>
+              <h3>Deployment readiness</h3>
+              <p>Generate go-live checklist, rollback plan, deployment manifest, and post-deploy smoke test checks.</p>
             </article>
             <article class="card">
               <div class="card-icon" aria-hidden="true">🤖</div>
@@ -246,18 +263,19 @@ cf-ready scan</code></pre>
       <section class="section section--light" aria-labelledby="safe-title">
         <div class="section-inner">
           <h2 id="safe-title">Safe by default</h2>
+          <p class="section-intro">CF Ready does not deploy, migrate, delete, or rewrite your app by default. It inspects first, reports clearly, and only generates files when you explicitly run fix commands.</p>
           <div class="grid-3">
             <article class="card">
               <h3>Read-only scans</h3>
-              <p><code>scan</code> and <code>inspect</code> analyze your project; reports are written to the configured output directory, not your app source files.</p>
+              <p><code>scan</code> and <code>inspect</code> analyze your project; reports go to the output directory, not your app source.</p>
             </article>
             <article class="card">
               <h3>Explicit fixes only</h3>
-              <p><code>cf-ready fix</code> runs only with <code>--ai-readiness</code> or <code>--seo</code> flags.</p>
+              <p><code>cf-ready fix</code> requires <code>--ai-readiness</code> or <code>--seo</code> flags.</p>
             </article>
             <article class="card">
               <h3>No auto-deploy</h3>
-              <p>CF Ready does not deploy, migrate, or change Cloudflare account settings.</p>
+              <p>Does not deploy, migrate, or change Cloudflare account settings.</p>
             </article>
           </div>
         </div>
@@ -299,6 +317,8 @@ cf-ready scan</code></pre>
             <li>npm publish <code>@orangecloud/cf-ready</code> to registry</li>
           </ul>
           <p style="margin-top:1rem">
+            <a href="/docs/roadmap.html">Full roadmap →</a>
+            ·
             <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">View repository →</a>
           </p>
         </div>
@@ -306,11 +326,12 @@ cf-ready scan</code></pre>
 
       <!-- Final CTA -->
       <section class="cta-band" aria-labelledby="cta-title">
-        <h2 id="cta-title">Ready to check your project?</h2>
-        <p>Run a scan in seconds — locally or in the browser.</p>
+        <h2 id="cta-title">Run your first readiness scan</h2>
+        <p>From finished code to Cloudflare-ready production.</p>
         <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:center">
-          <a class="btn btn-primary" href="/app/">Open Web Agent</a>
-          <a class="btn btn-ghost" href="/docs/getting-started.html">Install CLI</a>
+          <a class="btn btn-primary" href="#quickstart">Run your first scan</a>
+          <a class="btn btn-ghost" href="/app/">Open Web Agent</a>
+          <a class="btn btn-ghost" href="/docs/getting-started.html">Install the CLI</a>
         </div>
       </section>
     </main>
@@ -333,5 +354,15 @@ cf-ready scan</code></pre>
         </div>
       </div>
     </footer>
+    <script>
+      document.getElementById("copy-install-cmd")?.addEventListener("click", async () => {
+        const cmd = document.getElementById("install-cmd")?.textContent?.trim() ?? "";
+        try {
+          await navigator.clipboard.writeText(cmd);
+          const btn = document.getElementById("copy-install-cmd");
+          if (btn) { btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = "Copy command"; }, 2000); }
+        } catch { /* ignore */ }
+      });
+    </script>
   </body>
 </html>

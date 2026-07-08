@@ -2,16 +2,20 @@
   "color": {
     "navy": {
       "900": "#060D18",
-      "800": "#0B1628",
+      "800": "#0F172A",
       "700": "#0F1B33",
       "600": "#152238",
       "500": "#1E3050"
     },
     "orange": {
-      "500": "#F38020",
-      "400": "#FF9A47",
-      "300": "#FFB36E",
-      "soft": "rgba(243, 128, 32, 0.14)"
+      "500": "#F97316",
+      "400": "#FB923C",
+      "300": "#FDBA74",
+      "soft": "rgba(249, 115, 22, 0.14)"
+    },
+    "slate": {
+      "600": "#334155",
+      "500": "#475569"
     },
     "surface": {
       "light": "#F8FAFC",
@@ -20,20 +24,21 @@
     },
     "text": {
       "primary": "#0F172A",
-      "secondary": "#475569",
+      "secondary": "#334155",
       "inverse": "#F8FAFC",
       "muted": "#94A3B8"
     },
     "status": {
       "success": "#22C55E",
-      "warning": "#EAB308",
+      "warning": "#F59E0B",
       "danger": "#EF4444",
-      "info": "#38BDF8"
+      "info": "#38BDF8",
+      "high": "#F97316"
     }
   },
   "font": {
-    "sans": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
-    "mono": "\"JetBrains Mono\", ui-monospace, \"Cascadia Code\", monospace"
+    "sans": "\"Inter\", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "mono": "\"JetBrains Mono\", \"SFMono-Regular\", Consolas, monospace"
   },
   "radius": {
     "sm": "8px",
@@ -42,7 +47,7 @@
     "pill": "999px"
   },
   "shadow": {
-    "card": "0 4px 24px rgba(11, 22, 40, 0.08)",
+    "card": "0 4px 24px rgba(15, 23, 42, 0.08)",
     "hero": "0 24px 64px rgba(6, 13, 24, 0.45)"
   }
 }

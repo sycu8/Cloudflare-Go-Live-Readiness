@@ -3,17 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuration — CF Ready</title>
-    <meta name="description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
-    <link rel="canonical" href="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/configuration.html" />
-    <meta property="og:title" content="Configuration — CF Ready" />
-    <meta property="og:description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
+    <title>AI Readiness for Websites: robots.txt, llms.txt, OpenAPI, and MCP</title>
+    <meta name="description" content="Generate AI-readiness assets such as robots.txt, llms.txt, sitemap, OpenAPI drafts, MCP server cards, and auth documentation." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/ai-readiness.html" />
+    <meta property="og:title" content="AI Readiness for Websites" />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Configuration — CF Ready" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -30,10 +25,10 @@
         <a href="index.html">Overview</a>
         <a href="getting-started.html">Getting started</a>
         <a href="commands.html">Commands</a>
-        <a href="configuration.html" class="active">Configuration</a>
+        <a href="configuration.html">Configuration</a>
         <a href="migration-readiness.html">Migration</a>
         <a href="security-readiness.html">Security</a>
-        <a href="ai-readiness.html">AI readiness</a>
+        <a href="ai-readiness.html" class="active">AI readiness</a>
         <a href="seo-readiness.html">SEO readiness</a>
         <a href="reports.html">Reports</a>
         <a href="readiness-categories.html">Scoring</a>
@@ -41,19 +36,21 @@
         <a href="roadmap.html">Roadmap</a>
       </nav>
       <article class="docs-content">
-        <h1>Configuration</h1>
-        <p>Optional <code>cf-ready.config.json</code> in your project root. Override with <code>--config</code>.</p>
-        <pre><code>{
-  "projectName": "my-app",
-  "framework": "nextjs",
-  "deploymentTarget": "cloudflare-pages",
-  "outputDir": ".",
-  "ai": {
-    "workerUrl": "https://your-worker.workers.dev",
-    "model": "openai/gpt-4o-mini"
-  }
-}</code></pre>
-        <p>See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/nextjs/cf-ready.config.json">examples/nextjs/cf-ready.config.json</a> in the repository.</p>
+        <h1>AI readiness for the agent-driven web</h1>
+        <p>Prepare your site for AI crawlers, agents, and discoverability tooling.</p>
+        <h2>Checks and generators</h2>
+        <ul>
+          <li><code>robots.txt</code> and AI crawler policy hints</li>
+          <li><code>llms.txt</code> and <code>llms-full.txt</code> drafts</li>
+          <li>OpenAPI specification drafts</li>
+          <li>MCP server card JSON</li>
+          <li>Agent-friendly auth documentation</li>
+        </ul>
+        <h2>Commands</h2>
+        <pre><code>cf-ready ai-ready
+cf-ready fix --ai-readiness
+cf-ready ai-optimize</code></pre>
+        <p>Fix commands only run when explicitly invoked. Existing files are skipped unless <code>--force</code>.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

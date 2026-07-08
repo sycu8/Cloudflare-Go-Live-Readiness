@@ -3,17 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Readiness categories — CF Ready</title>
-    <meta name="description" content="Migration, security, AI, SEO, and deployment readiness scoring for Cloudflare go-live." />
-    <link rel="canonical" href="https://ready.orangecloud.vn/docs/readiness-categories.html" />
-    <meta property="og:type" content="article" />
-    <meta property="og:url" content="https://ready.orangecloud.vn/docs/readiness-categories.html" />
-    <meta property="og:title" content="Readiness categories — CF Ready" />
-    <meta property="og:description" content="Migration, security, AI, SEO, and deployment readiness scoring for Cloudflare go-live." />
+    <title>CF Ready Docs: Cloudflare Go-Live Readiness CLI</title>
+    <meta name="description" content="Learn how to use cf-ready to scan repositories, generate readiness reports, check Cloudflare migration paths, and prepare apps for production." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/index.html" />
+    <meta property="og:title" content="CF Ready Docs: Cloudflare Go-Live Readiness CLI" />
+    <meta property="og:description" content="Documentation for the cf-ready CLI and Web Agent." />
     <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Readiness categories — CF Ready" />
-    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.png" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
@@ -27,7 +23,7 @@
     </header>
     <div class="docs-layout">
       <nav class="docs-nav" aria-label="Docs">
-        <a href="index.html">Overview</a>
+        <a href="index.html" class="active">Overview</a>
         <a href="getting-started.html">Getting started</a>
         <a href="commands.html">Commands</a>
         <a href="configuration.html">Configuration</a>
@@ -36,24 +32,25 @@
         <a href="ai-readiness.html">AI readiness</a>
         <a href="seo-readiness.html">SEO readiness</a>
         <a href="reports.html">Reports</a>
-        <a href="readiness-categories.html" class="active">Scoring</a>
+        <a href="readiness-categories.html">Scoring</a>
         <a href="github-action.html">GitHub Action</a>
         <a href="roadmap.html">Roadmap</a>
       </nav>
       <article class="docs-content">
-        <h1>Readiness categories</h1>
-        <p>Overall score is weighted across five categories. Blockers prevent a production-ready status.</p>
-        <h2>Weights</h2>
+        <h1>CF Ready documentation</h1>
+        <p><strong>CF Ready</strong> (<code>cf-ready</code>) is an open-source CLI that helps developers check whether a website or application is ready to go live on Cloudflare.</p>
+        <h2>Quick start</h2>
+        <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+        <p>See <a href="getting-started.html">Getting started</a> for install options and <a href="/app/">Web Agent</a> for browser-based scans.</p>
+        <h2>Topics</h2>
         <ul>
-          <li><strong>Migration (35%)</strong> — framework compatibility, Node/edge patterns, Cloudflare blockers</li>
-          <li><strong>Security (30%)</strong> — headers, secrets, npm audit, CORS, env documentation</li>
-          <li><strong>AI readiness (20%)</strong> — robots.txt, llms.txt, OpenAPI, MCP server card</li>
-          <li><strong>SEO (10%)</strong> — metadata, sitemap, structured data</li>
-          <li><strong>Deployment (5%)</strong> — wrangler, CI, scripts, rollback plan</li>
+          <li><a href="migration-readiness.html">Migration readiness</a> — runtime blockers, Next.js, Vite, Node.js</li>
+          <li><a href="security-readiness.html">Security readiness</a> — secrets, CORS, dependencies</li>
+          <li><a href="ai-readiness.html">AI readiness</a> — robots.txt, llms.txt, OpenAPI, MCP</li>
+          <li><a href="seo-readiness.html">SEO readiness</a> — metadata, sitemap, structured data</li>
+          <li><a href="reports.html">Reports</a> — migration plan, SARIF, go-live checklist</li>
+          <li><a href="github-action.html">GitHub Action</a> — PR readiness checks</li>
         </ul>
-        <h2>Severity levels</h2>
-        <p><span class="badge badge--blocker">Blocker</span> must be resolved before production ready.</p>
-        <p><span class="badge badge--warn">High</span> <span class="badge badge--muted">Medium</span> <span class="badge badge--muted">Low</span> — prioritized recommendations.</p>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
