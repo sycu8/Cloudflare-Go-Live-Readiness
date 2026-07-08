@@ -30,6 +30,20 @@ export async function createSession(): Promise<string> {
   return data.sessionId;
 }
 
+/** Reuse a linked workspace session or create a new one after sign-in. */
+export async function ensureWorkspaceSession(): Promise<string> {
+  const stored = sessionStorage.getItem("cf-ready-session");
+  if (stored) {
+    const res = await fetch(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
+    if (res.ok) return stored;
+    sessionStorage.removeItem("cf-ready-session");
+  }
+
+  const sessionId = await createSession();
+  sessionStorage.setItem("cf-ready-session", sessionId);
+  return sessionId;
+}
+
 export async function getStatus(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
   return res.json();

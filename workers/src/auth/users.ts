@@ -40,6 +40,16 @@ export async function getUserProviders(
   return result.results ?? [];
 }
 
+export async function isGitHubConnected(env: Env, userId: string): Promise<boolean> {
+  const providers = await getUserProviders(env, userId);
+  if (providers.some((p) => p.provider === "github")) return true;
+  if (env.SESSIONS) {
+    const token = await env.SESSIONS.get(`github:user:${userId}`);
+    if (token) return true;
+  }
+  return false;
+}
+
 export async function upsertUserFromProvider(
   env: Env,
   profile: ProviderProfile,

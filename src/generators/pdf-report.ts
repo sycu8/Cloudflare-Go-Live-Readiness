@@ -110,6 +110,14 @@ export function pdfReportInputFromScanData(data: {
     .filter((f) => f.status !== "passed" && f.status !== "fixed")
     .slice(0, 40);
 
+  const blockerFindings =
+    data.blockers?.length &&
+    typeof data.blockers[0] === "object" &&
+    data.blockers[0] !== null &&
+    "title" in data.blockers[0]
+      ? (data.blockers as Array<{ title: string; description: string }>)
+      : (data.findings ?? []).filter((f) => f.severity === "blocker");
+
   return {
     projectName: data.projectName ?? data.inspection.projectName ?? "Unknown project",
     framework: data.inspection.framework ?? "unknown",
@@ -118,15 +126,15 @@ export function pdfReportInputFromScanData(data: {
     scannedAt: data.scannedAt ?? new Date().toISOString(),
     productionReady: Boolean(data.productionReady),
     scores: data.scores,
-    blockers: (data.blockers ?? []).map((b) => ({
+    blockers: blockerFindings.map((b) => ({
       title: b.title,
-      description: b.description,
+      description: b.description ?? "",
     })),
     findings: openFindings.map((f) => ({
       severity: f.severity,
       title: f.title,
-      description: f.description,
-      recommendation: f.recommendation,
+      description: f.description ?? "",
+      recommendation: f.recommendation ?? "",
     })),
   };
 }

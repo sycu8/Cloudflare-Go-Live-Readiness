@@ -5,8 +5,10 @@ import {
   authCookieHeader,
   createAuthSession,
   getUserFromRequest,
+  assertWorkspaceSessionOwner,
 } from "./session.js";
-import { storeGitHubTokenForUser, upsertUserFromProvider } from "./users.js";
+import { forbiddenResponse } from "./handlers.js";
+import { storeGitHubTokenForUser, upsertUserFromProvider, getUserById } from "./users.js";
 
 const GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize";
 const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
@@ -194,7 +196,21 @@ export async function githubAuthCallback(
     const accessToken = await exchangeGitHubCode(env, code);
 
     if (state.mode === "connect") {
+      const profile = await fetchGitHubProfile(accessToken);
+
       if (state.userId) {
+        const account = await getUserById(env, state.userId);
+        if (account) {
+          await upsertUserFromProvider(env, {
+            provider: "github",
+            providerUserId: String(profile.id),
+            email: profile.email ?? account.email,
+            name: profile.name ?? profile.login,
+            avatarUrl: profile.avatar_url,
+            accessToken,
+            profileJson: JSON.stringify(profile),
+          });
+        }
         await storeGitHubTokenForUser(
           env,
           state.userId,
@@ -291,6 +307,10 @@ export async function resolveGitHubConnectRedirect(
 ): Promise<Response> {
   const user = await getUserFromRequest(request, env);
   if (user) {
+    const ownsSession = await assertWorkspaceSessionOwner(env, user.id, workspaceSessionId);
+    if (!ownsSession) {
+      return forbiddenResponse("You do not have access to this workspace session");
+    }
     return githubConnectRedirect(env, workspaceSessionId, user);
   }
   return githubLegacyConnectRedirect(env, workspaceSessionId);

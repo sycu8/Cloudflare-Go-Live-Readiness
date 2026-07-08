@@ -6,7 +6,7 @@ import {
   getUserFromRequest,
   parseAuthCookie,
 } from "./session.js";
-import { getUserProviders } from "./users.js";
+import { getUserProviders, isGitHubConnected } from "./users.js";
 
 export async function handleAuthMe(request: Request, env: Env): Promise<Response> {
   const user = await getUserFromRequest(request, env);
@@ -15,7 +15,7 @@ export async function handleAuthMe(request: Request, env: Env): Promise<Response
   }
 
   const providers = await getUserProviders(env, user.id);
-  const githubConnected = providers.some((p) => p.provider === "github");
+  const githubConnected = await isGitHubConnected(env, user.id);
 
   return Response.json({
     authenticated: true,

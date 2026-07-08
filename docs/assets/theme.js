@@ -82,9 +82,10 @@
 
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (event) => {
     try {
-      if (localStorage.getItem(STORAGE_KEY)) return;
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "light" || stored === "dark") return;
     } catch {
-      return;
+      /* ignore */
     }
     applyTheme(event.matches ? "dark" : "light");
   });

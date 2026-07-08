@@ -3,7 +3,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import {
   chat,
-  createSession,
+  ensureWorkspaceSession,
   execCommand,
   getResults,
   getStatus,
@@ -61,11 +61,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
 }
 
 async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> {
-  let sessionId = sessionStorage.getItem("cf-ready-session") ?? "";
-  if (!sessionId) {
-    sessionId = await createSession();
-    sessionStorage.setItem("cf-ready-session", sessionId);
-  }
+  const sessionId = await ensureWorkspaceSession();
 
   let lastResultData: ScanResultData | null = null;
   let findingsFilter = "all";
