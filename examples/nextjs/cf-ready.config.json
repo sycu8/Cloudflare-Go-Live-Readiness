@@ -19,5 +19,10 @@
   "security": {
     "blockOnSecrets": true,
     "blockOnCriticalDependencies": true
+  },
+  "ai": {
+    "workerUrl": "https://cf-ready-docs.sycu-lee.workers.dev",
+    "model": "openai/gpt-4o-mini",
+    "gatewayId": "default"
   }
 }

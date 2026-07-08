@@ -12,6 +12,7 @@ import { registerFixCommand } from "./commands/fix.js";
 import { registerReportCommand } from "./commands/report.js";
 import { registerDeployCheckCommand } from "./commands/deploy-check.js";
 import { registerSmokeTestCommand } from "./commands/smoke-test.js";
+import { registerAiOptimizeCommand } from "./commands/ai-optimize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgPath = path.resolve(__dirname, "../package.json");
@@ -41,6 +42,7 @@ registerFixCommand(program);
 registerReportCommand(program);
 registerDeployCheckCommand(program);
 registerSmokeTestCommand(program);
+registerAiOptimizeCommand(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : String(error));

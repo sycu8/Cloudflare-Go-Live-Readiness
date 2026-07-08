@@ -99,6 +99,14 @@ export const CfReadyConfigSchema = z.object({
       blockOnCriticalDependencies: z.boolean().default(true),
     })
     .optional(),
+  ai: z
+    .object({
+      workerUrl: z.string().url().optional(),
+      model: z.string().default("openai/gpt-4o-mini"),
+      apiToken: z.string().optional(),
+      gatewayId: z.string().default("default"),
+    })
+    .optional(),
 });
 
 export type CfReadyConfig = z.infer<typeof CfReadyConfigSchema>;

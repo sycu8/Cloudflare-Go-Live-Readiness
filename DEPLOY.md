@@ -61,3 +61,37 @@ curl -I https://ready.orangecloud.vn
 | `CLOUDFLARE_API_TOKEN` not set | Export token or add GitHub secret |
 | API error on deploy | Token needs **Account → Workers Scripts → Edit** |
 | Pages project error | This project uses Workers static assets (`wrangler deploy`), not Pages |
+
+## Workers AI (GPT optimize API)
+
+The deployed worker includes:
+
+- `POST /api/optimize` — AI refactor/migration suggestions
+- `GET /api/health` — health check
+- Static docs at `/`
+
+### Enable GPT models
+
+1. Load [AI Gateway Unified Billing credits](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)
+2. Default model: `openai/gpt-4o-mini` (configurable via `DEFAULT_AI_MODEL` var)
+3. Fallback: `@cf/meta/llama-3.1-8b-instruct-fast` (Workers AI)
+
+### Optional API auth
+
+```bash
+npx wrangler secret put AI_API_KEY
+```
+
+Then pass to CLI:
+
+```bash
+cf-ready ai-optimize --ai-token "$AI_API_KEY"
+```
+
+### CLI usage
+
+```bash
+cf-ready scan
+cf-ready ai-optimize --focus migration
+cf-ready ai-optimize --model openai/gpt-4o
+```

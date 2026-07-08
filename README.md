@@ -414,6 +414,26 @@ Checks:
 
 ---
 
+### AI optimize (Workers AI + GPT)
+
+```bash
+cf-ready ai-optimize
+cf-ready ai-optimize --focus migration
+cf-ready ai-optimize --model openai/gpt-4o
+```
+
+Uses your deployed **Cloudflare Worker** with **Workers AI** and **AI Gateway** to analyze scan findings and code snippets, then returns prioritized refactor steps for Cloudflare Workers/Pages.
+
+Requirements:
+
+* Cloudflare **AI Gateway Unified Billing** credits (for `openai/gpt-4o-mini`, `openai/gpt-4o`, etc.)
+* Deployed worker at `ai.workerUrl` in `cf-ready.config.json` (default: production worker)
+* Optional `ai.apiToken` if the worker enforces `AI_API_KEY`
+
+Output: `cf-ready-ai-optimize.md`
+
+---
+
 ## Configuration
 
 You can add an optional config file:

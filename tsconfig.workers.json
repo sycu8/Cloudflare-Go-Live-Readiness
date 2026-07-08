@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "workers",
+    "types": ["@cloudflare/workers-types"],
+    "lib": ["ES2022", "WebWorker"]
+  },
+  "include": ["workers/**/*"]
+}
