@@ -301,7 +301,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setMobileTab(tab: MobileTab) {
-    mobileTab = tab;
     root.querySelectorAll(".mobile-tabs button").forEach((btn) => {
       const active = (btn as HTMLElement).dataset.tab === tab;
       btn.classList.toggle("active", active);
@@ -315,7 +314,6 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   }
 
   function setWorkspaceView(view: WorkspaceView) {
-    workspaceView = view;
     root.querySelectorAll(".workspace-tabs button").forEach((btn) => {
       const active = (btn as HTMLElement).dataset.workspace === view;
       btn.classList.toggle("active", active);

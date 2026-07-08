@@ -1,0 +1,36 @@
+# CF Ready — Cloudflare Go-Live Readiness
+# https://ready.orangecloud.vn
+
+> CF Ready (cf-ready) is an open-source CLI that helps developers assess whether a web application is ready to deploy on Cloudflare Workers, Pages, and related platform services.
+
+## Product
+
+- Name: CF Ready / Cloudflare Go-Live Readiness
+- CLI: cf-ready
+- NPM: @orangecloud/cf-ready
+- Website: https://ready.orangecloud.vn
+- Repository: https://github.com/sycu8/Cloudflare-Go-Live-Readiness
+
+## Primary command
+
+```bash
+npx @orangecloud/cf-ready scan
+```
+
+## What it checks
+
+- Migration readiness (Next.js, Vite, Node, static sites → Cloudflare)
+- Security (headers, secrets, dependencies, CORS, env)
+- AI readiness (robots.txt, llms.txt, OpenAPI, MCP)
+- SEO readiness (metadata, sitemap, structured data)
+- Deployment readiness (wrangler, CI, scripts)
+
+## Safety
+
+Read-only by default. Does not deploy or migrate automatically.
+
+## Docs
+
+- Getting started: https://ready.orangecloud.vn/docs/getting-started.html
+- Commands: https://ready.orangecloud.vn/docs/commands.html
+- Web Agent: https://ready.orangecloud.vn/app/

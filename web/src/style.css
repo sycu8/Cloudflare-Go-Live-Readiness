@@ -3,10 +3,10 @@
   --accent: #f38020;
   --accent-soft: rgba(243, 128, 32, 0.12);
   --accent-hover: #ff9a47;
-  --bg: #09090b;
-  --surface: #111113;
-  --surface-2: #18181b;
-  --surface-3: #1f1f23;
+  --bg: #060d18;
+  --surface: #0b1628;
+  --surface-2: #0f1b33;
+  --surface-3: #152238;
   --border: #2e2e33;
   --border-soft: #232328;
   --text: #fafafa;
@@ -23,8 +23,10 @@
   --header-h: 60px;
   --mobile-nav-h: 56px;
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  --font: var(--cf-font-sans, "Inter", system-ui, sans-serif);
+  --mono: var(--cf-font-mono, "JetBrains Mono", ui-monospace, monospace);
+  --cf-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cf-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
 }
 
 *,
@@ -41,7 +43,7 @@ body,
 }
 
 body {
-  font-family: var(--font);
+  font-family: var(--cf-font-sans);
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;

@@ -1,0 +1,48 @@
+{
+  "color": {
+    "navy": {
+      "900": "#060D18",
+      "800": "#0B1628",
+      "700": "#0F1B33",
+      "600": "#152238",
+      "500": "#1E3050"
+    },
+    "orange": {
+      "500": "#F38020",
+      "400": "#FF9A47",
+      "300": "#FFB36E",
+      "soft": "rgba(243, 128, 32, 0.14)"
+    },
+    "surface": {
+      "light": "#F8FAFC",
+      "white": "#FFFFFF",
+      "muted": "#E2E8F0"
+    },
+    "text": {
+      "primary": "#0F172A",
+      "secondary": "#475569",
+      "inverse": "#F8FAFC",
+      "muted": "#94A3B8"
+    },
+    "status": {
+      "success": "#22C55E",
+      "warning": "#EAB308",
+      "danger": "#EF4444",
+      "info": "#38BDF8"
+    }
+  },
+  "font": {
+    "sans": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "mono": "\"JetBrains Mono\", ui-monospace, \"Cascadia Code\", monospace"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "pill": "999px"
+  },
+  "shadow": {
+    "card": "0 4px 24px rgba(11, 22, 40, 0.08)",
+    "hero": "0 24px 64px rgba(6, 13, 24, 0.45)"
+  }
+}

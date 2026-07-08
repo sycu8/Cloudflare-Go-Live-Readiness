@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Readiness categories — CF Ready</title>
+    <meta name="description" content="Migration, security, AI, SEO, and deployment readiness scoring for Cloudflare go-live." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/readiness-categories.html" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="getting-started.html">Getting started</a>
+        <a href="commands.html">Commands</a>
+        <a href="readiness-categories.html" class="active">Readiness categories</a>
+        <a href="configuration.html">Configuration</a>
+      </nav>
+      <article class="docs-content">
+        <h1>Readiness categories</h1>
+        <p>Overall score is weighted across five categories. Blockers prevent a production-ready status.</p>
+        <h2>Weights</h2>
+        <ul>
+          <li><strong>Migration (35%)</strong> — framework compatibility, Node/edge patterns, Cloudflare blockers</li>
+          <li><strong>Security (30%)</strong> — headers, secrets, npm audit, CORS, env documentation</li>
+          <li><strong>AI readiness (20%)</strong> — robots.txt, llms.txt, OpenAPI, MCP server card</li>
+          <li><strong>SEO (10%)</strong> — metadata, sitemap, structured data</li>
+          <li><strong>Deployment (5%)</strong> — wrangler, CI, scripts, rollback plan</li>
+        </ul>
+        <h2>Severity levels</h2>
+        <p><span class="badge badge--blocker">Blocker</span> must be resolved before production ready.</p>
+        <p><span class="badge badge--warn">High</span> <span class="badge badge--muted">Medium</span> <span class="badge badge--muted">Low</span> — prioritized recommendations.</p>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

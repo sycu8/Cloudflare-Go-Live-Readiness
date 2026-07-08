@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Commands — CF Ready</title>
+    <meta name="description" content="cf-ready CLI command reference for Cloudflare go-live readiness." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/commands.html" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="getting-started.html">Getting started</a>
+        <a href="commands.html" class="active">Commands</a>
+        <a href="readiness-categories.html">Readiness categories</a>
+        <a href="configuration.html">Configuration</a>
+      </nav>
+      <article class="docs-content">
+        <h1>Commands</h1>
+        <p>Global flags: <code>--cwd</code>, <code>--config</code>, <code>--json</code>, <code>--verbose</code>, <code>--no-color</code></p>
+        <h2>Core</h2>
+        <ul>
+          <li><code>scan</code> — full readiness scan + all reports</li>
+          <li><code>inspect</code> — detect framework, package manager, deployment target</li>
+          <li><code>report</code> — regenerate reports from a fresh scan</li>
+        </ul>
+        <h2>Category scans</h2>
+        <ul>
+          <li><code>migration-plan</code> — Cloudflare migration plan markdown</li>
+          <li><code>security-scan</code> — security checks + SARIF</li>
+          <li><code>ai-ready</code> — AI readiness (robots.txt, llms.txt, OpenAPI, MCP)</li>
+          <li><code>seo-ready</code> — SEO readiness</li>
+          <li><code>deploy-check</code> — deployment + migration + security subset</li>
+        </ul>
+        <h2>Actions</h2>
+        <ul>
+          <li><code>fix --ai-readiness</code> / <code>fix --seo</code> — generate assets (explicit flags only)</li>
+          <li><code>ai-optimize</code> — Workers AI refactor suggestions</li>
+          <li><code>smoke-test --url &lt;url&gt;</code> — HTTP checks against live URL</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

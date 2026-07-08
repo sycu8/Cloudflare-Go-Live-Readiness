@@ -2,133 +2,331 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cloudflare Go-Live Readiness — cf-ready</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>CF Ready — Cloudflare Go-Live Readiness CLI</title>
     <meta
       name="description"
-      content="Cloudflare Go-Live Readiness helps developers move from finished code to production-ready Cloudflare deployment."
+      content="Open-source CLI that scans your app for Cloudflare migration, security, AI readiness, SEO, and deployment readiness before go-live."
     />
-    <meta property="og:title" content="cf-ready — Cloudflare Go-Live Readiness" />
-    <meta property="og:description" content="Migration, security, AI, SEO, and deployment readiness CLI for Cloudflare." />
-    <link rel="canonical" href="https://ready.orangecloud.vn" />
-    <style>
-      :root {
-        color-scheme: light dark;
-        --accent: #f38020;
-        --bg: #0a0a0a;
-        --text: #f5f5f5;
-        --muted: #a3a3a3;
-      }
-      * { box-sizing: border-box; }
-      body {
-        font-family: system-ui, -apple-system, sans-serif;
-        line-height: 1.6;
-        max-width: 52rem;
-        margin: 0 auto;
-        padding: 2rem 1.5rem 4rem;
-        background: var(--bg);
-        color: var(--text);
-      }
-      h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-      .tagline { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
-      pre {
-        background: #171717;
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 1rem;
-        overflow-x: auto;
-      }
-      code { color: #fbbf24; }
-      a { color: var(--accent); }
-      .badge {
-        display: inline-block;
-        background: #262626;
-        border: 1px solid #404040;
-        border-radius: 999px;
-        padding: 0.2rem 0.75rem;
-        font-size: 0.85rem;
-        margin-right: 0.5rem;
-      }
-      ul { padding-left: 1.25rem; }
-      li { margin: 0.35rem 0; }
-      .site-footer {
-        margin-top: 3rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #333;
-        color: var(--muted);
-        font-size: 0.95rem;
-      }
-      .site-footer a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-      .site-footer a:hover {
-        text-decoration: underline;
-      }
-      .site-footer .links {
-        margin-top: 0.5rem;
-      }
-      .site-footer .links a + a::before {
-        content: "·";
-        margin: 0 0.5rem;
-        color: #525252;
-      }
-    </style>
+    <meta name="keywords" content="cloudflare, workers, pages, go-live, readiness, migration, security, cli, cf-ready" />
+    <link rel="canonical" href="https://ready.orangecloud.vn/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0B1628" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ready.orangecloud.vn/" />
+    <meta property="og:title" content="CF Ready — Cloudflare Go-Live Readiness" />
+    <meta property="og:description" content="Scan your codebase for Cloudflare go-live readiness. Migration, security, AI, SEO, and deployment checks." />
+    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.svg" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CF Ready — Cloudflare Go-Live Readiness" />
+    <meta name="twitter:description" content="Open-source CLI: npx @orangecloud/cf-ready scan" />
+    <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.svg" />
+
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "CF Ready",
+      "alternateName": "Cloudflare Go-Live Readiness",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Cross-platform",
+      "description": "Open-source CLI that scans applications for Cloudflare migration, security, AI readiness, SEO, and deployment readiness before go-live.",
+      "url": "https://ready.orangecloud.vn",
+      "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+      "softwareVersion": "0.1.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@type": "Organization", "name": "OrangeCloud" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+      "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started.html",
+      "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+    }
+    </script>
   </head>
   <body>
-    <p><span class="badge">@orangecloud/cf-ready</span><span class="badge">MIT</span></p>
-    <h1>Cloudflare Go-Live Readiness</h1>
-    <p class="tagline">
-      Move from finished code to production-ready Cloudflare deployment with migration checks,
-      security scanning, AI readiness, SEO readiness, and go-live reporting.
-    </p>
+    <a class="skip-link" href="#main">Skip to content</a>
 
-    <h2>Web Agent</h2>
-    <p>
-      Use the browser-based agent to upload source or connect GitHub and run cf-ready commands
-      without installing the CLI locally.
-    </p>
-    <pre><code><a href="/app/">Open cf-ready Web Agent →</a></code></pre>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/">
+          <span class="logo-mark" aria-hidden="true">CF</span>
+          <span class="logo-text">
+            <strong>CF Ready</strong>
+            <span>Go-Live Readiness</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="#checks" class="hide-mobile">Checks</a>
+          <a href="#how" class="hide-mobile">How it works</a>
+          <a href="/docs/getting-started.html">Docs</a>
+          <a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a>
+        </nav>
+      </div>
+    </header>
 
-    <h2>Quick start</h2>
-    <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+    <main id="main">
+      <!-- Hero -->
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="hero-eyebrow">
+              <span class="badge badge--muted">Open source</span>
+              <span class="badge badge--muted">MIT</span>
+            </p>
+            <h1 id="hero-title">Ship to Cloudflare with confidence</h1>
+            <p class="hero-lead">
+              CF Ready scans your codebase for migration blockers, security gaps, AI readiness, SEO basics, and deployment config — before you go live on Workers or Pages.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#quickstart">Run your first scan</a>
+              <a class="btn btn-ghost" href="/docs/getting-started.html">Read the docs</a>
+            </div>
+            <div class="install-card" id="quickstart">
+              <div class="install-card__head">
+                <div class="install-card__dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                <span>Primary command</span>
+              </div>
+              <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+              <p class="copy-hint">No install required · Node.js 18+</p>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="terminal-mock" role="img" aria-label="Example cf-ready scan output">
+              <div class="terminal-mock__bar">cf-ready scan — example output</div>
+              <div class="terminal-mock__body">
+                <div><span class="cmd">$</span> npx @orangecloud/cf-ready scan</div>
+                <div style="margin-top:0.75rem">Framework: nextjs · Target: vercel</div>
+                <div>Overall readiness: <span class="ok">78/100</span></div>
+                <div style="margin-top:0.5rem">Migration: 72 · Security: 85</div>
+                <div>AI readiness: 64 · SEO: 70 · Deploy: 80</div>
+                <div style="margin-top:0.75rem"><span class="warn">Not production ready</span></div>
+                <div>Blockers: 2 · Reports: 9 files generated</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <h2>Install</h2>
-    <pre><code>npm install -g @orangecloud/cf-ready
+      <!-- Problem -->
+      <section class="section section--light" aria-labelledby="problem-title">
+        <div class="section-inner">
+          <h2 id="problem-title">Finished coding ≠ production ready on Cloudflare</h2>
+          <p class="section-intro">
+            Moving from Vercel, Netlify, or a Node server to Cloudflare means new runtime constraints, security expectations, and platform-specific config. Teams often discover blockers late — during deploy or after launch.
+          </p>
+          <div class="grid-3">
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">⚠️</div>
+              <h3>Hidden migration blockers</h3>
+              <p>Node APIs, filesystem usage, and framework patterns that do not map cleanly to Workers or Pages.</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">🔒</div>
+              <h3>Security gaps</h3>
+              <p>Missing headers, leaked secrets, weak CORS, and unaudited dependencies before production traffic.</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">📋</div>
+              <h3>No go-live checklist</h3>
+              <p>Scattered docs and tribal knowledge instead of a repeatable readiness report for every release.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- What CF Ready checks -->
+      <section class="section section--muted" id="checks" aria-labelledby="checks-title">
+        <div class="section-inner">
+          <h2 id="checks-title">What CF Ready checks</h2>
+          <p class="section-intro">Five weighted categories produce an overall readiness score and actionable findings.</p>
+          <div class="grid-3">
+            <article class="card">
+              <span class="badge badge--warn">35%</span>
+              <h3>Migration</h3>
+              <p>Framework detection, Cloudflare compatibility, Next.js/Vite/Node patterns, and migration blockers.</p>
+            </article>
+            <article class="card">
+              <span class="badge badge--blocker">30%</span>
+              <h3>Security</h3>
+              <p>Headers, secrets scanning, dependency audit, CORS, and environment variable hygiene. SARIF export included.</p>
+            </article>
+            <article class="card">
+              <span class="badge badge--ok">20%</span>
+              <h3>AI readiness</h3>
+              <p>robots.txt, llms.txt, OpenAPI, and MCP-related assets for AI-assisted discovery.</p>
+            </article>
+            <article class="card">
+              <span class="badge badge--muted">10%</span>
+              <h3>SEO</h3>
+              <p>Metadata, sitemap, structured data, and public asset checks.</p>
+            </article>
+            <article class="card">
+              <span class="badge badge--muted">5%</span>
+              <h3>Deployment</h3>
+              <p>wrangler config, CI workflows, deploy scripts, and rollback documentation.</p>
+            </article>
+            <article class="card">
+              <div class="card-icon" aria-hidden="true">🤖</div>
+              <h3>AI optimize (optional)</h3>
+              <p>Workers AI suggestions for migration refactors via <code>cf-ready ai-optimize</code>.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section class="section section--light" id="how" aria-labelledby="how-title">
+        <div class="section-inner">
+          <h2 id="how-title">How it works</h2>
+          <ol class="steps">
+            <li><strong>Point at your repo</strong><p>Run locally with <code>--cwd</code>, upload in Web Agent, or import from GitHub.</p></li>
+            <li><strong>Scan read-only</strong><p>Inspectors detect framework, package manager, and deployment target automatically.</p></li>
+            <li><strong>Get scored findings</strong><p>Blockers, warnings, and recommendations with affected files.</p></li>
+            <li><strong>Export reports</strong><p>Markdown, JSON, SARIF, migration plan, and go-live checklist.</p></li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- CLI quickstart -->
+      <section class="section section--dark" aria-labelledby="cli-title">
+        <div class="section-inner">
+          <h2 id="cli-title">CLI quickstart</h2>
+          <p class="section-intro">Install globally or run once with npx. Primary entry point is a full scan.</p>
+          <div class="grid-3">
+            <div class="install-card">
+              <div class="install-card__head"><span>npx (recommended)</span></div>
+              <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+            </div>
+            <div class="install-card">
+              <div class="install-card__head"><span>global install</span></div>
+              <pre><code>npm i -g @orangecloud/cf-ready
 cf-ready scan</code></pre>
+            </div>
+            <div class="install-card">
+              <div class="install-card__head"><span>JSON output</span></div>
+              <pre><code>cf-ready scan --json</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <h2>Commands</h2>
-    <ul>
-      <li><code>cf-ready scan</code> — full readiness scan</li>
-      <li><code>cf-ready inspect</code> — repository detection</li>
-      <li><code>cf-ready migration-plan</code> — Cloudflare migration plan</li>
-      <li><code>cf-ready security-scan</code> — security checks + SARIF</li>
-      <li><code>cf-ready ai-ready</code> — AI readiness checks</li>
-      <li><code>cf-ready seo-ready</code> — SEO readiness checks</li>
-      <li><code>cf-ready fix --ai-readiness</code> — generate AI assets</li>
-      <li><code>cf-ready fix --seo</code> — generate SEO suggestions</li>
-      <li><code>cf-ready deploy-check</code> — deployment readiness</li>
-      <li><code>cf-ready smoke-test --url &lt;url&gt;</code> — live HTTP checks</li>
-    </ul>
+      <!-- Example report -->
+      <section class="section section--dark" aria-labelledby="report-title">
+        <div class="section-inner">
+          <h2 id="report-title">Example readiness report</h2>
+          <p class="section-intro">Sample category scores from a scan (illustrative fixture output).</p>
+          <div class="score-showcase">
+            <div class="score-card"><div class="score-card__value">78</div><div class="score-card__label">Overall</div></div>
+            <div class="score-card"><div class="score-card__value">72</div><div class="score-card__label">Migration</div></div>
+            <div class="score-card"><div class="score-card__value">85</div><div class="score-card__label">Security</div></div>
+            <div class="score-card"><div class="score-card__value">64</div><div class="score-card__label">AI</div></div>
+            <div class="score-card"><div class="score-card__value">70</div><div class="score-card__label">SEO</div></div>
+            <div class="score-card"><div class="score-card__value">80</div><div class="score-card__label">Deploy</div></div>
+          </div>
+          <p style="margin-top:1.5rem;color:var(--cf-text-muted);font-size:0.9rem">
+            <span class="badge badge--blocker">Blocker</span> filesystem in API route
+            <span class="badge badge--warn" style="margin-left:0.5rem">High</span> missing security headers
+          </p>
+        </div>
+      </section>
 
-    <h2>Safety</h2>
-    <p>
-      Read-only by default. Does not deploy or migrate automatically.
-      Only modifies files when you run explicit <code>fix</code> commands.
-    </p>
+      <!-- Safe by default -->
+      <section class="section section--light" aria-labelledby="safe-title">
+        <div class="section-inner">
+          <h2 id="safe-title">Safe by default</h2>
+          <div class="grid-3">
+            <article class="card">
+              <h3>Read-only scans</h3>
+              <p><code>scan</code>, <code>inspect</code>, and report commands never modify your source tree.</p>
+            </article>
+            <article class="card">
+              <h3>Explicit fixes only</h3>
+              <p><code>cf-ready fix</code> runs only with <code>--ai-readiness</code> or <code>--seo</code> flags.</p>
+            </article>
+            <article class="card">
+              <h3>No auto-deploy</h3>
+              <p>CF Ready does not deploy, migrate, or change Cloudflare account settings.</p>
+            </article>
+          </div>
+        </div>
+      </section>
 
-    <p>
-      <a href="https://github.com/sycu8/cloudflare-go-live-readiness">GitHub</a>
-      ·
-      <a href="https://www.npmjs.com/package/@orangecloud/cf-ready">npm</a>
-    </p>
+      <!-- Built for Cloudflare -->
+      <section class="section section--muted" aria-labelledby="cf-title">
+        <div class="section-inner">
+          <h2 id="cf-title">Built for Cloudflare</h2>
+          <p class="section-intro">
+            Designed for Workers, Pages, wrangler, and modern frameworks — not a generic linter. Checks align with Cloudflare deployment patterns and platform constraints.
+          </p>
+          <div class="grid-3">
+            <article class="card">
+              <h3>Workers &amp; Pages</h3>
+              <p>Detects wrangler config, Pages workflows, and deployment targets.</p>
+            </article>
+            <article class="card">
+              <h3>Web Agent</h3>
+              <p>Browser UI at <a href="/app/">/app/</a> — upload ZIP or import GitHub, run commands in a web terminal.</p>
+            </article>
+            <article class="card">
+              <h3>Workers AI</h3>
+              <p>Optional <code>ai-optimize</code> command for refactor suggestions via Cloudflare AI.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Open-source roadmap -->
+      <section class="section section--light" aria-labelledby="roadmap-title">
+        <div class="section-inner">
+          <h2 id="roadmap-title">Open-source roadmap</h2>
+          <p class="section-intro">CF Ready is MIT-licensed. Contributions welcome on GitHub.</p>
+          <ul>
+            <li>GitHub Action for PR readiness checks</li>
+            <li>Expanded framework adapters (Remix, Astro, Hono)</li>
+            <li>Private repo support in Web Agent (GitHub OAuth)</li>
+            <li>npm publish <code>@orangecloud/cf-ready</code></li>
+          </ul>
+          <p style="margin-top:1rem">
+            <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">View repository →</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- Final CTA -->
+      <section class="cta-band" aria-labelledby="cta-title">
+        <h2 id="cta-title">Ready to check your project?</h2>
+        <p>Run a scan in seconds — locally or in the browser.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:center">
+          <a class="btn btn-primary" href="#quickstart">npx @orangecloud/cf-ready scan</a>
+          <a class="btn btn-ghost" href="/app/">Open Web Agent</a>
+        </div>
+      </section>
+    </main>
 
     <footer class="site-footer">
-      <p>Made by Lê Sỹ Cường</p>
-      <p class="links">
-        <a href="https://www.linkedin.com/in/sycule/" rel="noopener noreferrer" target="_blank">LinkedIn</a>
-        <a href="https://github.com/sycu8/" rel="noopener noreferrer" target="_blank">GitHub</a>
-      </p>
+      <div class="footer-inner">
+        <div>
+          <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
+          <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường · OrangeCloud</p>
+        </div>
+        <div>
+          <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a>
+          ·
+          <a href="https://www.npmjs.com/package/@orangecloud/cf-ready">npm</a>
+          ·
+          <a href="https://www.linkedin.com/in/sycule/" rel="noopener noreferrer" target="_blank">LinkedIn</a>
+          ·
+          <a href="/llms.txt">llms.txt</a>
+        </div>
+      </div>
     </footer>
   </body>
 </html>

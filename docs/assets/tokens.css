@@ -1,0 +1,49 @@
+/**
+ * CF Ready design tokens — source of truth for docs site + web agent.
+ * Generated from cf-ready-brandkit/brand/design-tokens.json
+ */
+:root {
+  /* Navy */
+  --cf-navy-900: #060d18;
+  --cf-navy-800: #0b1628;
+  --cf-navy-700: #0f1b33;
+  --cf-navy-600: #152238;
+  --cf-navy-500: #1e3050;
+
+  /* Orange */
+  --cf-orange-500: #f38020;
+  --cf-orange-400: #ff9a47;
+  --cf-orange-300: #ffb36e;
+  --cf-orange-soft: rgba(243, 128, 32, 0.14);
+
+  /* Surfaces */
+  --cf-surface-light: #f8fafc;
+  --cf-surface-white: #ffffff;
+  --cf-surface-muted: #e2e8f0;
+
+  /* Text */
+  --cf-text-primary: #0f172a;
+  --cf-text-secondary: #475569;
+  --cf-text-inverse: #f8fafc;
+  --cf-text-muted: #94a3b8;
+
+  /* Status */
+  --cf-success: #22c55e;
+  --cf-warning: #eab308;
+  --cf-danger: #ef4444;
+  --cf-info: #38bdf8;
+
+  /* Typography */
+  --cf-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cf-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+  /* Radius */
+  --cf-radius-sm: 8px;
+  --cf-radius-md: 12px;
+  --cf-radius-lg: 16px;
+  --cf-radius-pill: 999px;
+
+  /* Shadows */
+  --cf-shadow-card: 0 4px 24px rgba(11, 22, 40, 0.08);
+  --cf-shadow-hero: 0 24px 64px rgba(6, 13, 24, 0.45);
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Getting started — CF Ready</title>
+    <meta name="description" content="Install and run your first CF Ready scan for Cloudflare go-live readiness." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/getting-started.html" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="getting-started.html" class="active">Getting started</a>
+        <a href="commands.html">Commands</a>
+        <a href="readiness-categories.html">Readiness categories</a>
+        <a href="configuration.html">Configuration</a>
+      </nav>
+      <article class="docs-content">
+        <h1>Getting started</h1>
+        <p>CF Ready (<code>cf-ready</code>) is an open-source CLI for Cloudflare go-live readiness checks.</p>
+        <h2>Quick scan</h2>
+        <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+        <h2>Requirements</h2>
+        <ul>
+          <li>Node.js 18 or later</li>
+          <li>A project directory (local path, ZIP upload, or GitHub import in Web Agent)</li>
+        </ul>
+        <h2>Install globally</h2>
+        <pre><code>npm install -g @orangecloud/cf-ready
+cf-ready scan --cwd ./my-app</code></pre>
+        <h2>Web Agent</h2>
+        <p>No local install needed: <a href="/app/">open the Web Agent</a>, upload source or import a public GitHub repo, then run <code>scan</code>.</p>
+        <h2>Output</h2>
+        <p>Scan generates up to 9 report files in your configured output directory (default: project root), including markdown report, JSON, SARIF, and migration plan.</p>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

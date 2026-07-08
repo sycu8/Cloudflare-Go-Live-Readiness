@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuration — CF Ready</title>
+    <meta name="description" content="Configure cf-ready with cf-ready.config.json for your Cloudflare project." />
+    <link rel="canonical" href="https://ready.orangecloud.vn/docs/configuration.html" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><span class="logo-mark">CF</span><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="getting-started.html">Getting started</a>
+        <a href="commands.html">Commands</a>
+        <a href="readiness-categories.html">Readiness categories</a>
+        <a href="configuration.html" class="active">Configuration</a>
+      </nav>
+      <article class="docs-content">
+        <h1>Configuration</h1>
+        <p>Optional <code>cf-ready.config.json</code> in your project root. Override with <code>--config</code>.</p>
+        <pre><code>{
+  "projectName": "my-app",
+  "framework": "nextjs",
+  "deploymentTarget": "cloudflare-pages",
+  "outputDir": ".",
+  "ai": {
+    "workerUrl": "https://your-worker.workers.dev",
+    "model": "openai/gpt-4o-mini"
+  }
+}</code></pre>
+        <p>See <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/examples/nextjs/cf-ready.config.json">examples/nextjs/cf-ready.config.json</a> in the repository.</p>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+  </body>
+</html>

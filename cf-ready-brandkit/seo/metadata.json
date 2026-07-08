@@ -1,0 +1,28 @@
+{
+  "title": "CF Ready — Cloudflare Go-Live Readiness CLI",
+  "description": "Open-source CLI that scans your app for Cloudflare migration, security, AI readiness, SEO, and deployment readiness before go-live.",
+  "canonical": "https://ready.orangecloud.vn",
+  "og": {
+    "type": "website",
+    "url": "https://ready.orangecloud.vn",
+    "title": "CF Ready — Cloudflare Go-Live Readiness",
+    "description": "Scan your codebase for Cloudflare go-live readiness. Migration, security, AI, SEO, and deployment checks.",
+    "image": "https://ready.orangecloud.vn/assets/og.svg"
+  },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "CF Ready — Cloudflare Go-Live Readiness",
+    "description": "Open-source CLI: npx @orangecloud/cf-ready scan"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "pages",
+    "go-live",
+    "readiness",
+    "migration",
+    "security",
+    "cli",
+    "cf-ready"
+  ]
+}

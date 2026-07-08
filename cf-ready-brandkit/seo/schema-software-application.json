@@ -1,0 +1,25 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "CF Ready",
+  "alternateName": "Cloudflare Go-Live Readiness",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform",
+  "description": "Open-source CLI that scans applications for Cloudflare migration, security, AI readiness, SEO, and deployment readiness before go-live.",
+  "url": "https://ready.orangecloud.vn",
+  "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+  "softwareVersion": "0.1.0",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": {
+    "@type": "Organization",
+    "name": "OrangeCloud"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+  "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started.html",
+  "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+}
