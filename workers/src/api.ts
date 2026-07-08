@@ -42,6 +42,11 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     return json({ ok: true, service: "cf-ready-agent" });
   }
 
+  if (pathname === "/api/webhooks/github" && request.method === "POST") {
+    const { handleGitHubWebhook } = await import("./github-webhook.js");
+    return handleGitHubWebhook(request, env);
+  }
+
   if (pathname === "/api/sessions" && request.method === "POST") {
     const id = stubId();
     const doId = env.SESSION.idFromName(id);

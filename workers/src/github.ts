@@ -21,6 +21,31 @@ export function githubTarballUrl(owner: string, repo: string, ref = "HEAD"): str
   return `https://codeload.github.com/${owner}/${repo}/tar.gz/${ref}`;
 }
 
+export async function fetchGitHubCommitSha(
+  owner: string,
+  repo: string,
+  ref = "HEAD",
+  token?: string,
+): Promise<string> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "cf-ready-agent",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/commits/${encodeURIComponent(ref)}`,
+    { headers },
+  );
+  if (!response.ok) {
+    throw new Error(`GitHub commit lookup failed (${response.status})`);
+  }
+  const data = (await response.json()) as { sha?: string };
+  if (!data.sha) throw new Error("GitHub commit response missing sha");
+  return data.sha;
+}
+
 export function validateGitHubUrl(repoUrl: string): string {
   const parsed = parseGitHubRepoUrl(repoUrl);
   if (!parsed) {

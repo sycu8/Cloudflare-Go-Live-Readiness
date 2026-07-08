@@ -1,6 +1,21 @@
 import { getSandbox } from "@cloudflare/sandbox";
 import type { Env, ExecRequest, SessionState } from "./types.js";
-import { validateGitHubUrl } from "./github.js";
+import {
+  fetchGitHubCommitSha,
+  githubTarballUrl,
+  parseGitHubRepoUrl,
+} from "./github.js";
+import { getGitHubToken } from "./auth-github.js";
+import {
+  generatePdfReport,
+  pdfReportInputFromScanData,
+} from "../../src/generators/pdf-report.js";
+import {
+  getCachedPdf,
+  hashScanPayload,
+  putCachedPdf,
+  registerGitHubRepoSession,
+} from "./reports-cache.js";
 
 const PROJECT_DIR = "/workspace/project";
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -72,7 +87,30 @@ export class SessionDO implements DurableObject {
           result: this.session.lastResult ?? null,
           markdown: this.session.lastMarkdown ?? null,
           error: this.session.lastError ?? null,
+          report: this.session.reportCache ?? null,
+          sourceCommitSha: this.session.sourceCommitSha ?? null,
         });
+      }
+
+      if (request.method === "GET" && path.endsWith("/reports")) {
+        return Response.json({
+          report: this.session.reportCache ?? null,
+          hasResult: Boolean(this.session.lastResult),
+          sourceCommitSha: this.session.sourceCommitSha ?? null,
+          githubRepo: this.session.githubRepo ?? null,
+        });
+      }
+
+      if (request.method === "GET" && path.endsWith("/reports/pdf")) {
+        return this.handleReportPdf(false);
+      }
+
+      if (request.method === "POST" && path.endsWith("/reports/generate")) {
+        return this.handleReportPdf(true);
+      }
+
+      if (request.method === "POST" && path.endsWith("/refresh/github")) {
+        return this.handleRefreshGitHub(request);
       }
 
       if (request.method === "GET" && path.endsWith("/files")) {
@@ -163,10 +201,27 @@ export class SessionDO implements DurableObject {
       return Response.json({ error: "repoUrl is required" }, { status: 400 });
     }
 
-    const tarballUrl = validateGitHubUrl(body.repoUrl);
+    const parsed = parseGitHubRepoUrl(body.repoUrl);
+    if (!parsed) {
+      return Response.json({ error: "Invalid GitHub URL" }, { status: 400 });
+    }
+
+    const ref = body.ref ?? parsed.ref;
+    const tarballUrl = githubTarballUrl(parsed.owner, parsed.repo, ref);
+    const previousSha = this.session.sourceCommitSha;
+
+    let commitSha: string | undefined;
+    try {
+      commitSha = await fetchGitHubCommitSha(parsed.owner, parsed.repo, ref, body.token);
+    } catch {
+      commitSha = undefined;
+    }
+
     this.session.status = "importing";
     this.session.source = "github";
-    this.session.projectName = body.repoUrl;
+    this.session.projectName = `${parsed.owner}/${parsed.repo}`;
+    this.session.githubRepo = { owner: parsed.owner, repo: parsed.repo, ref };
+    if (commitSha) this.session.sourceCommitSha = commitSha;
     await this.save();
 
     const sandbox = this.sandbox();
@@ -176,10 +231,169 @@ export class SessionDO implements DurableObject {
     }
 
     await this.importTarball(sandbox, fetchUrl);
+    await registerGitHubRepoSession(this.env, parsed.owner, parsed.repo, this.session.id);
 
     this.session.status = "idle";
     await this.save();
-    return Response.json({ ok: true, projectName: this.session.projectName });
+
+    const commitChanged = Boolean(commitSha && commitSha !== previousSha);
+    if (commitChanged || !previousSha) {
+      this.state.waitUntil(this.runScanAndCacheReport(commitSha));
+    }
+
+    return Response.json({
+      ok: true,
+      projectName: this.session.projectName,
+      commitSha: commitSha ?? null,
+      reportQueued: commitChanged || !previousSha,
+    });
+  }
+
+  private async handleRefreshGitHub(request: Request): Promise<Response> {
+    const body = (await request.json()) as { commitSha?: string; ref?: string };
+    const repo = this.session.githubRepo;
+    if (!repo) {
+      return Response.json({ error: "Session has no linked GitHub repository" }, { status: 400 });
+    }
+
+    const ref = body.ref ?? repo.ref;
+    const token = await getGitHubToken(this.env, this.session.id);
+    const tarballUrl = githubTarballUrl(repo.owner, repo.repo, ref);
+    let fetchUrl = tarballUrl;
+    if (token) fetchUrl = tarballUrl.replace("https://", `https://${token}@`);
+
+    this.session.status = "importing";
+    if (body.commitSha) this.session.sourceCommitSha = body.commitSha;
+    await this.save();
+
+    const sandbox = this.sandbox();
+    await this.importTarball(sandbox, fetchUrl);
+    this.session.status = "idle";
+    await this.save();
+
+    await this.runScanAndCacheReport(body.commitSha);
+    return Response.json({
+      ok: true,
+      commitSha: this.session.sourceCommitSha ?? null,
+      report: this.session.reportCache ?? null,
+    });
+  }
+
+  private scanDataFromResult(result: unknown) {
+    if (!result || typeof result !== "object") return null;
+    return pdfReportInputFromScanData(result as Parameters<typeof pdfReportInputFromScanData>[0]);
+  }
+
+  private async runScanAndCacheReport(commitSha?: string): Promise<void> {
+    const execResponse = await this.handleExec(
+      new Request("http://do/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: "scan" }),
+      }),
+    );
+    if (!execResponse.ok) return;
+
+    try {
+      const payload = await execResponse.json();
+      const data = (payload as { data?: unknown }).data ?? this.session.lastResult;
+      await this.cachePdfFromScanData(data, commitSha);
+    } catch {
+      /* ignore cache failures */
+    }
+  }
+
+  private async cachePdfFromScanData(scanData: unknown, commitSha?: string): Promise<void> {
+    const input = this.scanDataFromResult(scanData);
+    if (!input) return;
+
+    const hashPayload = {
+      ...(scanData as Record<string, unknown>),
+      sourceCommitSha: commitSha ?? this.session.sourceCommitSha ?? null,
+    };
+    const contentHash = await hashScanPayload(hashPayload);
+    const cached = await getCachedPdf(this.env, this.session.id, contentHash);
+    if (cached) {
+      this.session.reportCache = {
+        contentHash,
+        r2Key: `reports/${this.session.id}/${contentHash}/cf-ready-report.pdf`,
+        generatedAt: new Date().toISOString(),
+        commitSha: commitSha ?? this.session.sourceCommitSha,
+        format: "pdf",
+      };
+      await this.save();
+      return;
+    }
+
+    const pdfBytes = await generatePdfReport(input);
+    const meta = await putCachedPdf(this.env, this.session.id, contentHash, pdfBytes, {
+      sessionId: this.session.id,
+      projectName: input.projectName,
+      scannedAt: input.scannedAt,
+      commitSha: commitSha ?? this.session.sourceCommitSha ?? "",
+    });
+    this.session.reportCache = meta;
+    await this.save();
+  }
+
+  private async handleReportPdf(force: boolean): Promise<Response> {
+    if (!this.session.lastResult) {
+      return Response.json({ error: "No scan results yet. Run scan first." }, { status: 404 });
+    }
+
+    const scanData = this.session.lastResult;
+    const hashPayload = {
+      ...(scanData as Record<string, unknown>),
+      sourceCommitSha: this.session.sourceCommitSha ?? null,
+    };
+    const contentHash = await hashScanPayload(hashPayload);
+
+    if (!force && this.session.reportCache?.contentHash === contentHash) {
+      const cached = await getCachedPdf(this.env, this.session.id, contentHash);
+      if (cached) {
+        return new Response(cached, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": 'attachment; filename="cf-ready-report.pdf"',
+            "Cache-Control": "private, max-age=3600",
+            "X-Report-Hash": contentHash,
+          },
+        });
+      }
+    }
+
+    const input = this.scanDataFromResult(scanData);
+    if (!input) {
+      return Response.json({ error: "Scan result is missing required fields for PDF export" }, { status: 422 });
+    }
+
+    const pdfBytes = await generatePdfReport(input);
+    try {
+      this.session.reportCache = await putCachedPdf(
+        this.env,
+        this.session.id,
+        contentHash,
+        pdfBytes,
+        {
+          sessionId: this.session.id,
+          projectName: input.projectName,
+          scannedAt: input.scannedAt,
+          commitSha: this.session.sourceCommitSha ?? "",
+        },
+      );
+      await this.save();
+    } catch {
+      /* return generated PDF even if R2 is unavailable */
+    }
+
+    return new Response(pdfBytes.slice(), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": 'attachment; filename="cf-ready-report.pdf"',
+        "Cache-Control": "private, max-age=3600",
+        "X-Report-Hash": contentHash,
+      },
+    });
   }
 
   private buildCfReadyArgs(req: ExecRequest): string[] {
@@ -289,6 +503,10 @@ export class SessionDO implements DurableObject {
       this.session.lastMarkdown = String((parsed as { markdown: string }).markdown);
     }
     await this.save();
+
+    if (req.command === "scan" || req.command === "report") {
+      this.state.waitUntil(this.cachePdfFromScanData(parsed, this.session.sourceCommitSha));
+    }
 
     return Response.json({
       exitCode: result.exitCode,

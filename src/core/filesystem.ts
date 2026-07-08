@@ -32,6 +32,20 @@ export async function writeTextFile(
   return exists ? "overwritten" : "created";
 }
 
+export async function writeBinaryFile(
+  filePath: string,
+  content: Uint8Array,
+  options?: { force?: boolean },
+): Promise<"created" | "skipped" | "overwritten"> {
+  const exists = await fileExists(filePath);
+  if (exists && !options?.force) {
+    return "skipped";
+  }
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, content);
+  return exists ? "overwritten" : "created";
+}
+
 export async function ensureDir(dirPath: string): Promise<void> {
   await mkdir(dirPath, { recursive: true });
 }

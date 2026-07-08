@@ -65,6 +65,21 @@ export async function getResults(sessionId: string) {
   return res.json();
 }
 
+export function reportPdfUrl(sessionId: string): string {
+  return `${API_BASE}/api/sessions/${sessionId}/reports/pdf`;
+}
+
+export async function regenerateReport(sessionId: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/reports/generate`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "Failed to regenerate PDF report");
+  }
+  return res.blob();
+}
+
 export async function listFiles(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/files`);
   return res.json() as Promise<{ files: string[] }>;

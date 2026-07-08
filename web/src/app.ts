@@ -12,6 +12,7 @@ import {
   listFiles,
   listGitHubRepos,
   uploadZip,
+  regenerateReport,
 } from "./api/client.js";
 import {
   renderEmptyResults,
@@ -293,12 +294,34 @@ export async function mountApp(root: HTMLElement): Promise<void> {
       resultsSummary.textContent = "—";
       return;
     }
-    resultsPanel.innerHTML = renderResults(lastResultData, findingsFilter);
+    resultsPanel.innerHTML = renderResults(lastResultData, findingsFilter, sessionId);
     resultsPanel.querySelectorAll(".filter-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         findingsFilter = (btn as HTMLElement).dataset.filter ?? "all";
         updateResultsPanel();
       });
+    });
+    const regenerateBtn = resultsPanel.querySelector('[data-action="regenerate-report"]');
+    regenerateBtn?.addEventListener("click", () => {
+      void (async () => {
+        regenerateBtn.setAttribute("disabled", "true");
+        try {
+          const blob = await regenerateReport(sessionId);
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "cf-ready-report.pdf";
+          link.click();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          addChatBubble(
+            "agent",
+            `PDF error: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        } finally {
+          regenerateBtn.removeAttribute("disabled");
+        }
+      })();
     });
     const scores = lastResultData.scores;
     if (scores) {

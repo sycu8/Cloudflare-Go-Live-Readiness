@@ -85,7 +85,7 @@ export function renderEmptyResults(): string {
   `;
 }
 
-export function renderResults(data: ScanResultData, filter: string): string {
+export function renderResults(data: ScanResultData, filter: string, sessionId?: string): string {
   if (!data.scores) {
     return `<div class="raw-output"><pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre></div>`;
   }
@@ -116,6 +116,18 @@ export function renderResults(data: ScanResultData, filter: string): string {
       </div>`
     : "";
 
+  const reportActions = sessionId
+    ? `
+      <div class="report-actions">
+        <a class="ghost report-actions__btn" href="/api/sessions/${escapeHtml(sessionId)}/reports/pdf" download="cf-ready-report.pdf">
+          Download PDF
+        </a>
+        <button type="button" class="ghost report-actions__btn" data-action="regenerate-report">
+          Regenerate PDF
+        </button>
+      </div>`
+    : "";
+
   return `
     <div class="results-content">
       <div class="ready-banner ${readyClass}">
@@ -133,6 +145,7 @@ export function renderResults(data: ScanResultData, filter: string): string {
         ${scoreRing("SEO", scores.seo)}
         ${scoreRing("Deploy", scores.deployment)}
       </div>
+      ${reportActions}
       <div class="findings-toolbar">
         <button type="button" class="filter-btn ${filter === "all" ? "active" : ""}" data-filter="all">Tất cả (${allFindings.length})</button>
         <button type="button" class="filter-btn ${filter === "blockers" ? "active" : ""}" data-filter="blockers">Blockers (${blockers.length})</button>

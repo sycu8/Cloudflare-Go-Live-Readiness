@@ -1,8 +1,10 @@
 import path from "node:path";
 import type { ScanContext } from "../core/context.js";
-import { writeTextFile, ensureDir } from "../core/filesystem.js";
+import { writeTextFile, ensureDir, writeBinaryFile } from "../core/filesystem.js";
 import { generateMarkdownReport, generateGoLiveChecklist } from "../generators/markdown-report.js";
 import { generateJsonReport } from "../generators/json-report.js";
+import { generatePdfReport } from "../generators/pdf-report.js";
+import { pdfReportInputFromContext } from "../generators/pdf-report-adapter.js";
 import { generateSarif } from "../generators/sarif.js";
 import { generateMigrationPlanMarkdown } from "../modules/migration/index.js";
 import { generateAiReadinessReport } from "../modules/ai-readiness/index.js";
@@ -55,6 +57,11 @@ export async function writeAllReports(context: ScanContext): Promise<ReportFiles
     await writeTextFile(filePath, report.content, { force: true });
     written.push({ path: filePath, name: report.name });
   }
+
+  const pdfBytes = await generatePdfReport(pdfReportInputFromContext(context));
+  const pdfPath = path.join(outputDir, "cf-ready-report.pdf");
+  await writeBinaryFile(pdfPath, pdfBytes, { force: true });
+  written.push({ path: pdfPath, name: "cf-ready-report.pdf" });
 
   return written;
 }

@@ -879,6 +879,23 @@ button.full {
   gap: 0.35rem;
 }
 
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.report-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 36px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
+}
+
 .filter-btn {
   background: var(--surface-2);
   border: 1px solid var(--border);

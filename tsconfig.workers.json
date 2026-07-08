@@ -1,9 +1,14 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "workers",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "rootDir": ".",
     "types": ["@cloudflare/workers-types"],
     "lib": ["ES2022", "WebWorker"]
   },
-  "include": ["workers/**/*"]
+  "include": ["workers/**/*", "src/generators/pdf-report.ts"]
 }

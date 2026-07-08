@@ -31,11 +31,28 @@ export type AiOptimizeResponse = {
 
 export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
 
+export type GitHubRepoRef = {
+  owner: string;
+  repo: string;
+  ref: string;
+};
+
+export type ReportCacheMeta = {
+  contentHash: string;
+  r2Key: string;
+  generatedAt: string;
+  commitSha?: string;
+  format: "pdf";
+};
+
 export type SessionState = {
   id: string;
   status: SessionStatus;
   projectName?: string;
   source?: "upload" | "github";
+  githubRepo?: GitHubRepoRef;
+  sourceCommitSha?: string;
+  reportCache?: ReportCacheMeta;
   lastCommand?: string;
   lastError?: string;
   lastResult?: unknown;
@@ -79,5 +96,6 @@ export type Env = {
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_REDIRECT_URI?: string;
+  GITHUB_WEBHOOK_SECRET?: string;
   WORKER_PUBLIC_URL?: string;
 };
