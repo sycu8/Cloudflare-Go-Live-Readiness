@@ -25,8 +25,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm test
       - run: npm run build
+      - run: npm test
 
       - name: Scan Next.js fixture
-        run: node dist/cli/index.js scan --cwd tests/fixtures/nextjs-app --json
+        run: node dist/index.js scan --cwd tests/fixtures/nextjs-app --json
