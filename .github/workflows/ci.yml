@@ -29,4 +29,6 @@ jobs:
       - run: npm test
 
       - name: Scan Next.js fixture
-        run: node dist/index.js scan --cwd tests/fixtures/nextjs-app --json
+        run: |
+          node dist/index.js scan --cwd tests/fixtures/nextjs-app --json > /tmp/scan.json || test $? -eq 1
+          node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/scan.json','utf8')); if(!r.scores) process.exit(1)"
