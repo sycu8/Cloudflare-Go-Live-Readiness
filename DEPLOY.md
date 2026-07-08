@@ -27,6 +27,28 @@ This runs:
 - **Connect GitHub** — OAuth for private repos (set secrets below)
 - **Web CLI** — terminal + chat to run `scan`, `security-scan`, `ai-optimize`, etc.
 
+### Import architecture (Model B — R2 staging + Container execution)
+
+```
+GitHub/ZIP → Worker/DO fetch → R2 sources/... → Container extract → cf-ready CLI
+```
+
+| Plane | Responsibility |
+|-------|----------------|
+| **Import (Worker/DO)** | Fetch GitHub tarball or accept ZIP upload; stage to R2 |
+| **Execution (Sandbox)** | Stream archive from R2 → write to `/tmp` → `tar`/`unzip` → `/workspace/project` |
+| **Cache** | GitHub tarballs keyed by commit SHA; uploads keyed per session + content hash |
+
+R2 object layout in bucket `cf-ready-uploads`:
+
+| Path | Purpose |
+|------|---------|
+| `sources/github/{owner}/{repo}/{sha-or-ref}.tar.gz` | Shared GitHub commit cache |
+| `sources/uploads/{sessionId}/{hash}.zip` | Per-session ZIP uploads |
+| `reports/{sessionId}/{hash}/cf-ready-report.pdf` | Cached PDF reports |
+
+If the Sandbox container is recycled, the session re-extracts from `sourceR2Key` on the next command.
+
 ### Session API
 
 | Endpoint | Method | Description |
@@ -140,11 +162,12 @@ When a session imports a GitHub repo, it subscribes to push events for that repo
 
 On each push, linked sessions re-import the repo, run `scan`, and cache a fresh PDF in R2.
 
-## PDF reports (R2 cache)
+## R2 storage (`cf-ready-uploads`)
 
+- **Source archives** — `sources/github/...` and `sources/uploads/...` (see Model B table above)
+- **PDF reports** — `reports/{sessionId}/{hash}/cf-ready-report.pdf`
 - `GET /api/sessions/:id/reports/pdf` — download cached PDF (generates on first request)
 - `POST /api/sessions/:id/reports/generate` — force regenerate and refresh R2 cache
-- Objects stored in R2 bucket `cf-ready-uploads` under `reports/{sessionId}/{hash}/cf-ready-report.pdf`
 - CLI `cf-ready scan` also writes `cf-ready-report.pdf` locally
 
 ## Local development

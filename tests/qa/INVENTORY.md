@@ -35,8 +35,8 @@ Pass criteria: each row’s acceptance criteria met; edge cases return documente
 | ID | Feature | Acceptance criteria | Edge cases |
 |----|---------|---------------------|------------|
 | W1 | Session bootstrap | Creates/reuses `cf-ready-session` in sessionStorage | Stale ID → new session |
-| W2 | ZIP upload | Accepts `.zip` ≤50MB; lists files | Empty zip → error message |
-| W3 | GitHub URL import | `owner/repo` and full URL work; async wait | Private repo without connect → clear error |
+| W2 | ZIP upload | Accepts `.zip` ≤50MB; stages to R2 `sources/uploads/{session}/{hash}.zip`; lists files | Empty zip → error message |
+| W3 | GitHub URL import | `owner/repo` and full URL work; Worker stages tarball to R2; async wait | Private repo without connect → clear error; container recycle → re-extract from R2 |
 | W4 | My repos | Lists ≤30 repos; Import per repo | Not connected → prompt to connect |
 | W5 | Quick command chips | 8 commands run via exec API | Unknown command → stderr in terminal |
 | W6 | CLI terminal | `cf-ready>` prompt; backspace; Enter runs | Empty line → no-op |
@@ -55,7 +55,7 @@ Pass criteria: each row’s acceptance criteria met; edge cases return documente
 | P1 | `GET /api/health` | `{ ok: true }` | — |
 | P2 | `POST /api/sessions` | Returns `sessionId` UUID | Auth enforced without login → 401 |
 | P3 | Session exec | Allowed commands only; JSON with `--json` | `fix` blocked in sandbox |
-| P4 | Import GitHub | Returns importing; completes to idle | Invalid URL → 400 |
+| P4 | Import GitHub | Returns `importing` + `staging: r2`; completes to idle with `sourceR2Key` | Invalid URL → 400 |
 | P5 | Reports PDF | GET pdf; POST regenerate | No scan → 404 or error |
 | P6 | Chat | Returns `reply` + optional `command` | AI unavailable → graceful error |
 | P7 | API errors | JSON errors; no HTML parse in client | 524/504 → timeout message |
@@ -81,6 +81,7 @@ Pass criteria: each row’s acceptance criteria met; edge cases return documente
 | G*, C* | `tests/qa/run-qa.sh`, `tests/integration/cli-*.test.ts` |
 | W8, W11 | `tests/unit/ui-render.test.ts`, `tests/unit/ui-security.test.ts` |
 | P7, W3 | `tests/unit/api-client.test.ts` |
+| W2, W3, P4 (R2 staging) | `tests/unit/sources-cache.test.ts`, `tests/unit/import-extract.test.ts` |
 | A1 | `tests/unit/auth-config.test.ts` |
 | Seed scale | `tests/qa/seed/scan-result-large.json` |
 
