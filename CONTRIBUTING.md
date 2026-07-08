@@ -1,13 +1,16 @@
-# Contributing to Cloudflare Go-Live Readiness
+# Contributing to CF Ready
 
-Thank you for contributing to `@orangecloud/cf-ready`.
+Thank you for contributing to **Cloudflare Go-Live Readiness** (`@orangecloud/cf-ready`).
+
+- **Website:** https://ready.orangecloud.vn
+- **Repository:** https://github.com/sycu8/Cloudflare-Go-Live-Readiness
 
 ## Development setup
 
 ```bash
-git clone https://github.com/sycu8/cloudflare-go-live-readiness.git
-cd cloudflare-go-live-readiness
-npm install
+git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
+cd Cloudflare-Go-Live-Readiness
+npm ci
 npm run build
 ```
 
@@ -16,18 +19,20 @@ npm run build
 | Command | Description |
 |---------|-------------|
 | `npm run build` | Build CLI to `dist/` |
-| `npm run dev` | Watch mode build |
-| `npm run typecheck` | TypeScript check |
+| `npm run build:all` | Build CLI + marketing site + Web Agent assets |
+| `npm run dev` | Watch mode CLI build |
+| `npm run typecheck` | TypeScript check (CLI + Workers) |
 | `npm run lint` | ESLint |
 | `npm test` | Run Vitest |
 | `npm run test:integration` | Integration tests |
+| `npm run pages:deploy` | Deploy site + Worker to Cloudflare |
 
 ## Local testing
 
 ```bash
 npm run build
-node dist/cli/index.js scan --cwd tests/fixtures/nextjs-app
-node dist/cli/index.js inspect --cwd tests/fixtures/vite-app --json
+node dist/index.js scan --cwd tests/fixtures/nextjs-app
+node dist/index.js inspect --cwd tests/fixtures/vite-app --json
 ```
 
 ## Pull request guidelines
@@ -44,7 +49,7 @@ node dist/cli/index.js inspect --cwd tests/fixtures/vite-app --json
 - AI/SEO generators
 - Test fixtures
 - Report templates
-- Documentation
+- Documentation and brandkit (`cf-ready-brandkit/`)
 
 ## Code style
 

@@ -1,24 +1,16 @@
-# Cloudflare Go-Live Readiness
+# CF Ready — Cloudflare Go-Live Readiness
 
-**Cloudflare Go-Live Readiness** helps developers move from finished code to production-ready Cloudflare deployment with migration checks, security scanning, AI readiness, SEO readiness, and go-live reporting.
+**CF Ready** (`cf-ready`) helps developers move from finished code to production-ready Cloudflare deployment with migration checks, security scanning, AI readiness, SEO readiness, and go-live reporting.
 
-CLI package:
+| | |
+|---|---|
+| **Website** | [ready.orangecloud.vn](https://ready.orangecloud.vn) |
+| **Web Agent** | [ready.orangecloud.vn/app](https://ready.orangecloud.vn/app/) — upload source or import GitHub, run scans in the browser |
+| **CLI** | `cf-ready` |
+| **npm** | `@orangecloud/cf-ready` (publish pending — install from source below) |
+| **License** | MIT |
 
-```bash
-@orangecloud/cf-ready
-```
-
-CLI command:
-
-```bash
-cf-ready
-```
-
-Suggested docs site:
-
-```text
-ready.orangecloud.vn
-```
+Community open-source tool; not affiliated with Cloudflare, Inc.
 
 ---
 
@@ -105,7 +97,17 @@ Risky changes should always require human review.
 
 ## Installation
 
-Run directly with `npx`:
+### From GitHub (available now)
+
+```bash
+git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
+cd Cloudflare-Go-Live-Readiness
+npm ci
+npm run build
+node dist/index.js scan --cwd /path/to/your-app
+```
+
+### npm (when published)
 
 ```bash
 npx @orangecloud/cf-ready scan
@@ -118,21 +120,26 @@ npm install -g @orangecloud/cf-ready
 cf-ready scan
 ```
 
-You can also use it inside a project:
+Project dev dependency:
 
 ```bash
 npm install -D @orangecloud/cf-ready
 npx cf-ready scan
 ```
 
+### Web Agent (no local install)
+
+Open [ready.orangecloud.vn/app](https://ready.orangecloud.vn/app/), upload a ZIP or import a public GitHub repo, then run `scan` in the browser terminal.
+
 ---
 
 ## Quick start
 
-From your project root:
+From your project root (after building from source, or via npm when published):
 
 ```bash
 npx @orangecloud/cf-ready scan
+# or: node /path/to/Cloudflare-Go-Live-Readiness/dist/index.js scan
 ```
 
 Example output:
@@ -1137,10 +1144,10 @@ Good first contribution areas:
 Recommended workflow:
 
 ```bash
-git clone https://github.com/orangecloud/cloudflare-go-live-readiness.git
-cd cloudflare-go-live-readiness
-npm install
-npm run dev
+git clone https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git
+cd Cloudflare-Go-Live-Readiness
+npm ci
+npm run build
 npm test
 ```
 

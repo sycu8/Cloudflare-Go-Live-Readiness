@@ -7,11 +7,11 @@
   "author": "OrangeCloud",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sycu8/cloudflare-go-live-readiness.git"
+    "url": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness.git"
   },
   "homepage": "https://ready.orangecloud.vn",
   "bugs": {
-    "url": "https://github.com/sycu8/cloudflare-go-live-readiness/issues"
+    "url": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness/issues"
   },
   "keywords": [
     "cloudflare",
