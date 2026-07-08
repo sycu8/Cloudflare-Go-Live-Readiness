@@ -1,8 +1,5 @@
 import type { Command } from "commander";
-import path from "node:path";
-import { createScanContext, getOutputDir } from "../../core/context.js";
-import { writeTextFile } from "../../core/filesystem.js";
-import { generateAiReadinessReport } from "../../modules/ai-readiness/index.js";
+import { runCommand } from "../../service/run-command.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -16,30 +13,19 @@ export function registerAiReadyCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("ai-ready", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: ["ai-readiness"],
         });
 
-        const content = generateAiReadinessReport(context.inspection, context.findings);
-        const outputPath = path.join(getOutputDir(context), "ai-readiness-report.md");
-        await writeTextFile(outputPath, content, { force: true });
+        const data = result.data as { score: number; report: string };
 
         if (opts.json) {
-          console.log(
-            JSON.stringify({
-              score: context.scores.aiReadiness,
-              findings: context.findings,
-              report: outputPath,
-            },
-            null,
-            2,
-          ));
+          console.log(JSON.stringify(result.data, null, 2));
         } else {
           logger.heading("AI Readiness");
-          console.log(`Score: ${context.scores.aiReadiness}/100`);
-          logger.success(`Report: ${outputPath}`);
+          console.log(`Score: ${data.score}/100`);
+          logger.success(`Report: ${data.report}`);
         }
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));

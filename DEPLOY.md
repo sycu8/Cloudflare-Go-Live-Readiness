@@ -1,97 +1,88 @@
-# Deploy to Cloudflare Pages
-
-This guide deploys the **cf-ready** documentation site (`docs/`) to Cloudflare Pages at `ready.orangecloud.vn`.
+# Deploy cf-ready (Worker + Web Agent)
 
 ## Prerequisites
 
-1. A [Cloudflare account](https://dash.cloudflare.com/sign-up)
-2. Your **Account ID** (Cloudflare dashboard → any zone → right sidebar)
-3. An **API token** with **Workers Scripts — Edit** (and **Account — Read**)
+- Cloudflare account with Workers, R2, KV, Containers (Sandbox), and Workers AI enabled
+- `CLOUDFLARE_API_TOKEN` with Workers, R2, KV permissions
+- `CLOUDFLARE_ACCOUNT_ID`
+- Docker (for local Sandbox dev and container image builds)
 
-Create a token: https://developers.cloudflare.com/fundamentals/api/get-started/create-token/
-
-Recommended template: **Edit Cloudflare Workers**
-
-## Option A — GitHub Actions (recommended)
-
-Add these repository secrets (Settings → Secrets and variables → Actions):
-
-| Secret | Value |
-|--------|--------|
-| `CLOUDFLARE_API_TOKEN` | API token with Workers Scripts Edit |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
-
-Then either:
-
-- **Merge to `main`** — the [deploy workflow](.github/workflows/deploy-pages.yml) runs automatically when `docs/` changes
-- **Manual run** — Actions → *Deploy to Cloudflare* → *Run workflow*
-
-Docs deploy as a **Cloudflare Worker with static assets** (`wrangler deploy`), available at `https://cf-ready-docs.<subdomain>.workers.dev`.
-
-## Option B — Deploy from your machine
+## Build & deploy
 
 ```bash
-export CLOUDFLARE_API_TOKEN="your-token"
-export CLOUDFLARE_ACCOUNT_ID="your-account-id"
-
-npm install
+npm ci
 npm run pages:deploy
 ```
 
-## Custom domain
+This runs:
 
-After the first deploy:
+1. `tsup` — bundle CLI to `dist/`
+2. `scripts/build-public.mjs` — copy `docs/` + build `web/` → `public/`
+3. `wrangler deploy` — Worker API, Sandbox container, static assets
 
-1. Cloudflare dashboard → **Workers & Pages** → **cf-ready-docs**
-2. **Settings** → **Domains & Routes** → Add `ready.orangecloud.vn`
-3. Update DNS if the zone is on Cloudflare
+## Web Agent (`/app/`)
 
-## Verify
+- **Upload ZIP** — drag & drop project source (max 50MB)
+- **GitHub public URL** — import via tarball
+- **Connect GitHub** — OAuth for private repos (set secrets below)
+- **Web CLI** — terminal + chat to run `scan`, `security-scan`, `ai-optimize`, etc.
+
+### Session API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/sessions` | POST | Create session |
+| `/api/sessions/:id/upload` | POST | Multipart ZIP |
+| `/api/sessions/:id/import/github` | POST | `{ repoUrl }` |
+| `/api/sessions/:id/exec` | POST | `{ line: "scan" }` |
+| `/api/sessions/:id/chat` | POST | Natural language → command |
+| `/api/sessions/:id/status` | GET | Session status |
+| `/api/sessions/:id/results` | GET | Last scan results |
+
+## Secrets & vars
 
 ```bash
-curl -I https://cf-ready-docs.<your-subdomain>.workers.dev
-# or after custom domain:
-curl -I https://ready.orangecloud.vn
+wrangler secret put AI_API_KEY          # optional Bearer for /api/optimize
+wrangler secret put GITHUB_CLIENT_ID
+wrangler secret put GITHUB_CLIENT_SECRET
 ```
+
+Set in dashboard or `wrangler.jsonc` vars:
+
+- `GITHUB_REDIRECT_URI` — `https://<worker>/api/auth/github/callback`
+- `WORKER_PUBLIC_URL` — public worker URL for AI optimize callbacks
+
+## GitHub OAuth App
+
+1. Create OAuth App at https://github.com/settings/developers
+2. Callback URL: `https://cf-ready-docs.<account>.workers.dev/api/auth/github/callback`
+3. Store `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Worker secrets
+
+## Local development
+
+```bash
+npm run build:all
+docker info   # Sandbox requires Docker
+npm run dev:web
+```
+
+Visit `http://localhost:8787/app/` for the Web Agent.
+
+## Option A — GitHub Actions (recommended)
+
+Push to `main` triggers [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml) when `workers/`, `web/`, `public/`, `docs/`, or `wrangler.jsonc` change.
+
+Required repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
 
 ## Troubleshooting
 
-| Error | Fix |
+| Issue | Fix |
 |-------|-----|
-| `CLOUDFLARE_API_TOKEN` not set | Export token or add GitHub secret |
-| API error on deploy | Token needs **Account → Workers Scripts → Edit** |
-| Pages project error | This project uses Workers static assets (`wrangler deploy`), not Pages |
-
-## Workers AI (GPT optimize API)
-
-The deployed worker includes:
-
-- `POST /api/optimize` — AI refactor/migration suggestions
-- `GET /api/health` — health check
-- Static docs at `/`
-
-### Enable GPT models
-
-1. Load [AI Gateway Unified Billing credits](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)
-2. Default model: `openai/gpt-4o-mini` (configurable via `DEFAULT_AI_MODEL` var)
-3. Fallback: `@cf/meta/llama-3.1-8b-instruct-fast` (Workers AI)
-
-### Optional API auth
-
-```bash
-npx wrangler secret put AI_API_KEY
-```
-
-Then pass to CLI:
-
-```bash
-cf-ready ai-optimize --ai-token "$AI_API_KEY"
-```
-
-### CLI usage
-
-```bash
-cf-ready scan
-cf-ready ai-optimize --focus migration
-cf-ready ai-optimize --model openai/gpt-4o
-```
+| Sandbox container fails | Ensure Docker is running; rebuild with `wrangler deploy` |
+| KV namespace invalid | Run `wrangler kv namespace create SESSIONS` and update `wrangler.jsonc` |
+| R2 bucket missing | Run `wrangler r2 bucket create cf-ready-uploads` |
+| GitHub OAuth 501 | Set `GITHUB_CLIENT_ID` and `GITHUB_REDIRECT_URI` |
+| AI optimize fails in sandbox | Set `WORKER_PUBLIC_URL` to your deployed worker URL |

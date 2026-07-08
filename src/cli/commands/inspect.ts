@@ -1,8 +1,7 @@
 import type { Command } from "commander";
-import { createScanContext } from "../../core/context.js";
+import { runCommand } from "../../service/run-command.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
-import { printInspection } from "../output.js";
 
 export function registerInspectCommand(program: Command): void {
   program
@@ -14,18 +13,15 @@ export function registerInspectCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("inspect", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: [],
         });
 
-        if (opts.json) {
-          printInspection(context);
-        } else {
+        if (!opts.json) {
           logger.heading("Repository Inspection");
-          printInspection(context);
         }
+        console.log(JSON.stringify(result.data, null, 2));
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));
         process.exit(2);

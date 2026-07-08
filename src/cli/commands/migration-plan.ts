@@ -1,8 +1,5 @@
 import type { Command } from "commander";
-import path from "node:path";
-import { createScanContext, getOutputDir } from "../../core/context.js";
-import { writeTextFile } from "../../core/filesystem.js";
-import { generateMigrationPlanMarkdown } from "../../modules/migration/index.js";
+import { runCommand } from "../../service/run-command.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -16,21 +13,17 @@ export function registerMigrationPlanCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("migration-plan", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: ["migration"],
         });
 
-        const content = generateMigrationPlanMarkdown(context.inspection, context.findings);
-        const outputPath = path.join(getOutputDir(context), "migration-plan.md");
-        await writeTextFile(outputPath, content, { force: true });
-
         if (opts.json) {
-          console.log(JSON.stringify({ path: outputPath, findings: context.findings.length }, null, 2));
+          console.log(JSON.stringify(result.data, null, 2));
         } else {
-          logger.success(`migration-plan.md written to ${outputPath}`);
-          console.log("\n" + content);
+          const data = result.data as { path: string };
+          logger.success(`migration-plan.md written to ${data.path}`);
+          if (result.markdown) console.log("\n" + result.markdown);
         }
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));

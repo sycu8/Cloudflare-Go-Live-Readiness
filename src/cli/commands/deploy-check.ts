@@ -1,8 +1,10 @@
 import type { Command } from "commander";
-import { createScanContext } from "../../core/context.js";
-import { getGlobalOptions, getExitCode } from "../options.js";
+import { runCommand } from "../../service/run-command.js";
+import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 import { printScanSummary } from "../output.js";
+import type { ScanContext } from "../../core/context.js";
+import type { Finding } from "../../config/schema.js";
 
 export function registerDeployCheckCommand(program: Command): void {
   program
@@ -14,33 +16,38 @@ export function registerDeployCheckCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("deploy-check", {
           rootDir: opts.cwd,
           configPath: opts.config,
-          modules: ["deployment", "migration", "security"],
         });
 
-        const deploymentFindings = context.findings.filter(
-          (f) => f.category === "deployment" || f.severity === "blocker",
-        );
+        const data = result.data as {
+          deploymentScore: number;
+          productionReady: boolean;
+          scores: ScanContext["scores"];
+          blockers: Finding[];
+          findings: Finding[];
+          inspection: ScanContext["inspection"];
+        };
 
         if (opts.json) {
-          console.log(
-            JSON.stringify({
-              productionReady: context.productionReady,
-              deploymentScore: context.scores.deployment,
-              findings: deploymentFindings,
-            },
-            null,
-            2,
-          ));
+          console.log(JSON.stringify(result.data, null, 2));
         } else {
           logger.heading("Deployment Readiness");
-          console.log(`Deployment score: ${context.scores.deployment}/100`);
-          printScanSummary(context);
+          console.log(`Deployment score: ${data.deploymentScore}/100`);
+          printScanSummary({
+            rootDir: opts.cwd,
+            config: { outputDir: "." } as ScanContext["config"],
+            inspection: data.inspection,
+            findings: data.findings,
+            scores: data.scores,
+            productionReady: data.productionReady,
+            blockers: data.blockers,
+            scannedAt: new Date().toISOString(),
+          });
         }
 
-        process.exit(getExitCode(context.productionReady, false));
+        process.exit(result.exitCode);
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));
         process.exit(2);

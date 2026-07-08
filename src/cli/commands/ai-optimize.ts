@@ -1,13 +1,6 @@
 import type { Command } from "commander";
-import path from "node:path";
-import { createScanContext, getOutputDir } from "../../core/context.js";
-import { writeTextFile } from "../../core/filesystem.js";
-import {
-  buildOptimizePayload,
-  callAiOptimizeApi,
-  getAiWorkerUrl,
-  getAiModel,
-} from "../../modules/ai-optimize/index.js";
+import { runCommand } from "../../service/run-command.js";
+import { getAiModel } from "../../modules/ai-optimize/index.js";
 import { getGlobalOptions } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
@@ -46,53 +39,40 @@ export function registerAiOptimizeCommand(program: Command): void {
         : "all";
 
       try {
-        const context = await createScanContext({
+        const result = await runCommand("ai-optimize", {
           rootDir: opts.cwd,
           configPath: opts.config,
+          focus,
+          workerUrl: cmdOpts.workerUrl,
+          model: cmdOpts.model,
+          aiToken: cmdOpts.aiToken,
+          dryRun: cmdOpts.dryRun,
         });
-
-        if (cmdOpts.model) {
-          context.config.ai = {
-            ...context.config.ai,
-            model: cmdOpts.model,
-            gatewayId: context.config.ai?.gatewayId ?? "default",
-          };
-        }
-
-        const payload = await buildOptimizePayload(context, focus);
-        const workerUrl = cmdOpts.workerUrl ?? getAiWorkerUrl(context.config);
 
         if (cmdOpts.dryRun) {
           if (opts.json) {
-            console.log(JSON.stringify({ workerUrl, payload }, null, 2));
+            console.log(JSON.stringify(result.data, null, 2));
           } else {
-            logger.info(`Dry run — would POST to ${workerUrl}/api/optimize`);
-            console.log(JSON.stringify(payload, null, 2));
+            const data = result.data as { workerUrl: string; payload: unknown };
+            logger.info(`Dry run — would POST to ${data.workerUrl}/api/optimize`);
+            console.log(JSON.stringify(data.payload, null, 2));
           }
           return;
         }
 
+        const data = result.data as { reportPath: string; model?: string };
+
         if (!opts.json) {
           logger.heading("cf-ready AI Optimize (Cloudflare Workers AI)");
-          logger.info(`Worker: ${workerUrl}`);
-          logger.info(`Model: ${getAiModel(context.config)}`);
+          if (cmdOpts.workerUrl) logger.info(`Worker: ${cmdOpts.workerUrl}`);
+          logger.info(`Model: ${data.model ?? getAiModel({} as never)}`);
         }
 
-        const result = await callAiOptimizeApi(
-          workerUrl,
-          payload,
-          cmdOpts.aiToken ?? context.config.ai?.apiToken ?? process.env.CF_READY_AI_TOKEN,
-        );
-
-        const markdown = String(result.markdown ?? "");
-        const outputPath = path.join(getOutputDir(context), "cf-ready-ai-optimize.md");
-        await writeTextFile(outputPath, markdown, { force: true });
-
         if (opts.json) {
-          console.log(JSON.stringify({ ...result, reportPath: outputPath }, null, 2));
+          console.log(JSON.stringify(result.data, null, 2));
         } else {
-          logger.success(`Report: ${outputPath}`);
-          console.log("\n" + markdown);
+          logger.success(`Report: ${data.reportPath}`);
+          if (result.markdown) console.log("\n" + result.markdown);
         }
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));

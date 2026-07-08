@@ -1,5 +1,9 @@
 import type { AiOptimizeRequest, AiOptimizeResponse, Env } from "./types.js";
 import { buildOptimizePrompt, extractJsonFromModelResponse } from "./prompt.js";
+import { handleApiRequest } from "./api.js";
+
+export { Sandbox } from "@cloudflare/sandbox";
+export { SessionDO } from "./session-do.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -30,11 +34,7 @@ async function runModel(
   messages: Array<{ role: string; content: string }>,
 ): Promise<string> {
   const gateway = { id: env.AI_GATEWAY_ID || "default", skipCache: false };
-  const response = await env.AI.run(
-    model,
-    { messages },
-    { gateway },
-  );
+  const response = await env.AI.run(model, { messages }, { gateway });
 
   if (typeof response === "string") return response;
   if (response && typeof response === "object") {
@@ -115,9 +115,7 @@ async function handleOptimize(request: Request, env: Env): Promise<Response> {
     raw = await runModel(env, primaryModel, messages);
   } catch (primaryError) {
     try {
-      raw = await runModel(env, fallbackModel, [
-        { role: "user", content: prompt },
-      ]);
+      raw = await runModel(env, fallbackModel, [{ role: "user", content: prompt }]);
       modelUsed = fallbackModel;
     } catch {
       return jsonResponse(
@@ -170,17 +168,12 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: CORS_HEADERS });
-    }
-
-    if (url.pathname === "/api/health") {
-      return jsonResponse({ ok: true, service: "cf-ready-ai" });
-    }
-
     if (url.pathname === "/api/optimize" && request.method === "POST") {
       return handleOptimize(request, env);
     }
+
+    const apiResponse = await handleApiRequest(request, env);
+    if (apiResponse) return apiResponse;
 
     return env.ASSETS.fetch(request);
   },
