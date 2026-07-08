@@ -14,11 +14,13 @@ import {
   uploadZip,
   regenerateReport,
 } from "./api/client.js";
+import { getAuthState, logout, type AuthState } from "./api/auth.js";
 import {
   renderEmptyResults,
   renderResults,
   type ScanResultData,
 } from "./ui/render.js";
+import { mountUserMenu, renderLoginScreen, renderUserMenu } from "./ui/auth.js";
 
 const COMMANDS: Array<{ name: string; desc: string }> = [
   { name: "scan", desc: "Full readiness scan" },
@@ -50,6 +52,15 @@ const TERMINAL_THEMES = {
 } as const;
 
 export async function mountApp(root: HTMLElement): Promise<void> {
+  const auth = await getAuthState();
+  if (!auth.authenticated || !auth.user) {
+    root.innerHTML = renderLoginScreen();
+    return;
+  }
+  await mountAgentApp(root, auth);
+}
+
+async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> {
   let sessionId = sessionStorage.getItem("cf-ready-session") ?? "";
   if (!sessionId) {
     sessionId = await createSession();
@@ -71,6 +82,7 @@ export async function mountApp(root: HTMLElement): Promise<void> {
         </div>
       </div>
       <div class="header-actions">
+        ${renderUserMenu(auth.user!.name ?? "", auth.user!.email, auth.user!.avatarUrl)}
         <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
         <a class="link-btn" href="/">Docs</a>
       </div>
@@ -104,8 +116,8 @@ export async function mountApp(root: HTMLElement): Promise<void> {
             </div>
             <div class="btn-row">
               <button type="button" class="primary" id="import-btn">Import URL</button>
-              <button type="button" class="ghost" id="github-connect">Connect</button>
-              <button type="button" class="ghost" id="github-repos" disabled>My repos</button>
+              ${auth.githubConnected ? "" : '<button type="button" class="ghost" id="github-connect">Connect GitHub</button>'}
+              <button type="button" class="ghost" id="github-repos" ${auth.githubConnected ? "" : "disabled"}>My repos</button>
             </div>
             <div class="repo-list" id="repo-list" hidden>
               <div class="repo-list__head">
@@ -193,6 +205,12 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   `;
 
   const $ = <T extends HTMLElement>(sel: string) => root.querySelector(sel) as T;
+
+  mountUserMenu(root, async () => {
+    await logout();
+    sessionStorage.removeItem("cf-ready-session");
+    window.location.reload();
+  });
 
   const statusPill = $("#status-pill");
   const dropzone = $("#dropzone");
@@ -521,9 +539,9 @@ export async function mountApp(root: HTMLElement): Promise<void> {
     }
   };
 
-  githubConnect.onclick = () => {
+  githubConnect?.addEventListener("click", () => {
     window.location.href = githubAuthUrl(sessionId);
-  };
+  });
 
   async function importRepoByName(fullName: string): Promise<void> {
     const url = `https://github.com/${fullName}`;
@@ -627,10 +645,14 @@ export async function mountApp(root: HTMLElement): Promise<void> {
   });
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get("github") === "connected") {
-    addChatBubble("agent", "GitHub đã kết nối. Bấm My repos để import private repo.");
+  if (params.get("github") === "connected" || auth.githubConnected) {
+    if (params.get("github") === "connected") {
+      addChatBubble("agent", "GitHub đã kết nối. Bấm My repos để import private repo.");
+    }
     githubReposBtn.removeAttribute("disabled");
-    void loadGitHubRepos();
+    if (auth.githubConnected || params.get("github") === "connected") {
+      void loadGitHubRepos();
+    }
   }
 
   await pollStatus();

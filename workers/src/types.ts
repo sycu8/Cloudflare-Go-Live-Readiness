@@ -89,6 +89,7 @@ export type Env = {
   Sandbox: DurableObjectNamespace;
   UPLOADS?: R2Bucket;
   SESSIONS?: KVNamespace;
+  DB?: D1Database;
   DEFAULT_AI_MODEL: string;
   FALLBACK_AI_MODEL: string;
   AI_GATEWAY_ID: string;
@@ -97,5 +98,8 @@ export type Env = {
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_REDIRECT_URI?: string;
   GITHUB_WEBHOOK_SECRET?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_REDIRECT_URI?: string;
   WORKER_PUBLIC_URL?: string;
 };

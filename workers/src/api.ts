@@ -1,10 +1,23 @@
 import type { Env } from "./types.js";
 import {
+  handleAuthLogout,
+  handleAuthMe,
+  forbiddenResponse,
+  requireAuth,
+} from "./auth/handlers.js";
+import { googleAuthCallback, googleLoginRedirect } from "./auth/google.js";
+import {
   githubAuthCallback,
-  githubAuthRedirect,
   getGitHubToken,
+  githubLoginRedirect,
   listGitHubRepos,
-} from "./auth-github.js";
+  resolveGitHubConnectRedirect,
+} from "./auth/github.js";
+import {
+  assertWorkspaceSessionOwner,
+  getUserFromRequest,
+  linkWorkspaceSession,
+} from "./auth/session.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -12,10 +25,10 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function json(data: unknown, status = 200): Response {
+function json(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS, ...extraHeaders },
   });
 }
 
@@ -47,48 +60,94 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     return handleGitHubWebhook(request, env);
   }
 
+  // --- User authentication ---
+  if (pathname === "/api/auth/me" && request.method === "GET") {
+    return handleAuthMe(request, env);
+  }
+
+  if (pathname === "/api/auth/logout" && request.method === "POST") {
+    return handleAuthLogout(request, env);
+  }
+
+  if (pathname === "/api/auth/google" && request.method === "GET") {
+    return googleLoginRedirect(env, url.searchParams.get("returnTo") ?? undefined);
+  }
+
+  if (pathname === "/api/auth/google/callback" && request.method === "GET") {
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    if (!code || !state) return json({ error: "Missing code or state" }, 400);
+    return googleAuthCallback(env, code, state);
+  }
+
+  if (pathname === "/api/auth/github/login" && request.method === "GET") {
+    return githubLoginRedirect(env, url.searchParams.get("returnTo") ?? undefined);
+  }
+
+  if (pathname === "/api/auth/github/callback" && request.method === "GET") {
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    if (!code || !state) return json({ error: "Missing code or state" }, 400);
+    return githubAuthCallback(env, code, state);
+  }
+
+  // GitHub repo connect (requires workspace session id)
+  if (pathname === "/api/auth/github" && request.method === "GET") {
+    const workspaceSessionId = url.searchParams.get("session");
+    if (!workspaceSessionId) {
+      return githubLoginRedirect(env, url.searchParams.get("returnTo") ?? undefined);
+    }
+    return resolveGitHubConnectRedirect(env, request, workspaceSessionId);
+  }
+
   if (pathname === "/api/sessions" && request.method === "POST") {
+    const auth = await requireAuth(request, env);
+    if (auth instanceof Response) return auth;
+
     const id = stubId();
     const doId = env.SESSION.idFromName(id);
     const stub = env.SESSION.get(doId);
     await stub.fetch("http://do/status");
+    await linkWorkspaceSession(env, auth.id, id);
     return json({ sessionId: id });
   }
 
   const sessionId = sessionIdFromPath(pathname);
   if (!sessionId) {
-    if (pathname === "/api/auth/github" && request.method === "GET") {
-      const state = url.searchParams.get("session") ?? stubId();
-      return githubAuthRedirect(env, state);
-    }
-    if (pathname === "/api/auth/github/callback" && request.method === "GET") {
-      const code = url.searchParams.get("code");
-      const state = url.searchParams.get("state");
-      if (!code || !state) return json({ error: "Missing code or state" }, 400);
-      return githubAuthCallback(env, code, state);
-    }
     return json({ error: "Not found" }, 404);
+  }
+
+  const user = await getUserFromRequest(request, env);
+  if (!user) {
+    return json({ error: "Authentication required. Sign in with Google or GitHub." }, 401);
+  }
+
+  const ownsSession = await assertWorkspaceSessionOwner(env, user.id, sessionId);
+  if (!ownsSession) {
+    return forbiddenResponse("You do not have access to this workspace session");
   }
 
   const stub = env.SESSION.get(env.SESSION.idFromName(sessionId));
 
   if (pathname.endsWith("/auth/github/repos") && request.method === "GET") {
-    const token = await getGitHubToken(env, sessionId);
-    if (!token) return json({ error: "GitHub not connected" }, 401);
+    const token = await getGitHubToken(env, sessionId, user.id);
+    if (!token) return json({ error: "GitHub not connected for private repos" }, 401);
     const repos = await listGitHubRepos(token);
     return json({ repos });
   }
 
   if (pathname.endsWith("/import/github") && request.method === "POST") {
-    const token = await getGitHubToken(env, sessionId);
+    const token = await getGitHubToken(env, sessionId, user.id);
     if (token) {
       const body = (await request.json()) as Record<string, unknown>;
       body.token = token;
-      return stub.fetch(new Request(request.url, {
-        method: "POST",
-        headers: request.headers,
-        body: JSON.stringify(body),
-      }));
+      return stub.fetch(
+        new Request(request.url, {
+          method: "POST",
+          headers: request.headers,
+          body: JSON.stringify(body),
+        }),
+      );
     }
   }
 

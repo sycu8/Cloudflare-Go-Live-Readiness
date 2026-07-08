@@ -1,4 +1,5 @@
 const API_BASE = "";
+const fetchOpts: RequestInit = { credentials: "include" };
 
 export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
 
@@ -20,13 +21,17 @@ export type Finding = {
 };
 
 export async function createSession(): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST" });
+  const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? "Failed to create session");
+  }
   const data = (await res.json()) as { sessionId: string };
   return data.sessionId;
 }
 
 export async function getStatus(sessionId: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`);
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
   return res.json();
 }
 
@@ -36,6 +41,7 @@ export async function uploadZip(sessionId: string, file: File) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/upload`, {
     method: "POST",
     body: form,
+    credentials: "include",
   });
   if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed");
   return res.json();
@@ -46,6 +52,7 @@ export async function importGitHub(sessionId: string, repoUrl: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ repoUrl }),
+    credentials: "include",
   });
   if (!res.ok) throw new Error((await res.json()).error ?? "Import failed");
   return res.json();
@@ -56,12 +63,13 @@ export async function execCommand(sessionId: string, line: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ line }),
+    credentials: "include",
   });
   return res.json();
 }
 
 export async function getResults(sessionId: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/results`);
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/results`, fetchOpts);
   return res.json();
 }
 
@@ -72,6 +80,7 @@ export function reportPdfUrl(sessionId: string): string {
 export async function regenerateReport(sessionId: string): Promise<Blob> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/reports/generate`, {
     method: "POST",
+    credentials: "include",
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -81,7 +90,7 @@ export async function regenerateReport(sessionId: string): Promise<Blob> {
 }
 
 export async function listFiles(sessionId: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/files`);
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/files`, fetchOpts);
   return res.json() as Promise<{ files: string[] }>;
 }
 
@@ -90,6 +99,7 @@ export async function chat(sessionId: string, message: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
+    credentials: "include",
   });
   return res.json();
 }
@@ -99,7 +109,7 @@ export function githubAuthUrl(sessionId: string): string {
 }
 
 export async function listGitHubRepos(sessionId: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/auth/github/repos`);
+  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/auth/github/repos`, fetchOpts);
   if (!res.ok) throw new Error("GitHub not connected");
   return res.json() as Promise<{ repos: Array<{ full_name: string; private: boolean }> }>;
 }

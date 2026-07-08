@@ -36,6 +36,14 @@
   "kv_namespaces": [
     { "binding": "SESSIONS", "id": "00000000000000000000000000000000", "preview_id": "00000000000000000000000000000001" }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cf-ready",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations/d1"
+    }
+  ],
   "vars": {
     "DEFAULT_AI_MODEL": "openai/gpt-4o-mini",
     "FALLBACK_AI_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",

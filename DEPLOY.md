@@ -46,11 +46,14 @@ wrangler secret put AI_API_KEY          # optional Bearer for /api/optimize
 wrangler secret put GITHUB_CLIENT_ID
 wrangler secret put GITHUB_CLIENT_SECRET
 wrangler secret put GITHUB_WEBHOOK_SECRET
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
 ```
 
 Set in dashboard or `wrangler.jsonc` vars:
 
 - `GITHUB_REDIRECT_URI` — `https://<worker>/api/auth/github/callback`
+- `GOOGLE_REDIRECT_URI` — `https://<worker>/api/auth/google/callback`
 - `WORKER_PUBLIC_URL` — public worker URL for AI optimize callbacks
 
 ## GitHub OAuth App
@@ -58,6 +61,20 @@ Set in dashboard or `wrangler.jsonc` vars:
 1. Create OAuth App at https://github.com/settings/developers
 2. Callback URL: `https://cf-ready-docs.<account>.workers.dev/api/auth/github/callback`
 3. Store `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` as Worker secrets
+
+## Google OAuth (account sign-in)
+
+1. Create OAuth client in [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Authorized redirect URI: `https://<worker>/api/auth/google/callback`
+3. Store `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as Worker secrets
+
+## User accounts
+
+- Sign in via **Google** or **GitHub** at `/app/` (accounts are created on first OAuth sign-in)
+- Auth session cookie: `cf_ready_auth` (HttpOnly, 30 days)
+- Workspace sessions require authentication and are linked to the signed-in user in D1
+- `GET /api/auth/me` — current user profile
+- `POST /api/auth/logout` — sign out
 
 ## GitHub push webhook (auto PDF on new commits)
 
