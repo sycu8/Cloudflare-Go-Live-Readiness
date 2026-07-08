@@ -5,7 +5,7 @@ import {
   forbiddenResponse,
   requireAuth,
 } from "./auth/handlers.js";
-import { handleAuthConfig } from "./auth/config.js";
+import { handleAuthConfig, isAuthEnforced } from "./auth/config.js";
 import { googleAuthCallback, googleLoginRedirect } from "./auth/google.js";
 import {
   githubAuthCallback,
@@ -118,14 +118,17 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   if (pathname === "/api/sessions" && request.method === "POST") {
-    const auth = await requireAuth(request, env);
-    if (auth instanceof Response) return auth;
-
     const id = stubId();
     const doId = env.SESSION.idFromName(id);
     const stub = env.SESSION.get(doId);
     await stub.fetch("http://do/status");
-    await linkWorkspaceSession(env, auth.id, id);
+
+    if (isAuthEnforced(env)) {
+      const auth = await requireAuth(request, env);
+      if (auth instanceof Response) return auth;
+      await linkWorkspaceSession(env, auth.id, id);
+    }
+
     return json({ sessionId: id });
   }
 
@@ -134,27 +137,31 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     return json({ error: "Not found" }, 404);
   }
 
-  const user = await getUserFromRequest(request, env);
-  if (!user) {
-    return json({ error: "Authentication required. Sign in with Google or GitHub." }, 401);
+  if (isAuthEnforced(env)) {
+    const user = await getUserFromRequest(request, env);
+    if (!user) {
+      return json({ error: "Authentication required. Sign in with Google or GitHub." }, 401);
+    }
+
+    const ownsSession = await assertWorkspaceSessionOwner(env, user.id, sessionId);
+    if (!ownsSession) {
+      return forbiddenResponse("You do not have access to this workspace session");
+    }
   }
 
-  const ownsSession = await assertWorkspaceSessionOwner(env, user.id, sessionId);
-  if (!ownsSession) {
-    return forbiddenResponse("You do not have access to this workspace session");
-  }
+  const user = isAuthEnforced(env) ? await getUserFromRequest(request, env) : null;
 
   const stub = env.SESSION.get(env.SESSION.idFromName(sessionId));
 
   if (pathname.endsWith("/auth/github/repos") && request.method === "GET") {
-    const token = await getGitHubToken(env, sessionId, user.id);
+    const token = await getGitHubToken(env, sessionId, user?.id);
     if (!token) return json({ error: "GitHub not connected for private repos" }, 401);
     const repos = await listGitHubRepos(token);
     return json({ repos });
   }
 
   if (pathname.endsWith("/import/github") && request.method === "POST") {
-    const token = await getGitHubToken(env, sessionId, user.id);
+    const token = await getGitHubToken(env, sessionId, user?.id);
     if (token) {
       const body = (await request.json()) as Record<string, unknown>;
       body.token = token;

@@ -14,7 +14,7 @@ import {
   uploadZip,
   regenerateReport,
 } from "./api/client.js";
-import { getAuthState, getAuthConfig, logout, type AuthState } from "./api/auth.js";
+import { getAuthState, getAuthConfig, logout, type AuthState, type AuthProviderConfig } from "./api/auth.js";
 import {
   renderEmptyResults,
   renderResults,
@@ -24,6 +24,7 @@ import {
   mountUserMenu,
   renderLoginLoading,
   renderLoginScreen,
+  renderOpenModeBanner,
   renderUserMenu,
 } from "./ui/auth.js";
 
@@ -56,23 +57,45 @@ const TERMINAL_THEMES = {
   },
 } as const;
 
+const ANONYMOUS_AUTH: AuthState = {
+  authenticated: false,
+  user: null,
+  providers: [],
+  githubConnected: false,
+};
+
 export async function mountApp(root: HTMLElement): Promise<void> {
+  root.innerHTML = renderLoginLoading();
+  const config = await getAuthConfig();
+  const params = new URLSearchParams(window.location.search);
+  const authError = params.get("auth_error");
+
+  if (config.openMode) {
+    await mountAgentApp(root, ANONYMOUS_AUTH, { openMode: true, config });
+    return;
+  }
+
   const auth = await getAuthState();
   if (!auth.authenticated || !auth.user) {
-    const params = new URLSearchParams(window.location.search);
-    const authError = params.get("auth_error");
-    root.innerHTML = renderLoginLoading();
-    const config = await getAuthConfig();
     root.innerHTML = renderLoginScreen(config, authError);
     if (authError) {
       window.history.replaceState({}, "", "/app/");
     }
     return;
   }
-  await mountAgentApp(root, auth);
+  await mountAgentApp(root, auth, { openMode: false, config });
 }
 
-async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> {
+type AgentMountOptions = {
+  openMode: boolean;
+  config: AuthProviderConfig;
+};
+
+async function mountAgentApp(
+  root: HTMLElement,
+  auth: AuthState,
+  options: AgentMountOptions,
+): Promise<void> {
   const sessionId = await ensureWorkspaceSession();
 
   let lastResultData: ScanResultData | null = null;
@@ -81,6 +104,7 @@ async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> 
   let fileCount = 0;
 
   root.innerHTML = `
+    ${options.openMode ? renderOpenModeBanner(options.config) : ""}
     <header class="app-header">
       <div class="brand">
         <div class="brand__logo" aria-hidden="true">☁</div>
@@ -90,7 +114,7 @@ async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> 
         </div>
       </div>
       <div class="header-actions">
-        ${renderUserMenu(auth.user!.name ?? "", auth.user!.email, auth.user!.avatarUrl)}
+        ${auth.user ? renderUserMenu(auth.user.name ?? "", auth.user.email, auth.user.avatarUrl) : ""}
         <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
         <a class="link-btn" href="/">Docs</a>
       </div>
@@ -124,7 +148,7 @@ async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> 
             </div>
             <div class="btn-row">
               <button type="button" class="primary" id="import-btn">Import URL</button>
-              ${auth.githubConnected ? "" : '<button type="button" class="ghost" id="github-connect">Connect GitHub</button>'}
+              ${options.openMode ? "" : auth.githubConnected ? "" : '<button type="button" class="ghost" id="github-connect">Connect GitHub</button>'}
               <button type="button" class="ghost" id="github-repos" ${auth.githubConnected ? "" : "disabled"}>My repos</button>
             </div>
             <div class="repo-list" id="repo-list" hidden>
@@ -214,11 +238,13 @@ async function mountAgentApp(root: HTMLElement, auth: AuthState): Promise<void> 
 
   const $ = <T extends HTMLElement>(sel: string) => root.querySelector(sel) as T;
 
-  mountUserMenu(root, async () => {
-    await logout();
-    sessionStorage.removeItem("cf-ready-session");
-    window.location.reload();
-  });
+  if (auth.user) {
+    mountUserMenu(root, async () => {
+      await logout();
+      sessionStorage.removeItem("cf-ready-session");
+      window.location.reload();
+    });
+  }
 
   const statusPill = $("#status-pill");
   const dropzone = $("#dropzone");

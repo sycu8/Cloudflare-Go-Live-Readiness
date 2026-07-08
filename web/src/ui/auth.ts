@@ -1,5 +1,15 @@
 import { githubLoginUrl, googleLoginUrl, type AuthProviderConfig } from "../api/auth.js";
 
+export function renderOpenModeBanner(config: AuthProviderConfig): string {
+  return `
+    <div class="open-mode-banner" role="status">
+      <strong>Open mode</strong>
+      <span>Sign-in is not configured — sessions are anonymous. Configure OAuth to enable accounts and private GitHub repos.</span>
+      <span class="open-mode-banner__callback" title="GitHub OAuth callback URL">${escapeHtml(config.githubCallbackUrl)}</span>
+    </div>
+  `;
+}
+
 export function renderLoginScreen(config: AuthProviderConfig, authError?: string | null): string {
   const hasProviders = config.google || config.github;
 
@@ -24,8 +34,14 @@ export function renderLoginScreen(config: AuthProviderConfig, authError?: string
       </a>`
     : "";
 
+  const openModeBtn = config.openMode
+    ? `<button type="button" class="auth-btn auth-btn--open" id="open-mode-continue">
+        Continue without sign-in
+      </button>`
+    : "";
+
   const setupNotice =
-    hasProviders || authError
+    hasProviders || authError || config.openMode
       ? ""
       : `<div class="auth-setup" role="alert">
         <strong>Sign-in is not configured yet</strong>
@@ -51,6 +67,7 @@ export function renderLoginScreen(config: AuthProviderConfig, authError?: string
         ${setupNotice}
 
         <div class="auth-actions">
+          ${openModeBtn}
           ${googleBtn}
           ${githubBtn}
         </div>
@@ -108,6 +125,11 @@ function authErrorMessage(code: string): string {
     return "GitHub sign-in is not configured on the server. The operator must set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.";
   }
   return "Sign-in provider is not available.";
+}
+
+export function mountOpenModeContinue(root: HTMLElement, onContinue: () => void): void {
+  const btn = root.querySelector("#open-mode-continue");
+  btn?.addEventListener("click", () => onContinue());
 }
 
 export function mountUserMenu(root: HTMLElement, onLogout: () => void): void {
