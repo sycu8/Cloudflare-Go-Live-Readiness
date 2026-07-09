@@ -395,7 +395,11 @@ export class SessionDO implements DurableObject {
         await this.cachePdfFromScanData(this.session.lastResult, commitSha);
         return;
       }
-      if (this.session.status === "error") return;
+      if (this.session.status === "error") {
+        this.session.status = "idle";
+        await this.save();
+        return;
+      }
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }

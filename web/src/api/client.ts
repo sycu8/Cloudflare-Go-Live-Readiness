@@ -21,6 +21,8 @@ async function waitForSessionStatus(
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const status = (await getStatus(sessionId)) as Record<string, unknown>;
+    // Model B: import completes when source is staged in R2 (background scan may still run/fail).
+    if (status.sourceR2Key) return status;
     if (status.status === "error") {
       throw new Error(String(status.lastError ?? "Operation failed"));
     }
@@ -127,7 +129,12 @@ export async function ensureWorkspaceSession(): Promise<string> {
   return sessionId;
 }
 
-export async function getStatus(sessionId: string): Promise<{ status?: SessionStatus; lastError?: string }> {
+export async function getStatus(sessionId: string): Promise<{
+  status?: SessionStatus;
+  lastError?: string;
+  sourceR2Key?: string;
+  projectName?: string;
+}> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
   if (!res.ok) {
     throw new Error(await readApiError(res, "Failed to load session status"));
