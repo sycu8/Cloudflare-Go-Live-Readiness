@@ -33,6 +33,11 @@ import {
   mountProgressTimer,
   type ProgressTimerHandle,
 } from "./ui/progress-timer.js";
+import {
+  hasCompletedOnboarding,
+  mountOnboarding,
+  type OnboardingHandle,
+} from "./ui/onboarding.js";
 
 const COMMANDS: Array<{ name: string; desc: string }> = [
   { name: "scan", desc: "Full readiness scan" },
@@ -121,10 +126,16 @@ async function mountAgentApp(
       </div>
       <div class="header-actions">
         ${auth.user ? renderUserMenu(auth.user.name ?? "", auth.user.email, auth.user.avatarUrl) : ""}
+        <button type="button" class="help-btn" id="tour-btn" title="Hướng dẫn sử dụng" aria-label="Hướng dẫn sử dụng">?</button>
         <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
-        <a class="link-btn" href="/">Docs</a>
+        <a class="link-btn link-btn--desktop" href="/">Docs</a>
       </div>
     </header>
+
+    <div class="mobile-context-bar" id="mobile-context-bar" aria-hidden="true">
+      <span class="mobile-context-bar__label" id="mobile-context-label">Project</span>
+      <span class="mobile-context-bar__hint" id="mobile-context-hint">Import source để bắt đầu</span>
+    </div>
 
     <div class="process-timer-host" id="process-timer-host" aria-hidden="true"></div>
 
@@ -136,6 +147,16 @@ async function mountAgentApp(
             <span id="file-count-label">Chưa có source</span>
           </div>
           <div class="panel-body">
+            <div class="mobile-quick-start" id="mobile-quick-start">
+              <p class="mobile-quick-start__title">Bắt đầu nhanh</p>
+              <ol class="mobile-quick-start__steps">
+                <li><span>1</span> Import ZIP / GitHub</li>
+                <li><span>2</span> Chạy <strong>scan</strong></li>
+                <li><span>3</span> Xem Results</li>
+              </ol>
+              <button type="button" class="ghost mobile-quick-start__tour" id="quick-tour-btn">Xem hướng dẫn chi tiết</button>
+            </div>
+
             <div class="project-card" id="project-card">
               <p class="project-card__name" id="project-name">Chưa import project</p>
               <p class="project-card__hint">Upload ZIP hoặc import GitHub để bắt đầu scan.</p>
@@ -231,15 +252,15 @@ async function mountAgentApp(
     <nav class="mobile-tabs" aria-label="Mobile navigation">
       <button type="button" class="active" data-tab="project" aria-current="page">
         <span class="tab-icon" aria-hidden="true">📁</span>
-        Project
+        <span class="tab-label">Import</span>
       </button>
       <button type="button" data-tab="workspace">
         <span class="tab-icon" aria-hidden="true">⚡</span>
-        Workspace
+        <span class="tab-label">Scan</span>
       </button>
       <button type="button" data-tab="results">
         <span class="tab-icon" aria-hidden="true">📊</span>
-        Results
+        <span class="tab-label">Kết quả</span>
       </button>
     </nav>
   `;
@@ -279,6 +300,21 @@ async function mountAgentApp(
   const chatSend = $("#chat-send");
   const progressTimerHost = $("#process-timer-host");
   const progressTimer: ProgressTimerHandle = mountProgressTimer(progressTimerHost);
+  const mobileContextLabel = $("#mobile-context-label");
+  const mobileContextHint = $("#mobile-context-hint");
+  const tourBtn = $("#tour-btn");
+  const quickTourBtn = $("#quick-tour-btn");
+
+  const MOBILE_TAB_META: Record<MobileTab, { label: string; hint: string }> = {
+    project: { label: "Import project", hint: "Upload ZIP hoặc GitHub URL" },
+    workspace: { label: "Scan & Chat", hint: "Gõ scan hoặc hỏi bằng chat" },
+    results: { label: "Kết quả", hint: "Điểm số và khuyến nghị" },
+  };
+
+  const onboarding: OnboardingHandle = mountOnboarding(root, {
+    onNavigateTab: (tab) => setMobileTab(tab),
+    onNavigateWorkspace: (view) => setWorkspaceView(view),
+  });
 
   window.cfReadyTheme?.remount();
 
@@ -462,6 +498,9 @@ async function mountAgentApp(
       panel.classList.remove("is-active");
     });
     $(`#panel-${tab}`).classList.add("is-active");
+    const meta = MOBILE_TAB_META[tab];
+    mobileContextLabel.textContent = meta.label;
+    mobileContextHint.textContent = meta.hint;
     if (tab === "workspace") fitTerminal();
   }
 
@@ -781,10 +820,49 @@ async function mountAgentApp(
     }
   }
 
+  tourBtn.onclick = () => onboarding.open(0);
+  quickTourBtn.onclick = () => onboarding.open(0);
+
+  async function waitForBusySession(timeoutMs = 600_000): Promise<void> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const status = await getStatus(sessionId);
+      const next = status.status ?? "idle";
+      if (next === "done" || next === "idle") return;
+      if (next === "error") throw new Error(status.lastError ?? "Operation failed");
+      if (isBusyProcessStatus(next)) setStatus(next);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
   try {
-    await pollStatus();
+    const status = await pollStatus();
+    if (status.sourceR2Key) {
+      await refreshFiles();
+      if (status.projectName) {
+        setProjectInfo(status.projectName, "Source đã import — chạy scan để phân tích.");
+      }
+    }
+    if (status.status === "running" || status.status === "extracting") {
+      const stopPoll = startStatusPollDuringWork();
+      try {
+        await waitForBusySession();
+        const restored = await getResults(sessionId);
+        if (restored.result) showResults(restored.result as ScanResultData);
+      } finally {
+        stopPoll();
+        await pollStatus();
+      }
+    } else {
+      const results = await getResults(sessionId);
+      if (results.result) showResults(results.result as ScanResultData);
+    }
   } catch {
     // Session may be stale after deploy or sign-out; app still usable for import/scan.
     setStatus("idle");
+  }
+
+  if (!hasCompletedOnboarding()) {
+    requestAnimationFrame(() => onboarding.open(0));
   }
 }
