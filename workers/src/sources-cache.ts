@@ -88,7 +88,9 @@ export async function stageGithubTarballToR2(
     throw new Error("GitHub returned an empty archive response");
   }
 
-  await env.UPLOADS.put(r2Key, response.body, {
+  const tarball = await response.arrayBuffer();
+
+  await env.UPLOADS.put(r2Key, tarball, {
     httpMetadata: {
       contentType: "application/gzip",
       cacheControl: "private, max-age=31536000, immutable",
