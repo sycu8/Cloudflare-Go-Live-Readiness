@@ -32,6 +32,17 @@ import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from ".
 import { resolveSessionId } from "./session-id.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+const EXEC_POLL_TIMEOUT_MS = 600_000;
+const SANDBOX_EXEC_TIMEOUT_MS: Record<string, number> = {
+  scan: 300_000,
+  report: 300_000,
+  "ai-optimize": 300_000,
+};
+const DEFAULT_SANDBOX_EXEC_TIMEOUT_MS = 180_000;
+
+function sandboxExecTimeoutMs(command: string): number {
+  return SANDBOX_EXEC_TIMEOUT_MS[command] ?? DEFAULT_SANDBOX_EXEC_TIMEOUT_MS;
+}
 
 type SandboxHandle = ReturnType<typeof getSandbox>;
 
@@ -82,6 +93,7 @@ export class SessionDO implements DurableObject {
     if (!this.session.sourceR2Key || !this.session.sourceFormat) {
       throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
     }
+    await this.patchSession({ status: "extracting", lastError: undefined });
     const format = this.session.sourceFormat;
     const archive = await readSourceBytes(this.env, this.session.sourceR2Key);
     await withSandboxRetry(() => extractStagedArchive(sandbox, archive, format));
@@ -426,15 +438,14 @@ export class SessionDO implements DurableObject {
     );
 
     const start = Date.now();
-    while (Date.now() - start < 300_000) {
+    while (Date.now() - start < EXEC_POLL_TIMEOUT_MS) {
       await this.load();
       if (this.session.status === "done") {
         await this.cachePdfFromScanData(this.session.lastResult, commitSha);
         return;
       }
       if (this.session.status === "error") {
-        this.session.status = "idle";
-        await this.save();
+        await this.patchSession({ status: "idle" });
         return;
       }
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -620,19 +631,23 @@ export class SessionDO implements DurableObject {
     try {
       const result = await this.withSandbox(async (sandbox) => {
         await this.ensureProjectReady(sandbox);
+        await this.patchSession({ status: "running", lastError: undefined });
         const cliArgs = this.buildCfReadyArgs(req);
         const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
 
         const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
         const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
 
-        return sandbox.exec(`${envPrefix}${cmd}`, { timeout: 180000 });
+        return sandbox.exec(`${envPrefix}${cmd}`, {
+          timeout: sandboxExecTimeoutMs(req.command),
+        });
       });
 
       if (!result.success && !result.stdout) {
-        this.session.status = "error";
-        this.session.lastError = result.stderr || `Command failed with exit ${result.exitCode}`;
-        await this.save();
+        await this.patchSession({
+          status: "error",
+          lastError: result.stderr || `Command failed with exit ${result.exitCode}`,
+        });
         return;
       }
 
@@ -643,20 +658,25 @@ export class SessionDO implements DurableObject {
         parsed = { stdout: result.stdout, stderr: result.stderr };
       }
 
-      this.session.status = "done";
-      this.session.lastResult = parsed;
+      const patch: Partial<SessionState> = {
+        status: "done",
+        lastResult: parsed,
+        lastError: undefined,
+      };
       if (typeof parsed === "object" && parsed && "markdown" in parsed) {
-        this.session.lastMarkdown = String((parsed as { markdown: string }).markdown);
+        patch.lastMarkdown = String((parsed as { markdown: string }).markdown);
       }
-      await this.save();
+      await this.patchSession(patch);
 
       if (req.command === "scan" || req.command === "report") {
+        await this.load();
         await this.cachePdfFromScanData(parsed, this.session.sourceCommitSha);
       }
     } catch (error) {
-      this.session.status = "error";
-      this.session.lastError = formatSandboxError(error);
-      await this.save();
+      await this.patchSession({
+        status: "error",
+        lastError: formatSandboxError(error),
+      });
     }
   }
 
@@ -711,7 +731,7 @@ Respond with JSON only: {"reply":"short explanation","command":"cf-ready scan","
       await this.handleExec(execReq);
 
       const start = Date.now();
-      while (Date.now() - start < 300_000) {
+      while (Date.now() - start < EXEC_POLL_TIMEOUT_MS) {
         await this.load();
         if (this.session.status === "done") {
           execResult = {
