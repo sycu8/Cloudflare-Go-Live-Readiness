@@ -5,6 +5,8 @@ import type { RepositoryInspection } from "../inspectors/types.js";
 
 export type ServiceOptions = ScanOptions & {
   json?: boolean;
+  /** Skip writing report artifacts to disk (web agent / JSON-only runs). */
+  skipReports?: boolean;
 };
 
 export type ScanResult = {

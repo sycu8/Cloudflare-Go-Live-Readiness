@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { runCommand } from "../../service/run-command.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerFixCommand(program: Command): void {
@@ -23,8 +23,7 @@ export function registerFixCommand(program: Command): void {
 
       try {
         const result = await runCommand("fix", {
-          rootDir: opts.cwd,
-          configPath: opts.config,
+          ...serviceOptionsFromGlobal(opts),
           aiReadiness: fixOpts.aiReadiness,
           seo: fixOpts.seo,
           force: fixOpts.force,

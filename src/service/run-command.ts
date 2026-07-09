@@ -43,6 +43,8 @@ export async function runCommand(
   command: CommandName,
   options: CommandOptions,
 ): Promise<CommandResult> {
+  const skipReports = Boolean(options.skipReports);
+
   switch (command) {
     case "scan": {
       const result = await runScan(options);
@@ -58,10 +60,14 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["migration"] });
       const content = generateMigrationPlanMarkdown(context.inspection, context.findings);
       const outputPath = path.join(getOutputDir(context), "migration-plan.md");
-      await writeTextFile(outputPath, content, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, content, { force: true });
+      }
       return {
         exitCode: 0,
-        data: { path: outputPath, findings: context.findings.length },
+        data: skipReports
+          ? { findings: context.findings.length, markdown: content }
+          : { path: outputPath, findings: context.findings.length },
         markdown: content,
       };
     }
@@ -70,13 +76,15 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["security"] });
       const sarif = generateSarif(context.findings, context.rootDir);
       const outputPath = path.join(getOutputDir(context), "security-findings.sarif");
-      await writeTextFile(outputPath, sarif, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, sarif, { force: true });
+      }
       const securityFindings = context.findings.filter((f) => f.category === "security");
       return {
         exitCode: getExitCode(context.productionReady, false),
         data: {
           findings: securityFindings,
-          sarif: outputPath,
+          sarif: skipReports ? undefined : outputPath,
           score: context.scores.security,
         },
       };
@@ -86,13 +94,15 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["ai-readiness"] });
       const content = generateAiReadinessReport(context.inspection, context.findings);
       const outputPath = path.join(getOutputDir(context), "ai-readiness-report.md");
-      await writeTextFile(outputPath, content, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, content, { force: true });
+      }
       return {
         exitCode: 0,
         data: {
           score: context.scores.aiReadiness,
           findings: context.findings,
-          report: outputPath,
+          report: skipReports ? undefined : outputPath,
         },
         markdown: content,
       };
@@ -102,13 +112,15 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["seo"] });
       const content = generateSeoReadinessReport(context.inspection, context.findings);
       const outputPath = path.join(getOutputDir(context), "seo-readiness-report.md");
-      await writeTextFile(outputPath, content, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, content, { force: true });
+      }
       return {
         exitCode: 0,
         data: {
           score: context.scores.seo,
           findings: context.findings,
-          report: outputPath,
+          report: skipReports ? undefined : outputPath,
         },
         markdown: content,
       };
@@ -168,11 +180,17 @@ export async function runCommand(
 
       const markdown = String(result.markdown ?? "");
       const outputPath = path.join(getOutputDir(context), "cf-ready-ai-optimize.md");
-      await writeTextFile(outputPath, markdown, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, markdown, { force: true });
+      }
 
       return {
         exitCode: 0,
-        data: { ...result, reportPath: outputPath, model: getAiModel(context.config) },
+        data: {
+          ...result,
+          reportPath: skipReports ? undefined : outputPath,
+          model: getAiModel(context.config),
+        },
         markdown,
       };
     }

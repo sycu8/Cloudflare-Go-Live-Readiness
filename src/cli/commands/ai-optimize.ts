@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 import { runCommand } from "../../service/run-command.js";
 import { getAiModel } from "../../modules/ai-optimize/index.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerAiOptimizeCommand(program: Command): void {
@@ -40,8 +40,7 @@ export function registerAiOptimizeCommand(program: Command): void {
 
       try {
         const result = await runCommand("ai-optimize", {
-          rootDir: opts.cwd,
-          configPath: opts.config,
+          ...serviceOptionsFromGlobal(opts),
           focus,
           workerUrl: cmdOpts.workerUrl,
           model: cmdOpts.model,

@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { runCommand } from "../../service/run-command.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 import { printScanSummary } from "../output.js";
 import type { ScanContext } from "../../core/context.js";
@@ -16,10 +16,7 @@ export function registerDeployCheckCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const result = await runCommand("deploy-check", {
-          rootDir: opts.cwd,
-          configPath: opts.config,
-        });
+        const result = await runCommand("deploy-check", serviceOptionsFromGlobal(opts));
 
         const data = result.data as {
           deploymentScore: number;

@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { runCommand } from "../../service/run-command.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerInspectCommand(program: Command): void {
@@ -13,10 +13,7 @@ export function registerInspectCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const result = await runCommand("inspect", {
-          rootDir: opts.cwd,
-          configPath: opts.config,
-        });
+        const result = await runCommand("inspect", serviceOptionsFromGlobal(opts));
 
         if (!opts.json) {
           logger.heading("Repository Inspection");

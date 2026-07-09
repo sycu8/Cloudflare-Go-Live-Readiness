@@ -40,10 +40,10 @@ export async function extractStagedArchive(
   archive: Uint8Array,
   format: SourceArchiveFormat,
 ): Promise<void> {
-  await sandbox.exec("mkdir -p /tmp", { timeout: 10000 });
-  await sandbox.exec(`rm -rf ${PROJECT_DIR} && mkdir -p ${PROJECT_DIR}`, { timeout: 30000 });
-
   const archivePath = format === "zip" ? ZIP_ARCHIVE_PATH : TAR_ARCHIVE_PATH;
+  await sandbox.exec(`mkdir -p /tmp ${PROJECT_DIR} && rm -rf ${PROJECT_DIR}/* ${archivePath}`, {
+    timeout: 30000,
+  });
   await sandbox.writeFile(archivePath, archive);
 
   if (format === "zip") {
@@ -64,10 +64,9 @@ export async function extractStagedArchive(
     }
   }
 
-  const verify = await sandbox.exec(
-    `test -n "$(ls -A ${PROJECT_DIR} 2>/dev/null | head -1)"`,
-    { timeout: 10000 },
-  );
+  const verify = await sandbox.exec(`test -n "$(ls -A ${PROJECT_DIR} 2>/dev/null | head -1)"`, {
+    timeout: 5000,
+  });
   if (!verify.success) {
     throw new Error(
       "Archive extracted but the project folder is empty. Check the branch or repository URL.",

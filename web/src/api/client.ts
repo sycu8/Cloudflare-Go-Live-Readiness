@@ -28,7 +28,7 @@ async function waitForSessionStatus(
       throw new Error(String(status.lastError ?? "Operation failed"));
     }
     if (done(status)) return status;
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error(timeoutMessage);
 }

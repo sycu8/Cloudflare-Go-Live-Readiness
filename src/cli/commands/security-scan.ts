@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { runCommand } from "../../service/run-command.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerSecurityScanCommand(program: Command): void {
@@ -13,10 +13,7 @@ export function registerSecurityScanCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const result = await runCommand("security-scan", {
-          rootDir: opts.cwd,
-          configPath: opts.config,
-        });
+        const result = await runCommand("security-scan", serviceOptionsFromGlobal(opts));
 
         const data = result.data as {
           findings: unknown[];

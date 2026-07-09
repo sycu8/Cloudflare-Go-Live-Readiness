@@ -57,6 +57,8 @@ export type SessionState = {
   /** R2 key for staged source archive (Model B). */
   sourceR2Key?: string;
   sourceFormat?: SourceArchiveFormat;
+  /** Last sourceR2Key successfully extracted into the sandbox container. */
+  materializedSourceKey?: string;
   reportCache?: ReportCacheMeta;
   lastCommand?: string;
   lastError?: string;
