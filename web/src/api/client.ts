@@ -163,9 +163,16 @@ export async function importGitHub(sessionId: string, repoUrl: string) {
     credentials: "include",
   });
   if (!res.ok) throw new Error(await readApiError(res, "Import failed"));
-  const data = await readApiJson<{ ok?: boolean; status?: string }>(res);
+  const data = await readApiJson<{ ok?: boolean; status?: string; staging?: string }>(res);
   if (data.status === "importing") {
     await waitForImportComplete(sessionId);
+  }
+  const status = await getStatus(sessionId);
+  if (status.sourceR2Key) {
+    return { ...data, sourceR2Key: status.sourceR2Key, sandboxPending: Boolean(status.lastError) };
+  }
+  if (status.status === "error") {
+    throw new Error(status.lastError ?? "Import failed");
   }
   return data;
 }
@@ -228,7 +235,7 @@ export async function regenerateReport(sessionId: string): Promise<Blob> {
 export async function listFiles(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/files`, fetchOpts);
   if (!res.ok) throw new Error(await readApiError(res, "Failed to list files"));
-  return readApiJson<{ files: string[] }>(res);
+  return readApiJson<{ files: string[]; warning?: string; staged?: boolean }>(res);
 }
 
 export async function chat(sessionId: string, message: string): Promise<ChatResponse> {
