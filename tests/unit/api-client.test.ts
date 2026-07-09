@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { execWaitTimeoutMs, normalizeGitHubRepoUrl } from "../../web/src/api/client.js";
+import { execWaitTimeoutMs, normalizeGitHubRepoUrl, sessionPollDelayMs } from "../../web/src/api/client.js";
 
 describe("api client helpers", () => {
   it("normalizeGitHubRepoUrl passes through full URLs", () => {
@@ -29,5 +29,13 @@ describe("api client helpers", () => {
     expect(execWaitTimeoutMs("security-scan")).toBe(900_000);
     expect(execWaitTimeoutMs("ai-ready")).toBe(600_000);
     expect(execWaitTimeoutMs("inspect")).toBe(420_000);
+  });
+
+  it("sessionPollDelayMs polls faster early then backs off", () => {
+    expect(sessionPollDelayMs(0)).toBe(400);
+    expect(sessionPollDelayMs(59_999)).toBe(400);
+    expect(sessionPollDelayMs(60_000)).toBe(750);
+    expect(sessionPollDelayMs(299_999)).toBe(750);
+    expect(sessionPollDelayMs(300_000)).toBe(1000);
   });
 });

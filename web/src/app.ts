@@ -11,6 +11,7 @@ import {
   importGitHub,
   listFiles,
   listGitHubRepos,
+  sessionPollDelayMs,
   uploadZip,
   regenerateReport,
 } from "./api/client.js";
@@ -385,7 +386,7 @@ async function mountAgentApp(
         .catch(() => {
           /* ignore transient poll errors */
         });
-    }, 2000);
+    }, 800);
     return () => clearInterval(id);
   }
 
@@ -844,7 +845,7 @@ async function mountAgentApp(
       if (next === "done" || next === "idle") return;
       if (next === "error") throw new Error(status.lastError ?? "Operation failed");
       if (isBusyProcessStatus(next)) setStatus(next);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, sessionPollDelayMs(Date.now() - start)));
     }
   }
 
