@@ -49,10 +49,11 @@ describe("import-extract", () => {
         c.close();
       },
     });
+    const archive = new Uint8Array([1, 2, 3]);
 
-    await extractStagedArchive(sandbox, stream, "tar.gz");
+    await extractStagedArchive(sandbox, archive, "tar.gz");
 
-    expect(sandbox.writeFile).toHaveBeenCalledWith(TAR_ARCHIVE_PATH, stream);
+    expect(sandbox.writeFile).toHaveBeenCalledWith(TAR_ARCHIVE_PATH, archive);
     expect(sandbox.exec).toHaveBeenCalledWith(
       expect.stringContaining(`tar -xzf ${TAR_ARCHIVE_PATH} -C ${PROJECT_DIR} --strip-components=1`),
       expect.any(Object),

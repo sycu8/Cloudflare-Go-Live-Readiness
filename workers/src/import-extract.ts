@@ -11,7 +11,7 @@ type SandboxExec = {
   ): Promise<{ success: boolean; stdout?: string; stderr?: string; exitCode?: number }>;
   writeFile(
     path: string,
-    content: string | ReadableStream<Uint8Array>,
+    content: string | Uint8Array | ReadableStream<Uint8Array>,
     options?: { encoding?: string },
   ): Promise<unknown>;
 };
@@ -37,14 +37,14 @@ export function formatExtractFailure(
  */
 export async function extractStagedArchive(
   sandbox: SandboxExec,
-  stream: ReadableStream<Uint8Array>,
+  archive: Uint8Array,
   format: SourceArchiveFormat,
 ): Promise<void> {
   await sandbox.exec("mkdir -p /tmp", { timeout: 10000 });
   await sandbox.exec(`rm -rf ${PROJECT_DIR} && mkdir -p ${PROJECT_DIR}`, { timeout: 30000 });
 
   const archivePath = format === "zip" ? ZIP_ARCHIVE_PATH : TAR_ARCHIVE_PATH;
-  await sandbox.writeFile(archivePath, stream);
+  await sandbox.writeFile(archivePath, archive);
 
   if (format === "zip") {
     const unzip = await sandbox.exec(
