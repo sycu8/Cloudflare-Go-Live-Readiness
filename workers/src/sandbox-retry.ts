@@ -19,8 +19,8 @@ export async function withSandboxRetry<T>(
   fn: () => Promise<T>,
   opts?: { maxAttempts?: number; baseDelayMs?: number },
 ): Promise<T> {
-  const maxAttempts = opts?.maxAttempts ?? 4;
-  const baseDelayMs = opts?.baseDelayMs ?? 1500;
+  const maxAttempts = opts?.maxAttempts ?? 6;
+  const baseDelayMs = opts?.baseDelayMs ?? 2500;
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

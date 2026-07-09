@@ -62,6 +62,13 @@ export class SessionDO implements DurableObject {
     await this.state.storage.put("session", this.session);
   }
 
+  /** Merge into persisted session (avoids waitUntil races with concurrent /status loads). */
+  private async patchSession(patch: Partial<SessionState>): Promise<void> {
+    await this.load();
+    Object.assign(this.session, patch);
+    await this.save();
+  }
+
   private sandbox(): SandboxHandle {
     const sandboxId = resolveSessionId(this.state, this.session.id);
     return getSandbox(
@@ -304,25 +311,20 @@ export class SessionDO implements DurableObject {
       this.session.sourceFormat = staged.format;
       await registerGitHubRepoSession(this.env, owner, repo, this.session.id);
 
-      // Model B: import plane completes once R2 staging succeeds.
-      // Sandbox extract runs on demand (files/exec) or in background scan.
-      this.session.status = "idle";
-      await this.save();
+      await this.patchSession({
+        sourceR2Key: staged.r2Key,
+        sourceFormat: staged.format,
+        status: "idle",
+        lastError: undefined,
+      });
 
-      const commitChanged = Boolean(commitSha && commitSha !== previousSha);
-      if (commitChanged || !previousSha) {
-        this.state.waitUntil(
-          this.runScanAndCacheReport(commitSha).catch(async (err) => {
-            this.session.lastError = formatSandboxError(err);
-            this.session.status = "idle";
-            await this.save();
-          }),
-        );
-      }
+      // Auto-scan disabled on import — sandbox cold start races with staging.
+      // User runs `scan` after import; source is already in R2.
     } catch (error) {
-      this.session.status = "error";
-      this.session.lastError = formatSandboxError(error);
-      await this.save();
+      await this.patchSession({
+        status: "error",
+        lastError: formatSandboxError(error),
+      });
     }
   }
 
@@ -564,10 +566,11 @@ export class SessionDO implements DurableObject {
       return Response.json({ error: `Command not allowed: ${req.command}` }, { status: 400 });
     }
 
-    this.session.status = "running";
-    this.session.lastCommand = req.command;
-    this.session.lastError = undefined;
-    await this.save();
+    await this.patchSession({
+      status: "running",
+      lastCommand: req.command,
+      lastError: undefined,
+    });
 
     this.state.waitUntil(this.runExec(req));
 
