@@ -32,13 +32,19 @@ import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from ".
 import { resolveSessionId } from "./session-id.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
-const EXEC_POLL_TIMEOUT_MS = 600_000;
+/** Server-side poll while exec/chat runs in waitUntil (must exceed sandbox exec + cold start). */
+const EXEC_POLL_TIMEOUT_MS = 900_000;
 const SANDBOX_EXEC_TIMEOUT_MS: Record<string, number> = {
-  scan: 300_000,
-  report: 300_000,
-  "ai-optimize": 300_000,
+  scan: 600_000,
+  report: 600_000,
+  "ai-optimize": 600_000,
+  "security-scan": 480_000,
+  "migration-plan": 480_000,
+  "deploy-check": 480_000,
+  "ai-ready": 360_000,
+  "seo-ready": 360_000,
 };
-const DEFAULT_SANDBOX_EXEC_TIMEOUT_MS = 180_000;
+const DEFAULT_SANDBOX_EXEC_TIMEOUT_MS = 300_000;
 
 function sandboxExecTimeoutMs(command: string): number {
   return SANDBOX_EXEC_TIMEOUT_MS[command] ?? DEFAULT_SANDBOX_EXEC_TIMEOUT_MS;
@@ -204,7 +210,7 @@ export class SessionDO implements DurableObject {
           const list = await this.withSandbox(async (sandbox) => {
             await this.ensureProjectReady(sandbox);
             return sandbox.exec(`find ${PROJECT_DIR} -type f | head -200`, {
-              timeout: 30000,
+              timeout: 60_000,
             });
           });
           const files = list.stdout

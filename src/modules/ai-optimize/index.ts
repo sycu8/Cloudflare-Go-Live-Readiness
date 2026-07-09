@@ -59,7 +59,7 @@ export async function callAiOptimizeApi(
     method: "POST",
     headers,
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(120000),
+    signal: AbortSignal.timeout(300_000),
   });
 
   const data = (await response.json()) as Record<string, unknown>;

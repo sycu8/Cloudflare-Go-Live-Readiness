@@ -22,10 +22,12 @@ describe("api client helpers", () => {
   });
 
   it("execWaitTimeoutMs uses longer budget for scan-like commands", () => {
-    expect(execWaitTimeoutMs("scan")).toBe(600_000);
-    expect(execWaitTimeoutMs("cf-ready scan")).toBe(600_000);
-    expect(execWaitTimeoutMs("report")).toBe(600_000);
-    expect(execWaitTimeoutMs("ai-optimize")).toBe(600_000);
+    expect(execWaitTimeoutMs("scan")).toBe(900_000);
+    expect(execWaitTimeoutMs("cf-ready scan")).toBe(900_000);
+    expect(execWaitTimeoutMs("report")).toBe(900_000);
+    expect(execWaitTimeoutMs("ai-optimize")).toBe(900_000);
+    expect(execWaitTimeoutMs("security-scan")).toBe(900_000);
+    expect(execWaitTimeoutMs("ai-ready")).toBe(600_000);
     expect(execWaitTimeoutMs("inspect")).toBe(420_000);
   });
 });

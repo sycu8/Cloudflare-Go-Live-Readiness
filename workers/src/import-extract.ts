@@ -42,14 +42,14 @@ export async function extractStagedArchive(
 ): Promise<void> {
   const archivePath = format === "zip" ? ZIP_ARCHIVE_PATH : TAR_ARCHIVE_PATH;
   await sandbox.exec(`mkdir -p /tmp ${PROJECT_DIR} && rm -rf ${PROJECT_DIR}/* ${archivePath}`, {
-    timeout: 30000,
+    timeout: 60_000,
   });
   await sandbox.writeFile(archivePath, archive);
 
   if (format === "zip") {
     const unzip = await sandbox.exec(
       `unzip -q -o ${archivePath} -d ${PROJECT_DIR} && rm -f ${archivePath}`,
-      { timeout: 180000 },
+      { timeout: 300_000 },
     );
     if (!unzip.success) {
       throw new Error(formatExtractFailure(unzip, "unzip"));
@@ -57,7 +57,7 @@ export async function extractStagedArchive(
   } else {
     const extract = await sandbox.exec(
       `tar -xzf ${archivePath} -C ${PROJECT_DIR} --strip-components=1 && rm -f ${archivePath}`,
-      { timeout: 180000 },
+      { timeout: 300_000 },
     );
     if (!extract.success) {
       throw new Error(formatExtractFailure(extract, "extract"));
