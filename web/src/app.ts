@@ -28,6 +28,11 @@ import {
   renderOpenModeBanner,
   renderUserMenu,
 } from "./ui/auth.js";
+import {
+  isBusyProcessStatus,
+  mountProgressTimer,
+  type ProgressTimerHandle,
+} from "./ui/progress-timer.js";
 
 const COMMANDS: Array<{ name: string; desc: string }> = [
   { name: "scan", desc: "Full readiness scan" },
@@ -120,6 +125,8 @@ async function mountAgentApp(
         <a class="link-btn" href="/">Docs</a>
       </div>
     </header>
+
+    <div class="process-timer-host" id="process-timer-host" aria-hidden="true"></div>
 
     <div class="app-shell">
       <div class="layout">
@@ -270,6 +277,8 @@ async function mountAgentApp(
   const chatMessages = $("#chat-messages");
   const chatInput = $("#chat-input") as HTMLInputElement;
   const chatSend = $("#chat-send");
+  const progressTimerHost = $("#process-timer-host");
+  const progressTimer: ProgressTimerHandle = mountProgressTimer(progressTimerHost);
 
   window.cfReadyTheme?.remount();
 
@@ -322,6 +331,27 @@ async function mountAgentApp(
   function setStatus(status: string) {
     statusPill.textContent = status;
     statusPill.className = `status-pill ${status}`;
+    if (isBusyProcessStatus(status)) {
+      progressTimer.start(status);
+      progressTimerHost.setAttribute("aria-hidden", "false");
+    } else {
+      progressTimer.stop();
+      progressTimerHost.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function startStatusPollDuringWork(): () => void {
+    const id = setInterval(() => {
+      void getStatus(sessionId)
+        .then((status) => {
+          const next = status.status ?? "idle";
+          if (isBusyProcessStatus(next)) setStatus(next);
+        })
+        .catch(() => {
+          /* ignore transient poll errors */
+        });
+    }, 2000);
+    return () => clearInterval(id);
   }
 
   function setProjectInfo(name: string, hint: string) {
@@ -470,6 +500,7 @@ async function mountAgentApp(
     setWorkspaceView("cli");
     writeln(`$ cf-ready ${trimmed}`);
 
+    const stopPoll = startStatusPollDuringWork();
     try {
       const result = await execCommand(sessionId, trimmed);
       if (result.stderr) writeln(result.stderr);
@@ -491,6 +522,8 @@ async function mountAgentApp(
       writeln(`Error: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
       return;
+    } finally {
+      stopPoll();
     }
 
     await pollStatus();
@@ -504,6 +537,7 @@ async function mountAgentApp(
   async function handleUpload(file: File) {
     setStatus("importing");
     writeln(`Uploading ${file.name}…`);
+    const stopPoll = startStatusPollDuringWork();
     try {
       await uploadZip(sessionId, file);
       const name = file.name.replace(/\.zip$/i, "");
@@ -516,6 +550,8 @@ async function mountAgentApp(
     } catch (err) {
       writeln(`Upload failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
+    } finally {
+      stopPoll();
     }
   }
 
@@ -584,6 +620,7 @@ async function mountAgentApp(
     }
     setStatus("importing");
     writeln(`Importing ${url}…`);
+    const stopPoll = startStatusPollDuringWork();
     try {
       const result = await importGitHub(sessionId, url);
       const short = url.replace(/^https?:\/\/github\.com\//, "").replace(/^\/+/, "");
@@ -604,6 +641,8 @@ async function mountAgentApp(
       }
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
+    } finally {
+      stopPoll();
     }
   };
 
@@ -615,6 +654,7 @@ async function mountAgentApp(
     const url = `https://github.com/${fullName}`;
     setStatus("importing");
     writeln(`Importing ${fullName}…`);
+    const stopPoll = startStatusPollDuringWork();
     try {
       const result = await importGitHub(sessionId, url);
       const note =
@@ -633,6 +673,8 @@ async function mountAgentApp(
       }
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
+    } finally {
+      stopPoll();
     }
   }
 
@@ -680,6 +722,8 @@ async function mountAgentApp(
     chatInput.value = "";
     addChatBubble("user", msg);
     chatSend.setAttribute("disabled", "true");
+    setStatus("running");
+    const stopPoll = startStatusPollDuringWork();
     try {
       const result = await chat(sessionId, msg);
       addChatBubble("agent", result.reply ?? "Đã xử lý.");
@@ -697,8 +741,15 @@ async function mountAgentApp(
       }
     } catch (err) {
       addChatBubble("agent", `Lỗi: ${err instanceof Error ? err.message : String(err)}`);
+      setStatus("error");
     } finally {
+      stopPoll();
       chatSend.removeAttribute("disabled");
+      try {
+        await pollStatus();
+      } catch {
+        if (!progressTimer.isActive()) setStatus("idle");
+      }
     }
   }
 
