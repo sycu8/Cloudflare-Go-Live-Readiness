@@ -29,7 +29,7 @@ export type AiOptimizeResponse = {
   markdown: string;
 };
 
-export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
+export type SessionStatus = "idle" | "importing" | "extracting" | "running" | "done" | "error";
 
 export type GitHubRepoRef = {
   owner: string;

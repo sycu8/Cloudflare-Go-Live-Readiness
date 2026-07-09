@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeGitHubRepoUrl } from "../../web/src/api/client.js";
+import { execWaitTimeoutMs, normalizeGitHubRepoUrl } from "../../web/src/api/client.js";
 
 describe("api client helpers", () => {
   it("normalizeGitHubRepoUrl passes through full URLs", () => {
@@ -19,5 +19,13 @@ describe("api client helpers", () => {
 
   it("normalizeGitHubRepoUrl leaves unknown strings unchanged", () => {
     expect(normalizeGitHubRepoUrl("not-a-repo")).toBe("not-a-repo");
+  });
+
+  it("execWaitTimeoutMs uses longer budget for scan-like commands", () => {
+    expect(execWaitTimeoutMs("scan")).toBe(600_000);
+    expect(execWaitTimeoutMs("cf-ready scan")).toBe(600_000);
+    expect(execWaitTimeoutMs("report")).toBe(600_000);
+    expect(execWaitTimeoutMs("ai-optimize")).toBe(600_000);
+    expect(execWaitTimeoutMs("inspect")).toBe(420_000);
   });
 });

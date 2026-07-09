@@ -17,12 +17,13 @@ async function waitForSessionStatus(
   done: (status: Record<string, unknown>) => boolean,
   timeoutMs: number,
   timeoutMessage: string,
+  options?: { completeOnSourceR2Key?: boolean },
 ): Promise<Record<string, unknown>> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const status = (await getStatus(sessionId)) as Record<string, unknown>;
-    // Model B: import completes when source is staged in R2 (background scan may still run/fail).
-    if (status.sourceR2Key) return status;
+    // Model B: import completes when source is staged in R2 (not used for exec polling).
+    if (options?.completeOnSourceR2Key && status.sourceR2Key) return status;
     if (status.status === "error") {
       throw new Error(String(status.lastError ?? "Operation failed"));
     }
@@ -38,10 +39,20 @@ async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Pr
     (status) => status.status === "idle" || status.status === "done",
     timeoutMs,
     "Import timed out. The repository may be large — try again.",
+    { completeOnSourceR2Key: true },
   );
 }
 
-async function waitForExecComplete(sessionId: string, timeoutMs = 300_000) {
+export function execWaitTimeoutMs(line: string): number {
+  const trimmed = line.trim().replace(/^cf-ready\s+/, "");
+  const command = trimmed.split(/\s+/)[0] ?? "scan";
+  if (command === "scan" || command === "report" || command === "ai-optimize") {
+    return 600_000;
+  }
+  return 420_000;
+}
+
+async function waitForExecComplete(sessionId: string, timeoutMs = 600_000) {
   await waitForSessionStatus(
     sessionId,
     (status) => status.status === "done" || status.status === "idle",
@@ -51,7 +62,7 @@ async function waitForExecComplete(sessionId: string, timeoutMs = 300_000) {
   return getResults(sessionId);
 }
 
-export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
+export type SessionStatus = "idle" | "importing" | "extracting" | "running" | "done" | "error";
 
 export type ScanScores = {
   overall: number;
@@ -198,7 +209,7 @@ export async function execCommand(sessionId: string, line: string): Promise<Exec
   const data = await readApiJson<ExecCommandResult>(res);
 
   if (data.status === "running") {
-    const results = await waitForExecComplete(sessionId);
+    const results = await waitForExecComplete(sessionId, execWaitTimeoutMs(line));
     if (results.error) throw new Error(results.error);
     const payload = results.result ?? null;
     return {

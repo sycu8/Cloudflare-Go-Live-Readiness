@@ -191,6 +191,7 @@ input {
 
 .status-pill.idle::before { background: var(--muted); }
 .status-pill.importing::before,
+.status-pill.extracting::before,
 .status-pill.running::before {
   background: var(--warn);
   animation: pulse 1.2s ease infinite;
