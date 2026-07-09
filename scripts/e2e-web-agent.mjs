@@ -9,7 +9,9 @@
  */
 const BASE_URL = (process.env.BASE_URL ?? "https://ready.orangecloud.vn").replace(/\/$/, "");
 const AUTH_COOKIE = process.env.CF_READY_AUTH_COOKIE ?? "";
-const PUBLIC_REPO = process.env.E2E_GITHUB_REPO ?? "https://github.com/sycu8/cloudflare-go-live-readiness";
+const PUBLIC_REPO =
+  process.env.E2E_GITHUB_REPO ?? "https://github.com/sycu8/Cloudflare-Go-Live-Readiness";
+const IMPORT_ONLY = process.env.E2E_IMPORT_ONLY === "1";
 const COMMANDS = [
   "inspect",
   "scan",
@@ -102,7 +104,11 @@ async function main() {
     printSummary();
     process.exit(1);
   }
-  pass("import github started", importRes.body.status ?? "ok");
+  const staging = importRes.body.staging ?? "";
+  pass(
+    "import github started",
+    `${importRes.body.status ?? "ok"}${staging ? ` staging=${staging}` : ""}`,
+  );
 
   try {
     await waitForStatus(sessionId, (s) => s === "idle" || s === "done");
@@ -118,6 +124,11 @@ async function main() {
     pass("list files", `${files.body.files.length} files`);
   } else {
     fail("list files", files.body.error ?? "empty");
+  }
+
+  if (IMPORT_ONLY) {
+    printSummary();
+    process.exit(results.some((r) => !r.ok) ? 1 : 0);
   }
 
   for (const cmd of COMMANDS) {
