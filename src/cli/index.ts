@@ -29,6 +29,7 @@ program
   .option("--cwd <path>", "Project root directory", process.cwd())
   .option("--config <path>", "Path to cf-ready.config.json")
   .option("--json", "Output machine-readable JSON")
+  .option("--skip-reports", "Skip writing report files to disk (faster; use with --json)")
   .option("--verbose", "Verbose logging")
   .option("--no-color", "Disable colored output");
 

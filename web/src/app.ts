@@ -831,7 +831,7 @@ async function mountAgentApp(
       if (next === "done" || next === "idle") return;
       if (next === "error") throw new Error(status.lastError ?? "Operation failed");
       if (isBusyProcessStatus(next)) setStatus(next);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 

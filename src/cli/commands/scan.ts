@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { runScan } from "../../service/run-scan.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 import { printScanSummary } from "../output.js";
 
@@ -19,8 +19,7 @@ export function registerScanCommand(program: Command): void {
         }
 
         const result = await runScan({
-          rootDir: opts.cwd,
-          configPath: opts.config,
+          ...serviceOptionsFromGlobal(opts),
         });
 
         if (opts.json) {

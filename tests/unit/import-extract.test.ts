@@ -36,12 +36,7 @@ describe("import-extract", () => {
 
   it("extractStagedArchive writes tar.gz and extracts with strip-components", async () => {
     const sandbox = mockSandbox({
-      execResults: [
-        { success: true },
-        { success: true },
-        { success: true },
-        { success: true },
-      ],
+      execResults: [{ success: true }, { success: true }, { success: true }],
     });
     const archive = new Uint8Array([1, 2, 3]);
 

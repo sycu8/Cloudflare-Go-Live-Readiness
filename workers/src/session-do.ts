@@ -89,14 +89,29 @@ export class SessionDO implements DurableObject {
   }
 
   private async ensureProjectReady(sandbox: SandboxHandle): Promise<void> {
-    if (await withSandboxRetry(() => projectDirHasFiles(sandbox))) return;
     if (!this.session.sourceR2Key || !this.session.sourceFormat) {
       throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
     }
-    await this.patchSession({ status: "extracting", lastError: undefined });
+
     const format = this.session.sourceFormat;
-    const archive = await readSourceBytes(this.env, this.session.sourceR2Key);
+    const sourceKey = this.session.sourceR2Key;
+    const fastCheck = { maxAttempts: 4, baseDelayMs: 1500 };
+
+    const [hasFiles, archive] = await Promise.all([
+      withSandboxRetry(() => projectDirHasFiles(sandbox), fastCheck),
+      readSourceBytes(this.env, sourceKey),
+    ]);
+
+    if (hasFiles) {
+      if (this.session.materializedSourceKey !== sourceKey) {
+        await this.patchSession({ materializedSourceKey: sourceKey });
+      }
+      return;
+    }
+
+    await this.patchSession({ status: "extracting", lastError: undefined });
     await withSandboxRetry(() => extractStagedArchive(sandbox, archive, format));
+    await this.patchSession({ materializedSourceKey: sourceKey });
   }
 
   private async materializeSourceFromR2(sandbox: SandboxHandle): Promise<void> {
@@ -112,18 +127,25 @@ export class SessionDO implements DurableObject {
     return withSandboxRetry(async () => fn(this.sandbox()));
   }
 
-  /** Best-effort container wake-up after R2 staging (non-blocking). */
+  /** Pre-extract staged source after import so first scan skips cold extract. */
   private async warmSandbox(): Promise<void> {
+    if (!this.session.sourceR2Key || !this.session.sourceFormat) return;
     try {
       await withSandboxRetry(
         async () => {
           const sandbox = this.sandbox();
-          await sandbox.exec("true", { timeout: 120000 });
+          if (await projectDirHasFiles(sandbox)) {
+            await this.patchSession({ materializedSourceKey: this.session.sourceR2Key });
+            return;
+          }
+          const archive = await readSourceBytes(this.env, this.session.sourceR2Key!);
+          await extractStagedArchive(sandbox, archive, this.session.sourceFormat!);
+          await this.patchSession({ materializedSourceKey: this.session.sourceR2Key });
         },
-        { maxAttempts: 8, baseDelayMs: 2000 },
+        { maxAttempts: 6, baseDelayMs: 1000 },
       );
     } catch {
-      /* extract on next exec/files will retry */
+      /* first exec/files will retry extract */
     }
   }
 
@@ -555,6 +577,9 @@ export class SessionDO implements DurableObject {
     }
     if (req.args) args.push(...req.args);
     args.push("--json", "--cwd", PROJECT_DIR, "--no-color");
+    if (req.command !== "report") {
+      args.push("--skip-reports");
+    }
     return args;
   }
 
@@ -669,8 +694,13 @@ export class SessionDO implements DurableObject {
       await this.patchSession(patch);
 
       if (req.command === "scan" || req.command === "report") {
-        await this.load();
-        await this.cachePdfFromScanData(parsed, this.session.sourceCommitSha);
+        const commitSha = this.session.sourceCommitSha;
+        this.state.waitUntil(
+          (async () => {
+            await this.load();
+            await this.cachePdfFromScanData(parsed, commitSha);
+          })(),
+        );
       }
     } catch (error) {
       await this.patchSession({
