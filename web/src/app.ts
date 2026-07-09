@@ -743,7 +743,7 @@ async function mountAgentApp(
           }
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "ghost repo-list__import";
+          btn.className = "primary repo-list__import";
           btn.textContent = "Import";
           btn.onclick = () => void importRepoByName(repo.full_name);
           li.append(label, btn);
