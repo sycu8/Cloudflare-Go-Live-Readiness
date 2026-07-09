@@ -33,7 +33,7 @@ async function waitForSessionStatus(
   throw new Error(timeoutMessage);
 }
 
-async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Promise<void> {
+async function waitForImportComplete(sessionId: string, timeoutMs = 420_000): Promise<void> {
   await waitForSessionStatus(
     sessionId,
     (status) => status.status === "idle" || status.status === "done",
@@ -43,21 +43,30 @@ async function waitForImportComplete(sessionId: string, timeoutMs = 180_000): Pr
   );
 }
 
+const LONG_EXEC_COMMANDS = new Set([
+  "scan",
+  "report",
+  "ai-optimize",
+  "security-scan",
+  "migration-plan",
+  "deploy-check",
+]);
+const MEDIUM_EXEC_COMMANDS = new Set(["ai-ready", "seo-ready"]);
+
 export function execWaitTimeoutMs(line: string): number {
   const trimmed = line.trim().replace(/^cf-ready\s+/, "");
   const command = trimmed.split(/\s+/)[0] ?? "scan";
-  if (command === "scan" || command === "report" || command === "ai-optimize") {
-    return 600_000;
-  }
+  if (LONG_EXEC_COMMANDS.has(command)) return 900_000;
+  if (MEDIUM_EXEC_COMMANDS.has(command)) return 600_000;
   return 420_000;
 }
 
-async function waitForExecComplete(sessionId: string, timeoutMs = 600_000) {
+async function waitForExecComplete(sessionId: string, timeoutMs = 900_000) {
   await waitForSessionStatus(
     sessionId,
     (status) => status.status === "done" || status.status === "idle",
     timeoutMs,
-    "Command timed out. Try again or use a smaller project.",
+    "Command timed out after 15 minutes. Large projects may need another run — check Results if partial output exists.",
   );
   return getResults(sessionId);
 }

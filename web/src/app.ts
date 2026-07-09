@@ -836,7 +836,7 @@ async function mountAgentApp(
     if (isMobileLayout()) setMobileTab("workspace");
   };
 
-  async function waitForBusySession(timeoutMs = 600_000): Promise<void> {
+  async function waitForBusySession(timeoutMs = 900_000): Promise<void> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       const status = await getStatus(sessionId);
