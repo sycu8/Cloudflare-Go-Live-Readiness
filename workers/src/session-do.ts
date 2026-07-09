@@ -27,6 +27,7 @@ import {
   PROJECT_DIR,
   projectDirHasFiles,
 } from "./import-extract.js";
+import { formatSandboxError, withSandboxRetry } from "./sandbox-retry.js";
 
 import { resolveSessionId } from "./session-id.js";
 
@@ -70,20 +71,26 @@ export class SessionDO implements DurableObject {
   }
 
   private async ensureProjectReady(sandbox: SandboxHandle): Promise<void> {
-    if (await projectDirHasFiles(sandbox)) return;
+    if (await withSandboxRetry(() => projectDirHasFiles(sandbox))) return;
     if (!this.session.sourceR2Key || !this.session.sourceFormat) {
       throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
     }
+    const format = this.session.sourceFormat;
     const stream = await readSourceStream(this.env, this.session.sourceR2Key);
-    await extractStagedArchive(sandbox, stream, this.session.sourceFormat);
+    await withSandboxRetry(() => extractStagedArchive(sandbox, stream, format));
   }
 
   private async materializeSourceFromR2(sandbox: SandboxHandle): Promise<void> {
     if (!this.session.sourceR2Key || !this.session.sourceFormat) {
       throw new Error("Source archive not staged in R2");
     }
+    const format = this.session.sourceFormat;
     const stream = await readSourceStream(this.env, this.session.sourceR2Key);
-    await extractStagedArchive(sandbox, stream, this.session.sourceFormat);
+    await withSandboxRetry(() => extractStagedArchive(sandbox, stream, format));
+  }
+
+  private async withSandbox<T>(fn: (sandbox: SandboxHandle) => Promise<T>): Promise<T> {
+    return withSandboxRetry(async () => fn(this.sandbox()));
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -129,10 +136,11 @@ export class SessionDO implements DurableObject {
       }
 
       if (request.method === "GET" && path.endsWith("/files")) {
-        const sandbox = this.sandbox();
-        await this.ensureProjectReady(sandbox).catch(() => undefined);
-        const list = await sandbox.exec(`find ${PROJECT_DIR} -type f | head -200`, {
-          timeout: 30000,
+        const list = await this.withSandbox(async (sandbox) => {
+          await this.ensureProjectReady(sandbox).catch(() => undefined);
+          return sandbox.exec(`find ${PROJECT_DIR} -type f | head -200`, {
+            timeout: 30000,
+          });
         });
         const files = list.stdout
           .split("\n")
@@ -160,7 +168,7 @@ export class SessionDO implements DurableObject {
       return Response.json({ error: "Not found" }, { status: 404 });
     } catch (error) {
       this.session.status = "error";
-      this.session.lastError = error instanceof Error ? error.message : String(error);
+      this.session.lastError = formatSandboxError(error);
       await this.save();
       return Response.json({ error: this.session.lastError }, { status: 500 });
     }
@@ -193,8 +201,7 @@ export class SessionDO implements DurableObject {
     this.session.sourceFormat = staged.format;
     await this.save();
 
-    const sandbox = this.sandbox();
-    await this.materializeSourceFromR2(sandbox);
+    await this.withSandbox((sandbox) => this.materializeSourceFromR2(sandbox));
 
     this.session.status = "idle";
     await this.save();
@@ -295,12 +302,10 @@ export class SessionDO implements DurableObject {
 
       this.session.sourceR2Key = staged.r2Key;
       this.session.sourceFormat = staged.format;
-      await this.save();
-
-      const sandbox = this.sandbox();
-      await this.materializeSourceFromR2(sandbox);
       await registerGitHubRepoSession(this.env, owner, repo, this.session.id);
 
+      // Model B: import plane completes once R2 staging succeeds.
+      // Sandbox extract runs on demand (files/exec) or in background scan.
       this.session.status = "idle";
       await this.save();
 
@@ -308,8 +313,7 @@ export class SessionDO implements DurableObject {
       if (commitChanged || !previousSha) {
         this.state.waitUntil(
           this.runScanAndCacheReport(commitSha).catch(async (err) => {
-            this.session.lastError =
-              err instanceof Error ? err.message : String(err);
+            this.session.lastError = formatSandboxError(err);
             this.session.status = "idle";
             await this.save();
           }),
@@ -317,7 +321,7 @@ export class SessionDO implements DurableObject {
       }
     } catch (error) {
       this.session.status = "error";
-      this.session.lastError = error instanceof Error ? error.message : String(error);
+      this.session.lastError = formatSandboxError(error);
       await this.save();
     }
   }
@@ -357,8 +361,7 @@ export class SessionDO implements DurableObject {
     this.session.sourceFormat = staged.format;
     await this.save();
 
-    const sandbox = this.sandbox();
-    await this.materializeSourceFromR2(sandbox);
+    await this.withSandbox((sandbox) => this.materializeSourceFromR2(sandbox));
     this.session.status = "idle";
     await this.save();
 
@@ -573,15 +576,16 @@ export class SessionDO implements DurableObject {
 
   private async runExec(req: ExecRequest): Promise<void> {
     try {
-      const sandbox = this.sandbox();
-      await this.ensureProjectReady(sandbox);
-      const cliArgs = this.buildCfReadyArgs(req);
-      const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
+      const result = await this.withSandbox(async (sandbox) => {
+        await this.ensureProjectReady(sandbox);
+        const cliArgs = this.buildCfReadyArgs(req);
+        const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
 
-      const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
-      const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
+        const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
+        const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
 
-      const result = await sandbox.exec(`${envPrefix}${cmd}`, { timeout: 180000 });
+        return sandbox.exec(`${envPrefix}${cmd}`, { timeout: 180000 });
+      });
 
       if (!result.success && !result.stdout) {
         this.session.status = "error";
@@ -609,7 +613,7 @@ export class SessionDO implements DurableObject {
       }
     } catch (error) {
       this.session.status = "error";
-      this.session.lastError = error instanceof Error ? error.message : String(error);
+      this.session.lastError = formatSandboxError(error);
       await this.save();
     }
   }
