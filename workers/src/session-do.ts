@@ -27,7 +27,7 @@ import {
   PROJECT_DIR,
   projectDirHasFiles,
 } from "./import-extract.js";
-import { formatSandboxError, withSandboxRetry } from "./sandbox-retry.js";
+import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from "./sandbox-retry.js";
 
 import { resolveSessionId } from "./session-id.js";
 
@@ -100,6 +100,26 @@ export class SessionDO implements DurableObject {
     return withSandboxRetry(async () => fn(this.sandbox()));
   }
 
+  /** Best-effort container wake-up after R2 staging (non-blocking). */
+  private async warmSandbox(): Promise<void> {
+    try {
+      await withSandboxRetry(
+        async () => {
+          const sandbox = this.sandbox();
+          await sandbox.exec("true", { timeout: 120000 });
+        },
+        { maxAttempts: 8, baseDelayMs: 2000 },
+      );
+    } catch {
+      /* extract on next exec/files will retry */
+    }
+  }
+
+  private formatStagingError(error: unknown): string {
+    if (isRetryableSandboxError(error)) return formatSandboxError(error);
+    return error instanceof Error ? error.message : String(error);
+  }
+
   async fetch(request: Request): Promise<Response> {
     await this.load();
     const url = new URL(request.url);
@@ -143,17 +163,31 @@ export class SessionDO implements DurableObject {
       }
 
       if (request.method === "GET" && path.endsWith("/files")) {
-        const list = await this.withSandbox(async (sandbox) => {
-          await this.ensureProjectReady(sandbox).catch(() => undefined);
-          return sandbox.exec(`find ${PROJECT_DIR} -type f | head -200`, {
-            timeout: 30000,
+        if (!this.session.sourceR2Key) {
+          return Response.json({ files: [], staged: false });
+        }
+        try {
+          const list = await this.withSandbox(async (sandbox) => {
+            await this.ensureProjectReady(sandbox);
+            return sandbox.exec(`find ${PROJECT_DIR} -type f | head -200`, {
+              timeout: 30000,
+            });
           });
-        });
-        const files = list.stdout
-          .split("\n")
-          .map((l) => l.trim().replace(`${PROJECT_DIR}/`, ""))
-          .filter((l) => l && !l.includes("node_modules"));
-        return Response.json({ files });
+          const files = list.stdout
+            .split("\n")
+            .map((l) => l.trim().replace(`${PROJECT_DIR}/`, ""))
+            .filter((l) => l && !l.includes("node_modules"));
+          return Response.json({ files, staged: true });
+        } catch (error) {
+          if (isRetryableSandboxError(error)) {
+            return Response.json({
+              files: [],
+              staged: true,
+              warning: formatSandboxError(error),
+            });
+          }
+          throw error;
+        }
       }
 
       if (request.method === "POST" && path.endsWith("/upload")) {
@@ -204,19 +238,23 @@ export class SessionDO implements DurableObject {
 
     const buffer = await file.arrayBuffer();
     const staged = await stageUploadZipToR2(this.env, this.session.id, buffer);
-    this.session.sourceR2Key = staged.r2Key;
-    this.session.sourceFormat = staged.format;
-    await this.save();
 
-    await this.withSandbox((sandbox) => this.materializeSourceFromR2(sandbox));
+    await this.patchSession({
+      sourceR2Key: staged.r2Key,
+      sourceFormat: staged.format,
+      projectName: this.session.projectName,
+      status: "idle",
+      lastError: undefined,
+    });
 
-    this.session.status = "idle";
-    await this.save();
+    this.state.waitUntil(this.warmSandbox());
+
     return Response.json({
       ok: true,
       projectName: this.session.projectName,
       sourceR2Key: staged.r2Key,
       cached: false,
+      staging: "r2",
     });
   }
 
@@ -316,12 +354,11 @@ export class SessionDO implements DurableObject {
         lastError: undefined,
       });
 
-      // Auto-scan disabled on import — sandbox cold start races with staging.
-      // User runs `scan` after import; source is already in R2.
+      this.state.waitUntil(this.warmSandbox());
     } catch (error) {
       await this.patchSession({
         status: "error",
-        lastError: formatSandboxError(error),
+        lastError: this.formatStagingError(error),
       });
     }
   }

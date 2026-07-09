@@ -395,7 +395,7 @@ async function mountAgentApp(
 
   async function refreshFiles() {
     try {
-      const { files } = await listFiles(sessionId);
+      const { files, warning } = await listFiles(sessionId);
       fileCount = files.length;
       fileCountEl.textContent = String(fileCount);
       fileCountLabel.textContent = `${fileCount} files`;
@@ -404,9 +404,22 @@ async function mountAgentApp(
         .map((f) => `<li title="${escapeHtml(f)}">${escapeHtml(f)}</li>`)
         .join("");
       fileTree.hidden = files.length === 0;
+      if (warning && files.length === 0) {
+        writeln(warning);
+      }
     } catch {
       fileTree.hidden = true;
     }
+  }
+
+  async function finishGitHubImportUi(short: string, sandboxNote?: string) {
+    setProjectInfo(short, "Source staged — chạy scan để phân tích.");
+    writeln("✓ GitHub import complete (source staged in cloud).");
+    if (sandboxNote) writeln(sandboxNote);
+    setStatus("idle");
+    await refreshFiles();
+    addChatBubble("agent", `Đã import ${short}. Gõ scan để trích xuất và phân tích.`);
+    setMobileTab("workspace");
   }
 
   function setMobileTab(tab: MobileTab) {
@@ -572,15 +585,23 @@ async function mountAgentApp(
     setStatus("importing");
     writeln(`Importing ${url}…`);
     try {
-      await importGitHub(sessionId, url);
+      const result = await importGitHub(sessionId, url);
       const short = url.replace(/^https?:\/\/github\.com\//, "").replace(/^\/+/, "");
-      setProjectInfo(short, "GitHub import thành công — chạy scan để kiểm tra.");
-      writeln("✓ GitHub import complete.");
-      setStatus("idle");
-      await refreshFiles();
-      addChatBubble("agent", `Đã import ${short}. Thử lệnh scan.`);
-      setMobileTab("workspace");
+      const note =
+        result && typeof result === "object" && "sandboxPending" in result && result.sandboxPending
+          ? "Sandbox đang khởi động — chạy scan sau vài giây."
+          : undefined;
+      await finishGitHubImportUi(short, note);
     } catch (err) {
+      const status = await getStatus(sessionId).catch(() => ({}));
+      if (status.sourceR2Key) {
+        const short = url.replace(/^https?:\/\/github\.com\//, "").replace(/^\/+/, "");
+        await finishGitHubImportUi(
+          short,
+          "Sandbox chưa sẵn sàng — chạy scan sau vài giây để tiếp tục.",
+        );
+        return;
+      }
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
     }
@@ -595,14 +616,21 @@ async function mountAgentApp(
     setStatus("importing");
     writeln(`Importing ${fullName}…`);
     try {
-      await importGitHub(sessionId, url);
-      setProjectInfo(fullName, "GitHub import thành công — chạy scan để kiểm tra.");
-      writeln("✓ GitHub import complete.");
-      setStatus("idle");
-      await refreshFiles();
-      addChatBubble("agent", `Đã import ${fullName}. Thử lệnh scan.`);
-      setMobileTab("workspace");
+      const result = await importGitHub(sessionId, url);
+      const note =
+        result && typeof result === "object" && "sandboxPending" in result && result.sandboxPending
+          ? "Sandbox đang khởi động — chạy scan sau vài giây."
+          : undefined;
+      await finishGitHubImportUi(fullName, note);
     } catch (err) {
+      const status = await getStatus(sessionId).catch(() => ({}));
+      if (status.sourceR2Key) {
+        await finishGitHubImportUi(
+          fullName,
+          "Sandbox chưa sẵn sàng — chạy scan sau vài giây để tiếp tục.",
+        );
+        return;
+      }
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
     }
