@@ -294,7 +294,7 @@ export class SessionDO implements DurableObject {
     previousSha?: string;
     commitSha?: string;
   }): Promise<void> {
-    const { owner, repo, cacheKey, tarballUrl, token, previousSha, commitSha } = args;
+    const { owner, repo, cacheKey, tarballUrl, token } = args;
     const parsed = this.session.githubRepo;
     if (!parsed) return;
 
@@ -307,8 +307,6 @@ export class SessionDO implements DurableObject {
         token,
       });
 
-      this.session.sourceR2Key = staged.r2Key;
-      this.session.sourceFormat = staged.format;
       await registerGitHubRepoSession(this.env, owner, repo, this.session.id);
 
       await this.patchSession({

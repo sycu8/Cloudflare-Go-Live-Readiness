@@ -43,12 +43,6 @@ describe("import-extract", () => {
         { success: true },
       ],
     });
-    const stream = new ReadableStream({
-      start(c) {
-        c.enqueue(new Uint8Array([1, 2, 3]));
-        c.close();
-      },
-    });
     const archive = new Uint8Array([1, 2, 3]);
 
     await extractStagedArchive(sandbox, archive, "tar.gz");
