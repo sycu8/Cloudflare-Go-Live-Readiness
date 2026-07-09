@@ -17,16 +17,9 @@ import {
   putCachedPdf,
   registerGitHubRepoSession,
 } from "./reports-cache.js";
-import {
-  readSourceBytes,
-  stageGithubTarballToR2,
-  stageUploadZipToR2,
-} from "./sources-cache.js";
-import {
-  extractStagedArchive,
-  PROJECT_DIR,
-  projectDirHasFiles,
-} from "./import-extract.js";
+import { stageGithubTarballToR2, stageUploadZipToR2 } from "./sources-cache.js";
+import { PROJECT_DIR } from "./import-extract.js";
+import { materializeProject } from "./project-materialize.js";
 import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from "./sandbox-retry.js";
 
 import { resolveSessionId } from "./session-id.js";
@@ -99,34 +92,34 @@ export class SessionDO implements DurableObject {
       throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
     }
 
-    const format = this.session.sourceFormat;
-    const sourceKey = this.session.sourceR2Key;
-    const fastCheck = { maxAttempts: 4, baseDelayMs: 1500 };
+    const result = await materializeProject({
+      env: this.env,
+      sandbox,
+      sourceR2Key: this.session.sourceR2Key,
+      sourceFormat: this.session.sourceFormat,
+      materializedSourceKey: this.session.materializedSourceKey,
+      onExtracting: async () => {
+        await this.patchSession({ status: "extracting", lastError: undefined });
+      },
+    });
 
-    const [hasFiles, archive] = await Promise.all([
-      withSandboxRetry(() => projectDirHasFiles(sandbox), fastCheck),
-      readSourceBytes(this.env, sourceKey),
-    ]);
-
-    if (hasFiles) {
-      if (this.session.materializedSourceKey !== sourceKey) {
-        await this.patchSession({ materializedSourceKey: sourceKey });
-      }
-      return;
+    if (this.session.materializedSourceKey !== result.materializedSourceKey) {
+      await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
     }
-
-    await this.patchSession({ status: "extracting", lastError: undefined });
-    await withSandboxRetry(() => extractStagedArchive(sandbox, archive, format));
-    await this.patchSession({ materializedSourceKey: sourceKey });
   }
 
   private async materializeSourceFromR2(sandbox: SandboxHandle): Promise<void> {
     if (!this.session.sourceR2Key || !this.session.sourceFormat) {
       throw new Error("Source archive not staged in R2");
     }
-    const format = this.session.sourceFormat;
-    const archive = await readSourceBytes(this.env, this.session.sourceR2Key);
-    await withSandboxRetry(() => extractStagedArchive(sandbox, archive, format));
+    const result = await materializeProject({
+      env: this.env,
+      sandbox,
+      sourceR2Key: this.session.sourceR2Key,
+      sourceFormat: this.session.sourceFormat,
+      materializedSourceKey: this.session.materializedSourceKey,
+    });
+    await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
   }
 
   private async withSandbox<T>(fn: (sandbox: SandboxHandle) => Promise<T>): Promise<T> {
@@ -139,14 +132,16 @@ export class SessionDO implements DurableObject {
     try {
       await withSandboxRetry(
         async () => {
-          const sandbox = this.sandbox();
-          if (await projectDirHasFiles(sandbox)) {
-            await this.patchSession({ materializedSourceKey: this.session.sourceR2Key });
-            return;
+          const result = await materializeProject({
+            env: this.env,
+            sandbox: this.sandbox(),
+            sourceR2Key: this.session.sourceR2Key!,
+            sourceFormat: this.session.sourceFormat!,
+            materializedSourceKey: this.session.materializedSourceKey,
+          });
+          if (this.session.materializedSourceKey !== result.materializedSourceKey) {
+            await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
           }
-          const archive = await readSourceBytes(this.env, this.session.sourceR2Key!);
-          await extractStagedArchive(sandbox, archive, this.session.sourceFormat!);
-          await this.patchSession({ materializedSourceKey: this.session.sourceR2Key });
         },
         { maxAttempts: 6, baseDelayMs: 1000 },
       );
@@ -285,6 +280,7 @@ export class SessionDO implements DurableObject {
       projectName: this.session.projectName,
       status: "idle",
       lastError: undefined,
+      materializedSourceKey: undefined,
     });
 
     this.state.waitUntil(this.warmSandbox());
@@ -392,6 +388,7 @@ export class SessionDO implements DurableObject {
         sourceFormat: staged.format,
         status: "idle",
         lastError: undefined,
+        materializedSourceKey: undefined,
       });
 
       this.state.waitUntil(this.warmSandbox());

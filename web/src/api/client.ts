@@ -3,6 +3,13 @@ import { readApiError, readApiJson } from "./errors.js";
 const API_BASE = "";
 const fetchOpts: RequestInit = { credentials: "include" };
 
+/** Poll interval while waiting for long-running session work (import/exec). */
+export function sessionPollDelayMs(elapsedMs: number): number {
+  if (elapsedMs < 60_000) return 400;
+  if (elapsedMs < 300_000) return 750;
+  return 1000;
+}
+
 export function normalizeGitHubRepoUrl(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) return trimmed;
@@ -28,7 +35,7 @@ async function waitForSessionStatus(
       throw new Error(String(status.lastError ?? "Operation failed"));
     }
     if (done(status)) return status;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, sessionPollDelayMs(Date.now() - start)));
   }
   throw new Error(timeoutMessage);
 }
