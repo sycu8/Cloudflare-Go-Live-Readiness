@@ -189,6 +189,24 @@ Required repository secrets:
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
+## Workers Observability
+
+Enabled in [`wrangler.jsonc`](wrangler.jsonc):
+
+- **Workers Logs** — `console.log` / errors, invocation metadata (7-day retention)
+- **Traces** — automatic spans for Worker, Durable Objects, and bindings
+
+View in dashboard:
+
+1. [Workers & Pages](https://dash.cloudflare.com/) → **cf-ready-docs** → **Observability**
+2. Durable Objects → **SessionDO** / **Sandbox** → **Logs** tab
+
+Local tail:
+
+```bash
+npx wrangler tail cf-ready-docs
+```
+
 ## Troubleshooting
 
 | Issue | Fix |
