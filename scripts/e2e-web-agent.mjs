@@ -8,7 +8,7 @@
  *   BASE_URL=https://ready.orangecloud.vn node scripts/e2e-web-agent.mjs
  */
 const BASE_URL = (process.env.BASE_URL ?? "https://ready.orangecloud.vn").replace(/\/$/, "");
-const AUTH_COOKIE = process.env.CF_READY_AUTH_COOKIE ?? "";
+const AUTH_COOKIE = normalizeAuthCookie(process.env.CF_READY_AUTH_COOKIE ?? "");
 const PUBLIC_REPO =
   process.env.E2E_GITHUB_REPO ?? "https://github.com/sycu8/Cloudflare-Go-Live-Readiness";
 const IMPORT_ONLY = process.env.E2E_IMPORT_ONLY === "1";
@@ -23,6 +23,13 @@ const COMMANDS = [
 ];
 
 const results = [];
+
+function normalizeAuthCookie(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("cf_ready_auth=")) return trimmed;
+  return `cf_ready_auth=${trimmed}`;
+}
 
 function log(icon, msg) {
   console.log(`${icon} ${msg}`);

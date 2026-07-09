@@ -147,14 +147,25 @@ export async function stageUploadZipToR2(
   };
 }
 
+export async function readSourceBytes(env: Env, r2Key: string): Promise<Uint8Array> {
+  if (!env.UPLOADS) throw new Error("R2 bucket UPLOADS is not configured");
+  const object = await env.UPLOADS.get(r2Key);
+  if (!object) {
+    throw new Error("Source archive missing from R2. Re-import the project.");
+  }
+  return new Uint8Array(await object.arrayBuffer());
+}
+
+/** @deprecated Prefer readSourceBytes — Sandbox writeFile needs known-length body. */
 export async function readSourceStream(
   env: Env,
   r2Key: string,
 ): Promise<ReadableStream<Uint8Array>> {
-  if (!env.UPLOADS) throw new Error("R2 bucket UPLOADS is not configured");
-  const object = await env.UPLOADS.get(r2Key);
-  if (!object?.body) {
-    throw new Error("Source archive missing from R2. Re-import the project.");
-  }
-  return object.body;
+  const bytes = await readSourceBytes(env, r2Key);
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
 }

@@ -18,7 +18,7 @@ import {
   registerGitHubRepoSession,
 } from "./reports-cache.js";
 import {
-  readSourceStream,
+  readSourceBytes,
   stageGithubTarballToR2,
   stageUploadZipToR2,
 } from "./sources-cache.js";
@@ -76,8 +76,8 @@ export class SessionDO implements DurableObject {
       throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
     }
     const format = this.session.sourceFormat;
-    const stream = await readSourceStream(this.env, this.session.sourceR2Key);
-    await withSandboxRetry(() => extractStagedArchive(sandbox, stream, format));
+    const archive = await readSourceBytes(this.env, this.session.sourceR2Key);
+    await withSandboxRetry(() => extractStagedArchive(sandbox, archive, format));
   }
 
   private async materializeSourceFromR2(sandbox: SandboxHandle): Promise<void> {
@@ -85,8 +85,8 @@ export class SessionDO implements DurableObject {
       throw new Error("Source archive not staged in R2");
     }
     const format = this.session.sourceFormat;
-    const stream = await readSourceStream(this.env, this.session.sourceR2Key);
-    await withSandboxRetry(() => extractStagedArchive(sandbox, stream, format));
+    const archive = await readSourceBytes(this.env, this.session.sourceR2Key);
+    await withSandboxRetry(() => extractStagedArchive(sandbox, archive, format));
   }
 
   private async withSandbox<T>(fn: (sandbox: SandboxHandle) => Promise<T>): Promise<T> {
