@@ -126,6 +126,7 @@ async function mountAgentApp(
       </div>
       <div class="header-actions">
         ${auth.user ? renderUserMenu(auth.user.name ?? "", auth.user.email, auth.user.avatarUrl) : ""}
+        <button type="button" class="help-btn mobile-chat-btn" id="mobile-chat-btn" title="Chat" aria-label="Chat">💬</button>
         <button type="button" class="help-btn" id="tour-btn" title="Hướng dẫn sử dụng" aria-label="Hướng dẫn sử dụng">?</button>
         <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
         <a class="link-btn link-btn--desktop" href="/">Docs</a>
@@ -148,13 +149,7 @@ async function mountAgentApp(
           </div>
           <div class="panel-body">
             <div class="mobile-quick-start" id="mobile-quick-start">
-              <p class="mobile-quick-start__title">Bắt đầu nhanh</p>
-              <ol class="mobile-quick-start__steps">
-                <li><span>1</span> Import ZIP / GitHub</li>
-                <li><span>2</span> Chạy <strong>scan</strong></li>
-                <li><span>3</span> Xem Results</li>
-              </ol>
-              <button type="button" class="ghost mobile-quick-start__tour" id="quick-tour-btn">Xem hướng dẫn chi tiết</button>
+              <button type="button" class="ghost mobile-quick-start__tour" id="quick-tour-btn">📖 Hướng dẫn 3 bước</button>
             </div>
 
             <div class="project-card" id="project-card">
@@ -228,8 +223,10 @@ async function mountAgentApp(
             <div class="workspace-view" data-view="cli" id="view-cli">
               <div class="cli-section">
                 <div class="commands-section">
-                  <h3>Quick commands</h3>
-                  <div class="chips" id="chips"></div>
+                  <h3 class="commands-section__title">Quick commands</h3>
+                  <div class="commands-section__row">
+                    <div class="chips" id="chips"></div>
+                  </div>
                 </div>
                 <div class="terminal-wrap" id="terminal" aria-label="cf-ready terminal"></div>
               </div>
@@ -304,6 +301,8 @@ async function mountAgentApp(
   const mobileContextHint = $("#mobile-context-hint");
   const tourBtn = $("#tour-btn");
   const quickTourBtn = $("#quick-tour-btn");
+  const mobileChatBtn = $("#mobile-chat-btn");
+  const isMobileLayout = () => window.innerWidth <= 1024;
 
   const MOBILE_TAB_META: Record<MobileTab, { label: string; hint: string }> = {
     project: { label: "Import project", hint: "Upload ZIP hoặc GitHub URL" },
@@ -321,7 +320,7 @@ async function mountAgentApp(
   const term = new Terminal({
     theme: { ...TERMINAL_THEMES.dark },
     fontFamily: "JetBrains Mono, ui-monospace, monospace",
-    fontSize: 13,
+    fontSize: window.innerWidth <= 1024 ? 11 : 13,
     lineHeight: 1.35,
     cursorBlink: true,
     scrollback: 2000,
@@ -501,7 +500,10 @@ async function mountAgentApp(
     const meta = MOBILE_TAB_META[tab];
     mobileContextLabel.textContent = meta.label;
     mobileContextHint.textContent = meta.hint;
-    if (tab === "workspace") fitTerminal();
+    if (tab === "workspace") {
+      if (isMobileLayout()) setWorkspaceView("cli");
+      fitTerminal();
+    }
   }
 
   function setWorkspaceView(view: WorkspaceView) {
@@ -513,6 +515,7 @@ async function mountAgentApp(
     root.querySelectorAll(".workspace-view").forEach((el) => {
       el.classList.toggle("active", (el as HTMLElement).dataset.view === view);
     });
+    mobileChatBtn.classList.toggle("active", view === "chat");
     if (view === "cli") fitTerminal();
   }
 
@@ -594,8 +597,10 @@ async function mountAgentApp(
     }
   }
 
-  writeln("cf-ready Web Agent");
-  writeln("Import project → run scan → xem Results tab.");
+  writeln(isMobileLayout() ? "Gõ scan hoặc chọn lệnh bên trên." : "cf-ready Web Agent");
+  if (!isMobileLayout()) {
+    writeln("Import project → run scan → xem Results tab.");
+  }
   writePrompt();
   fitTerminal();
 
@@ -822,6 +827,14 @@ async function mountAgentApp(
 
   tourBtn.onclick = () => onboarding.open(0);
   quickTourBtn.onclick = () => onboarding.open(0);
+  mobileChatBtn.onclick = () => {
+    setWorkspaceView(
+      root.querySelector(".workspace-view.active")?.getAttribute("data-view") === "chat"
+        ? "cli"
+        : "chat",
+    );
+    if (isMobileLayout()) setMobileTab("workspace");
+  };
 
   async function waitForBusySession(timeoutMs = 600_000): Promise<void> {
     const start = Date.now();
@@ -865,4 +878,13 @@ async function mountAgentApp(
   if (!hasCompletedOnboarding()) {
     requestAnimationFrame(() => onboarding.open(0));
   }
+
+  if (isMobileLayout()) {
+    setWorkspaceView("cli");
+    setMobileTab("project");
+  }
+
+  window.addEventListener("resize", () => {
+    if (isMobileLayout()) fitTerminal();
+  });
 }
