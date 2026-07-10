@@ -25,7 +25,11 @@ import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from ".
 import { mergePartialScanResults } from "../../src/service/merge-scan.js";
 import { SCAN_MODULE_NAMES, type ScanModuleName } from "../../src/service/scan-modules.js";
 import { buildModuleSandboxId } from "./module-sandbox-id.js";
+import { mapWithConcurrency } from "./concurrency.js";
 import { resolveSessionId } from "./session-id.js";
+
+/** Max simultaneous sandbox containers per session (scan + warm). */
+const SANDBOX_MODULE_CONCURRENCY = 3;
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 /** Server-side poll while exec/chat runs in waitUntil (must exceed sandbox exec + cold start). */
@@ -146,27 +150,25 @@ export class SessionDO implements DurableObject {
       ...SCAN_MODULE_NAMES.map((module) => buildModuleSandboxId(this.session.id, module)),
     ];
     try {
-      await Promise.all(
-        sandboxIds.map((sandboxId) =>
-          withSandboxRetry(
-            async () => {
-              const result = await materializeProject({
-                env: this.env,
-                sandbox: this.sandboxForId(sandboxId),
-                sourceR2Key: this.session.sourceR2Key!,
-                sourceFormat: this.session.sourceFormat!,
-                materializedSourceKey:
-                  sandboxId === primaryId ? this.session.materializedSourceKey : undefined,
-              });
-              if (
-                sandboxId === primaryId &&
-                this.session.materializedSourceKey !== result.materializedSourceKey
-              ) {
-                await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
-              }
-            },
-            { maxAttempts: 6, baseDelayMs: 1000 },
-          ),
+      await mapWithConcurrency(sandboxIds, SANDBOX_MODULE_CONCURRENCY, (sandboxId) =>
+        withSandboxRetry(
+          async () => {
+            const result = await materializeProject({
+              env: this.env,
+              sandbox: this.sandboxForId(sandboxId),
+              sourceR2Key: this.session.sourceR2Key!,
+              sourceFormat: this.session.sourceFormat!,
+              materializedSourceKey:
+                sandboxId === primaryId ? this.session.materializedSourceKey : undefined,
+            });
+            if (
+              sandboxId === primaryId &&
+              this.session.materializedSourceKey !== result.materializedSourceKey
+            ) {
+              await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
+            }
+          },
+          { maxAttempts: 6, baseDelayMs: 1000 },
         ),
       );
     } catch {
@@ -724,7 +726,11 @@ export class SessionDO implements DurableObject {
       throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
     }
     await this.patchSession({ status: "running", lastError: undefined });
-    const partials = await Promise.all(SCAN_MODULE_NAMES.map((module) => this.runModuleScan(module)));
+    const partials = await mapWithConcurrency(
+      [...SCAN_MODULE_NAMES],
+      SANDBOX_MODULE_CONCURRENCY,
+      (module) => this.runModuleScan(module),
+    );
     return mergePartialScanResults(partials);
   }
 

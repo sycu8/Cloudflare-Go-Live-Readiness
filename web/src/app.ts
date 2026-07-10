@@ -394,17 +394,19 @@ async function mountAgentApp(
     }, 8000);
   }
 
+  function applyPolledStatus(status: Record<string, unknown>): void {
+    const next = String(status.status ?? "idle");
+    if (isBusyProcessStatus(next)) setStatus(next);
+  }
+
   function startStatusPollDuringWork(): () => void {
     const id = setInterval(() => {
       void getStatus(sessionId)
-        .then((status) => {
-          const next = status.status ?? "idle";
-          if (isBusyProcessStatus(next)) setStatus(next);
-        })
+        .then((status) => applyPolledStatus(status as Record<string, unknown>))
         .catch(() => {
           /* ignore transient poll errors */
         });
-    }, 800);
+    }, 2500);
     return () => clearInterval(id);
   }
 
@@ -562,9 +564,10 @@ async function mountAgentApp(
     setWorkspaceView("cli");
     writeln(`$ cf-ready ${trimmed}`);
 
-    const stopPoll = startStatusPollDuringWork();
     try {
-      const result = await execCommand(sessionId, trimmed);
+      const result = await execCommand(sessionId, trimmed, {
+        onStatus: (status) => applyPolledStatus(status),
+      });
       if (result.stderr) writeln(result.stderr);
       if (result.stdout) {
         try {
@@ -584,8 +587,6 @@ async function mountAgentApp(
       writeln(`Error: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
       return;
-    } finally {
-      stopPoll();
     }
 
     await pollStatus();
@@ -788,7 +789,6 @@ async function mountAgentApp(
     addChatBubble("user", msg);
     chatSend.setAttribute("disabled", "true");
     setStatus("running");
-    const stopPoll = startStatusPollDuringWork();
     let commandExecuted = false;
     try {
       const result = await chat(sessionId, msg);
@@ -810,15 +810,20 @@ async function mountAgentApp(
       addChatBubble("agent", `Lỗi: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
     } finally {
-      stopPoll();
       chatSend.removeAttribute("disabled");
-      try {
-        await pollStatus();
-        if (commandExecuted) {
+      if (commandExecuted) {
+        try {
+          await pollStatus();
           markCompleted();
+        } catch {
+          if (!progressTimer.isActive()) setStatus("idle");
         }
-      } catch {
-        if (!progressTimer.isActive()) setStatus("idle");
+      } else {
+        try {
+          await pollStatus();
+        } catch {
+          if (!progressTimer.isActive()) setStatus("idle");
+        }
       }
     }
   }

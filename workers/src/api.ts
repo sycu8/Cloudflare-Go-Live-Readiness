@@ -19,6 +19,7 @@ import {
   getUserFromRequest,
   linkWorkspaceSession,
 } from "./auth/session.js";
+import { checkRateLimit, rateLimitResponse } from "./rate-limit.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -118,6 +119,9 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   if (pathname === "/api/sessions" && request.method === "POST") {
+    const limit = await checkRateLimit(env, request, pathname);
+    if (!limit.allowed) return rateLimitResponse(limit);
+
     const id = stubId();
     const doId = env.SESSION.idFromName(id);
     const stub = env.SESSION.get(doId);
@@ -136,6 +140,9 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   if (!sessionId) {
     return json({ error: "Not found" }, 404);
   }
+
+  const limit = await checkRateLimit(env, request, pathname, sessionId);
+  if (!limit.allowed) return rateLimitResponse(limit);
 
   if (isAuthEnforced(env)) {
     const user = await getUserFromRequest(request, env);
@@ -156,7 +163,7 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   if (pathname.endsWith("/auth/github/repos") && request.method === "GET") {
     const token = await getGitHubToken(env, sessionId, user?.id);
     if (!token) return json({ error: "GitHub not connected for private repos" }, 401);
-    const repos = await listGitHubRepos(token);
+    const repos = await listGitHubRepos(env, token, user?.id);
     return json({ repos });
   }
 

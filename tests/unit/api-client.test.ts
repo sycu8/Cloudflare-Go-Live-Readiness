@@ -31,11 +31,11 @@ describe("api client helpers", () => {
     expect(execWaitTimeoutMs("inspect")).toBe(420_000);
   });
 
-  it("sessionPollDelayMs polls faster early then backs off", () => {
-    expect(sessionPollDelayMs(0)).toBe(400);
-    expect(sessionPollDelayMs(59_999)).toBe(400);
-    expect(sessionPollDelayMs(60_000)).toBe(750);
-    expect(sessionPollDelayMs(299_999)).toBe(750);
-    expect(sessionPollDelayMs(300_000)).toBe(1000);
+  it("sessionPollDelayMs backs off to reduce status polling load", () => {
+    expect(sessionPollDelayMs(0)).toBe(1500);
+    expect(sessionPollDelayMs(119_999)).toBe(1500);
+    expect(sessionPollDelayMs(120_000)).toBe(2500);
+    expect(sessionPollDelayMs(599_999)).toBe(2500);
+    expect(sessionPollDelayMs(600_000)).toBe(4000);
   });
 });
