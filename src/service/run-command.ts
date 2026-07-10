@@ -20,6 +20,7 @@ import { generateAiAssets } from "../generators/ai-assets.js";
 import { generateSeoAssets } from "../generators/seo-assets.js";
 import { getExitCode } from "../cli/options.js";
 import { runScan, serializeScanContext } from "./run-scan.js";
+import { resolveFixFlagsForFinding } from "../config/remediation-templates.js";
 import type { CommandName, CommandOptions, CommandResult } from "./types.js";
 
 function inspectionPayload(context: Awaited<ReturnType<typeof createScanContext>>) {
@@ -211,20 +212,36 @@ export async function runCommand(
     }
 
     case "fix": {
-      if (!options.aiReadiness && !options.seo) {
-        throw new Error("Specify aiReadiness and/or seo for fix command");
+      let aiReadiness = options.aiReadiness;
+      let seo = options.seo;
+      if (options.findingId) {
+        const flags = resolveFixFlagsForFinding(options.findingId);
+        aiReadiness = flags.aiReadiness;
+        seo = flags.seo;
+        if (!aiReadiness && !seo) {
+          throw new Error(
+            `Finding ${options.findingId} has no automated fix. Apply the recommendation manually.`,
+          );
+        }
+      }
+      if (!aiReadiness && !seo) {
+        throw new Error("Specify --ai-readiness, --seo, or --finding <id>");
       }
       const context = await createScanContext({ ...options, modules: [] });
       const results: Array<{ file: string; status: string }> = [];
 
-      if (options.aiReadiness) {
+      if (aiReadiness) {
         results.push(...(await generateAiAssets(context, { force: options.force })));
       }
-      if (options.seo) {
+      if (seo) {
         results.push(...(await generateSeoAssets(context, { force: options.force })));
       }
 
-      return { exitCode: 0, data: { results } };
+      if (options.rescan) {
+        await runCommand("scan", { ...options, skipReports: false });
+      }
+
+      return { exitCode: 0, data: { results, findingId: options.findingId ?? null } };
     }
 
     default:

@@ -31,6 +31,14 @@ const CATEGORY_ALIASES: Record<string, FindingCategory> = {
   observability: "observability",
 };
 
+const MAX_NON_BLOCKER_DEDUCTION = 60;
+
+function confidenceMultiplier(confidence?: Finding["confidence"]): number {
+  if (confidence === "low") return 0.5;
+  if (confidence === "medium") return 0.75;
+  return 1;
+}
+
 export function calculateScores(findings: Finding[]): ReadinessScores {
   const categories = Object.keys(CATEGORY_WEIGHTS) as FindingCategory[];
   const categoryScores: CategoryScore[] = [];
@@ -45,14 +53,23 @@ export function calculateScores(findings: Finding[]): ReadinessScores {
 
     let score = 100;
     let hasBlocker = false;
+    let nonBlockerDeduction = 0;
 
     for (const finding of categoryFindings) {
       if (finding.status !== "open") continue;
-      const deduction = SEVERITY_DEDUCTIONS[finding.severity] ?? 0;
+      const baseDeduction = SEVERITY_DEDUCTIONS[finding.severity] ?? 0;
       if (finding.severity === "blocker") {
         hasBlocker = true;
+        score -= baseDeduction;
+        continue;
       }
+      const deduction = Math.round(baseDeduction * confidenceMultiplier(finding.confidence));
+      nonBlockerDeduction += deduction;
       score -= deduction;
+    }
+
+    if (nonBlockerDeduction > MAX_NON_BLOCKER_DEDUCTION) {
+      score += nonBlockerDeduction - MAX_NON_BLOCKER_DEDUCTION;
     }
 
     if (hasBlocker) score = 0;
@@ -107,7 +124,10 @@ export function isProductionReady(
 
   if (blockOnCriticalDependencies) {
     const depBlockers = openFindings.filter(
-      (f) => f.id === "security-critical-dependencies",
+      (f) =>
+        f.category === "security" &&
+        (f.id === "security-critical-dependencies" || f.id.startsWith("security-dep-")) &&
+        (f.severity === "high" || f.severity === "blocker"),
     );
     if (depBlockers.length > 0) return false;
   }

@@ -58,14 +58,27 @@ export function severityLabel(severity: string): string {
 }
 
 export function findingCard(f: Finding): string {
+  const evidence =
+    f.evidence ??
+    (f.evidenceItems?.length
+      ? f.evidenceItems
+          .slice(0, 2)
+          .map((e) => `${e.file}${e.line ? `:${e.line}` : ""}`)
+          .join(", ")
+      : "");
+  const fixCmd = f.remediation?.cfReadyCommand ?? (f.autoFixAvailable ? "cf-ready fix" : "");
   return `
     <article class="finding-card severity-${f.severity}">
       <div class="finding-card__meta">
         <span class="finding-card__severity">${severityLabel(f.severity)}</span>
         ${f.category ? `<span class="finding-card__category">${escapeHtml(f.category)}</span>` : ""}
+        ${f.autoFixAvailable ? `<span class="finding-card__fix">auto-fix</span>` : ""}
       </div>
       <h4 class="finding-card__title">${escapeHtml(f.title)}</h4>
       ${f.description ? `<p class="finding-card__desc">${escapeHtml(f.description)}</p>` : ""}
+      ${evidence ? `<p class="finding-card__evidence"><strong>Evidence:</strong> ${escapeHtml(evidence)}</p>` : ""}
+      ${f.recommendation ? `<p class="finding-card__rec">${escapeHtml(f.recommendation)}</p>` : ""}
+      ${fixCmd ? `<p class="finding-card__cmd"><code>${escapeHtml(fixCmd)}</code></p>` : ""}
     </article>
   `;
 }
@@ -96,7 +109,7 @@ export function renderResults(data: ScanResultData, filter: string, sessionId?: 
   let findings = allFindings;
   if (filter === "blockers") findings = blockers;
   else if (filter === "high") findings = allFindings.filter((f) => f.severity === "high" || f.severity === "blocker");
-  findings = findings.slice(0, 30);
+  findings = findings.slice(0, 50);
 
   const readyClass = data.productionReady ? "ready-banner--ok" : "ready-banner--bad";
   const readyText = data.productionReady ? "Production ready" : "Chưa production ready";

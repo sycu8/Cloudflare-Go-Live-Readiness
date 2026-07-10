@@ -134,6 +134,13 @@ export type Finding = {
   severity: string;
   category: string;
   description?: string;
+  evidence?: string;
+  evidenceItems?: Array<{ file: string; line?: number; snippet?: string }>;
+  recommendation?: string;
+  remediation?: { steps: string[]; cfReadyCommand?: string };
+  autoFixAvailable?: boolean;
+  requiresApproval?: boolean;
+  affectedFiles?: string[];
 };
 
 export type SessionResults = {
