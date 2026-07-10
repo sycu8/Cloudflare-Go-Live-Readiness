@@ -39,4 +39,9 @@ describe("sandbox-retry", () => {
     await expect(withSandboxRetry(fn)).rejects.toThrow("permission denied");
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  it("isSandboxStartingMessage matches formatted sandbox errors", async () => {
+    const { isSandboxStartingMessage } = await import("../../workers/src/sandbox-retry.js");
+    expect(isSandboxStartingMessage(formatSandboxError(new Error("createSession")))).toBe(true);
+  });
 });
