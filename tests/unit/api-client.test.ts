@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { execWaitTimeoutMs, normalizeGitHubRepoUrl, sessionPollDelayMs } from "../../web/src/api/client.js";
+import {
+  LONG_EXEC_WAIT_MS,
+  MEDIUM_EXEC_WAIT_MS,
+  SHORT_EXEC_WAIT_MS,
+} from "../../src/shared/exec-timeouts.js";
 
 describe("api client helpers", () => {
   it("normalizeGitHubRepoUrl passes through full URLs", () => {
@@ -22,13 +27,13 @@ describe("api client helpers", () => {
   });
 
   it("execWaitTimeoutMs uses longer budget for scan-like commands", () => {
-    expect(execWaitTimeoutMs("scan")).toBe(900_000);
-    expect(execWaitTimeoutMs("cf-ready scan")).toBe(900_000);
-    expect(execWaitTimeoutMs("report")).toBe(900_000);
-    expect(execWaitTimeoutMs("ai-optimize")).toBe(900_000);
-    expect(execWaitTimeoutMs("security-scan")).toBe(900_000);
-    expect(execWaitTimeoutMs("ai-ready")).toBe(600_000);
-    expect(execWaitTimeoutMs("inspect")).toBe(420_000);
+    expect(execWaitTimeoutMs("scan")).toBe(LONG_EXEC_WAIT_MS);
+    expect(execWaitTimeoutMs("cf-ready scan")).toBe(LONG_EXEC_WAIT_MS);
+    expect(execWaitTimeoutMs("report")).toBe(LONG_EXEC_WAIT_MS);
+    expect(execWaitTimeoutMs("ai-optimize")).toBe(LONG_EXEC_WAIT_MS);
+    expect(execWaitTimeoutMs("security-scan")).toBe(LONG_EXEC_WAIT_MS);
+    expect(execWaitTimeoutMs("ai-ready")).toBe(MEDIUM_EXEC_WAIT_MS);
+    expect(execWaitTimeoutMs("inspect")).toBe(SHORT_EXEC_WAIT_MS);
   });
 
   it("sessionPollDelayMs backs off to reduce status polling load", () => {
