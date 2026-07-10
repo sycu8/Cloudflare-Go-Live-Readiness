@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   formatElapsed,
+  formatStatusPillLabel,
   isBusyProcessStatus,
   processStatusLabel,
 } from "../../web/src/ui/progress-timer.js";
@@ -23,5 +24,11 @@ describe("progress timer helpers", () => {
     expect(isBusyProcessStatus("extracting")).toBe(true);
     expect(isBusyProcessStatus("idle")).toBe(false);
     expect(isBusyProcessStatus("done")).toBe(false);
+  });
+
+  it("formatStatusPillLabel shows Vietnamese completed state", () => {
+    expect(formatStatusPillLabel("done")).toBe("Hoàn tất");
+    expect(formatStatusPillLabel("idle")).toBe("Sẵn sàng");
+    expect(formatStatusPillLabel("error")).toBe("Lỗi");
   });
 });
