@@ -12,6 +12,9 @@ export async function readApiError(
         ? `Too many requests. Wait ${retryAfter}s and try again.`
         : "Too many requests. Wait a moment and try again.";
     }
+    if (res.status === 500) {
+      return message || "Server error during import. Wait a moment and try again.";
+    }
     if (/OperationInterruptedError|createSession|runtime connection was closing/i.test(message)) {
       return "Sandbox is starting up. Wait a few seconds and try again, or run scan to continue.";
     }
@@ -25,6 +28,9 @@ export async function readApiError(
   if (text.includes("<!DOCTYPE") || text.includes("<html")) {
     if (res.status === 429) {
       return "Too many requests. Wait a minute and try again.";
+    }
+    if (res.status === 500) {
+      return "Server error during import. Wait a moment and try again, or use a smaller repository.";
     }
     if (res.status === 524 || res.status === 504) {
       return "Server timed out while importing. Try again or use a smaller repository.";

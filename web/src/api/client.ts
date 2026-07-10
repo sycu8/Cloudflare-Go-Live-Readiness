@@ -211,7 +211,7 @@ export async function getStatus(sessionId: string): Promise<{
 export async function uploadZip(sessionId: string, file: File) {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/upload`, {
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/upload`, {
     method: "POST",
     body: form,
     credentials: "include",
@@ -222,7 +222,7 @@ export async function uploadZip(sessionId: string, file: File) {
 
 export async function importGitHub(sessionId: string, repoUrl: string) {
   const normalized = normalizeGitHubRepoUrl(repoUrl);
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/import/github`, {
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/import/github`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ repoUrl: normalized }),

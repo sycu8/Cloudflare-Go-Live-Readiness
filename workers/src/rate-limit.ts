@@ -17,6 +17,12 @@ type Counter = { count: number; resetAt: number };
 /** In-memory fallback when KV is unavailable (single-isolate best-effort). */
 const memoryCounters = new Map<string, Counter>();
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 function ruleForPath(pathname: string): RateLimitRule {
   if (/^\/api\/sessions\/[^/]+\/status$/.test(pathname)) {
     return { windowMs: 60_000, max: 120 };
@@ -50,15 +56,24 @@ async function incrementCounter(
   const kvKey = `rl:${key}`;
   if (env.SESSIONS) {
     const raw = await env.SESSIONS.get(kvKey);
-    let counter: Counter = raw
-      ? (JSON.parse(raw) as Counter)
-      : { count: 0, resetAt: now + rule.windowMs };
+    let counter: Counter = { count: 0, resetAt: now + rule.windowMs };
+    if (raw) {
+      try {
+        counter = JSON.parse(raw) as Counter;
+      } catch {
+        counter = { count: 0, resetAt: now + rule.windowMs };
+      }
+    }
     if (now >= counter.resetAt) {
       counter = { count: 0, resetAt: now + rule.windowMs };
     }
     counter.count += 1;
     const ttl = Math.max(1, Math.ceil((counter.resetAt - now) / 1000));
-    await env.SESSIONS.put(kvKey, JSON.stringify(counter), { expirationTtl: ttl });
+    try {
+      await env.SESSIONS.put(kvKey, JSON.stringify(counter), { expirationTtl: ttl });
+    } catch {
+      /* allow request if KV write fails */
+    }
     return counter;
   }
 
@@ -105,7 +120,22 @@ export function rateLimitResponse(result: RateLimitResult): Response {
         "Retry-After": String(result.retryAfterSec),
         "X-RateLimit-Limit": String(result.limit),
         "X-RateLimit-Remaining": String(result.remaining),
+        ...CORS_HEADERS,
       },
     },
   );
+}
+
+/** Fail open when rate-limit storage is unavailable — never block imports due to KV errors. */
+export async function checkRateLimitSafe(
+  env: Env,
+  request: Request,
+  pathname: string,
+  sessionId?: string | null,
+): Promise<RateLimitResult> {
+  try {
+    return await checkRateLimit(env, request, pathname, sessionId);
+  } catch {
+    return { allowed: true, limit: 0, remaining: 0, retryAfterSec: 0 };
+  }
 }
