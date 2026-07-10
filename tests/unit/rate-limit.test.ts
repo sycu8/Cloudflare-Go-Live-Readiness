@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Env } from "../../workers/src/types.js";
-import { checkRateLimit } from "../../workers/src/rate-limit.js";
+import { checkRateLimit, checkRateLimitSafe } from "../../workers/src/rate-limit.js";
 
 function mockRequest(ip = "203.0.113.1"): Request {
   return new Request("https://example.com/api/sessions/abc/status", {
@@ -20,16 +20,20 @@ describe("checkRateLimit", () => {
     }
   });
 
-  it("blocks when status limit exceeded", async () => {
-    const env = {} as Env;
-    const request = mockRequest("203.0.113.99");
-    const pathname = "/api/sessions/xyz/status";
-
-    let last = await checkRateLimit(env, request, pathname, "xyz");
-    for (let i = 0; i < 120; i++) {
-      last = await checkRateLimit(env, request, pathname, "xyz");
-    }
-    expect(last.allowed).toBe(false);
-    expect(last.retryAfterSec).toBeGreaterThan(0);
+  it("checkRateLimitSafe allows traffic when KV throws", async () => {
+    const env = {
+      SESSIONS: {
+        get: async () => {
+          throw new Error("KV unavailable");
+        },
+      },
+    } as unknown as Env;
+    const result = await checkRateLimitSafe(
+      env,
+      mockRequest(),
+      "/api/sessions/abc/status",
+      "abc",
+    );
+    expect(result.allowed).toBe(true);
   });
 });

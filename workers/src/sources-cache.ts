@@ -1,5 +1,7 @@
 import type { Env } from "./types.js";
 
+export const MAX_SOURCE_ARCHIVE_BYTES = 50 * 1024 * 1024;
+
 export type SourceArchiveFormat = "tar.gz" | "zip";
 
 export type SourceMeta = {
@@ -82,15 +84,24 @@ export async function stageGithubTarballToR2(
         "GitHub archive not found. For private repos, connect GitHub or check repository access.",
       );
     }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("GitHub access denied. Connect GitHub to import private repositories.");
+    }
+    if (response.status === 429) {
+      throw new Error("GitHub rate limit exceeded. Wait a minute and try again.");
+    }
     throw new Error(`GitHub archive download failed (${response.status})`);
   }
   if (!response.body) {
     throw new Error("GitHub returned an empty archive response");
   }
 
-  const tarball = await response.arrayBuffer();
+  const contentLength = Number(response.headers.get("content-length") ?? "0");
+  if (contentLength > MAX_SOURCE_ARCHIVE_BYTES) {
+    throw new Error("Repository archive exceeds 50MB limit. Try a smaller branch or upload a ZIP.");
+  }
 
-  await env.UPLOADS.put(r2Key, tarball, {
+  await env.UPLOADS.put(r2Key, response.body, {
     httpMetadata: {
       contentType: "application/gzip",
       cacheControl: "private, max-age=31536000, immutable",
@@ -104,6 +115,10 @@ export async function stageGithubTarballToR2(
   });
 
   const head = await env.UPLOADS.head(r2Key);
+  if (head && head.size > MAX_SOURCE_ARCHIVE_BYTES) {
+    await env.UPLOADS.delete(r2Key);
+    throw new Error("Repository archive exceeds 50MB limit. Try a smaller branch or upload a ZIP.");
+  }
   return {
     r2Key,
     format: "tar.gz",
@@ -124,6 +139,10 @@ export async function stageUploadZipToR2(
 ): Promise<SourceMeta> {
   if (!env.UPLOADS) {
     throw new Error("R2 bucket UPLOADS is not configured for source staging");
+  }
+
+  if (data.byteLength > MAX_SOURCE_ARCHIVE_BYTES) {
+    throw new Error("File exceeds 50MB limit");
   }
 
   const contentHash = await hashBytes(data);

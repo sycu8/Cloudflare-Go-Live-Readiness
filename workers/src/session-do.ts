@@ -141,35 +141,25 @@ export class SessionDO implements DurableObject {
     return withSandboxRetry(async () => fn(this.sandbox()));
   }
 
-  /** Pre-extract staged source on primary + per-module sandboxes after import. */
+  /** Pre-extract staged source on primary sandbox after import (module sandboxes warm on scan). */
   private async warmSandbox(): Promise<void> {
     if (!this.session.sourceR2Key || !this.session.sourceFormat) return;
     const primaryId = resolveSessionId(this.state, this.session.id);
-    const sandboxIds = [
-      primaryId,
-      ...SCAN_MODULE_NAMES.map((module) => buildModuleSandboxId(this.session.id, module)),
-    ];
     try {
-      await mapWithConcurrency(sandboxIds, SANDBOX_MODULE_CONCURRENCY, (sandboxId) =>
-        withSandboxRetry(
-          async () => {
-            const result = await materializeProject({
-              env: this.env,
-              sandbox: this.sandboxForId(sandboxId),
-              sourceR2Key: this.session.sourceR2Key!,
-              sourceFormat: this.session.sourceFormat!,
-              materializedSourceKey:
-                sandboxId === primaryId ? this.session.materializedSourceKey : undefined,
-            });
-            if (
-              sandboxId === primaryId &&
-              this.session.materializedSourceKey !== result.materializedSourceKey
-            ) {
-              await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
-            }
-          },
-          { maxAttempts: 6, baseDelayMs: 1000 },
-        ),
+      await withSandboxRetry(
+        async () => {
+          const result = await materializeProject({
+            env: this.env,
+            sandbox: this.sandboxForId(primaryId),
+            sourceR2Key: this.session.sourceR2Key!,
+            sourceFormat: this.session.sourceFormat!,
+            materializedSourceKey: this.session.materializedSourceKey,
+          });
+          if (this.session.materializedSourceKey !== result.materializedSourceKey) {
+            await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
+          }
+        },
+        { maxAttempts: 6, baseDelayMs: 1000 },
       );
     } catch {
       /* first exec/files will retry extract */
@@ -269,11 +259,26 @@ export class SessionDO implements DurableObject {
 
       return Response.json({ error: "Not found" }, { status: 404 });
     } catch (error) {
+      const message = this.formatStagingError(error);
       this.session.status = "error";
-      this.session.lastError = formatSandboxError(error);
+      this.session.lastError = message;
       await this.save();
-      return Response.json({ error: this.session.lastError }, { status: 500 });
+      const status = this.httpStatusForError(message);
+      return Response.json({ error: message }, { status });
     }
+  }
+
+  private httpStatusForError(message: string): number {
+    if (/required|Invalid|exceeds|Missing|not configured|Expected multipart/i.test(message)) {
+      return 400;
+    }
+    if (/GitHub|rate limit|download failed|access denied/i.test(message)) {
+      return 502;
+    }
+    if (isRetryableSandboxError(new Error(message))) {
+      return 503;
+    }
+    return 500;
   }
 
   private async handleUpload(request: Request): Promise<Response> {
