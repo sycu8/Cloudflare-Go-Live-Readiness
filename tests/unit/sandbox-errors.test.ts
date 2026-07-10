@@ -16,6 +16,10 @@ describe("isSandboxStartingMessage", () => {
     ).toBe(true);
   });
 
+  it("detects reconnecting-only sandbox messages", () => {
+    expect(isSandboxStartingMessage("sandbox container is starting or reconnecting")).toBe(true);
+  });
+
   it("ignores unrelated errors", () => {
     expect(isSandboxStartingMessage("No project imported")).toBe(false);
   });
