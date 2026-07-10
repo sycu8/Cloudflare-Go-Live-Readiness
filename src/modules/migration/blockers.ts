@@ -1,9 +1,9 @@
-import fg from "fast-glob";
 import path from "node:path";
-import { RUNTIME_BLOCKER_PATTERNS, SCAN_EXCLUDE_DIRS } from "../../config/default-rules.js";
+import { RUNTIME_BLOCKER_PATTERNS } from "../../config/default-rules.js";
 import { readTextFile } from "../../core/filesystem.js";
 import { createFinding, createPassedFinding } from "../../core/findings.js";
 import { relativeToRoot } from "../../utils/path.js";
+import { projectGlob } from "../../utils/glob.js";
 import type { Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
 
@@ -13,9 +13,8 @@ export async function scanRuntimeBlockers(
   inspection: RepositoryInspection,
 ): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{ts,tsx,js,jsx,mjs,cjs}"], {
+  const files = await projectGlob(["**/*.{ts,tsx,js,jsx,mjs,cjs}"], {
     cwd: inspection.rootDir,
-    ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
     onlyFiles: true,
   });
 

@@ -1,4 +1,4 @@
-import fg from "fast-glob";
+import { projectGlob } from "../utils/glob.js";
 import path from "node:path";
 import { fileExists, readTextFile } from "../core/filesystem.js";
 import { getDependencyNames } from "../utils/package-json.js";
@@ -14,7 +14,7 @@ export async function detectFramework(
 
   const hasAppDir = await fileExists(path.join(rootDir, "app"));
   const hasPagesDir = await fileExists(path.join(rootDir, "pages"));
-  const nextConfigs = await fg(["next.config.{js,mjs,ts}"], { cwd: rootDir });
+  const nextConfigs = await projectGlob(["next.config.{js,mjs,ts}"], { cwd: rootDir });
 
   if (deps.has("next") || nextConfigs.length > 0 || hasAppDir || hasPagesDir) {
     const middlewareExists = await fileExists(path.join(rootDir, "middleware.ts")) ||
@@ -36,7 +36,7 @@ export async function detectFramework(
     };
   }
 
-  const viteConfigs = await fg(["vite.config.{ts,js,mjs}"], { cwd: rootDir });
+  const viteConfigs = await projectGlob(["vite.config.{ts,js,mjs}"], { cwd: rootDir });
   if (deps.has("vite") || viteConfigs.length > 0) {
     return { framework: "vite", confidence: deps.has("vite") ? "high" : "medium" };
   }
@@ -59,7 +59,7 @@ export async function detectFramework(
   }
 
   if (pkg && (deps.has("typescript") || deps.has("@types/node"))) {
-    const hasServerEntry = await fg(["src/index.{ts,js}", "index.{ts,js}"], { cwd: rootDir });
+    const hasServerEntry = await projectGlob(["src/index.{ts,js}", "index.{ts,js}"], { cwd: rootDir });
     if (hasServerEntry.length > 0) {
       const content = await readTextFile(path.join(rootDir, hasServerEntry[0]!));
       if (content?.includes("createServer") || content?.includes("http.createServer")) {
@@ -69,7 +69,7 @@ export async function detectFramework(
     return { framework: "nodejs", confidence: "low" };
   }
 
-  const htmlFiles = await fg(["**/*.html", "public/**/*.html"], {
+  const htmlFiles = await projectGlob(["**/*.html", "public/**/*.html"], {
     cwd: rootDir,
     ignore: ["node_modules/**"],
   });
@@ -90,7 +90,7 @@ export async function detectApiRoutes(
   const routes: string[] = [];
 
   if (framework === "nextjs") {
-    const appRoutes = await fg(["app/**/route.{ts,js}", "pages/api/**/*.{ts,js}"], {
+    const appRoutes = await projectGlob(["app/**/route.{ts,js}", "pages/api/**/*.{ts,js}"], {
       cwd: rootDir,
       onlyFiles: true,
     });
@@ -112,7 +112,7 @@ export async function detectApiRoutes(
   }
 
   if (framework === "express" || framework === "nodejs") {
-    const serverFiles = await fg(["**/*.{ts,js}"], {
+    const serverFiles = await projectGlob(["**/*.{ts,js}"], {
       cwd: rootDir,
       ignore: ["node_modules/**", "dist/**"],
     });
@@ -133,7 +133,7 @@ export async function detectPageRoutes(rootDir: string, framework: Framework): P
   const routes: string[] = ["/"];
 
   if (framework === "nextjs") {
-    const pageFiles = await fg(
+    const pageFiles = await projectGlob(
       ["app/**/page.{tsx,jsx,ts,js}", "pages/**/*.{tsx,jsx,ts,js}"],
       { cwd: rootDir, ignore: ["**/api/**", "**/node_modules/**"] },
     );
@@ -156,7 +156,7 @@ export async function detectPageRoutes(rootDir: string, framework: Framework): P
   }
 
   if (framework === "vite" || framework === "react-spa" || framework === "static") {
-    const htmlFiles = await fg(["index.html", "public/**/*.html"], { cwd: rootDir });
+    const htmlFiles = await projectGlob(["index.html", "public/**/*.html"], { cwd: rootDir });
     for (const file of htmlFiles) {
       if (file === "index.html") routes.push("/");
       else {
@@ -170,7 +170,7 @@ export async function detectPageRoutes(rootDir: string, framework: Framework): P
 }
 
 export async function detectAuthPatterns(rootDir: string): Promise<boolean> {
-  const files = await fg(["**/*.{ts,tsx,js,jsx}"], {
+  const files = await projectGlob(["**/*.{ts,tsx,js,jsx}"], {
     cwd: rootDir,
     ignore: ["node_modules/**", "dist/**", ".next/**"],
   });
