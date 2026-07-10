@@ -18,8 +18,7 @@ import { detectDeploymentTarget } from "../inspectors/deployment.js";
 import { inspectCloudflare } from "../inspectors/cloudflare.js";
 import { readPackageJson, getProjectName } from "../utils/package-json.js";
 import type { RepositoryInspection } from "../inspectors/types.js";
-import fg from "fast-glob";
-import { SCAN_EXCLUDE_DIRS } from "../config/default-rules.js";
+import { projectGlob } from "../utils/glob.js";
 
 export async function loadConfig(
   rootDir: string,
@@ -72,9 +71,8 @@ export async function inspectRepository(rootDir: string): Promise<RepositoryInsp
     ? path.join(rootDir, "public")
     : rootDir;
 
-  const sourceFiles = await fg(["**/*.{ts,tsx,js,jsx,mjs,cjs}"], {
+  const sourceFiles = await projectGlob(["**/*.{ts,tsx,js,jsx,mjs,cjs}"], {
     cwd: rootDir,
-    ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
     onlyFiles: true,
   });
 

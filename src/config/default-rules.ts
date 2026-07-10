@@ -144,6 +144,20 @@ export const SCAN_EXCLUDE_DIRS = [
   ".cf-ready-cache",
 ];
 
+/** Windows user-profile junctions that often throw EPERM when traversed. */
+export const WINDOWS_PROFILE_JUNCTIONS = [
+  "Application Data",
+  "Local Settings",
+  "My Documents",
+  "Cookies",
+  "NetHood",
+  "PrintHood",
+  "Recent",
+  "SendTo",
+  "Start Menu",
+  "Templates",
+];
+
 export const CATEGORY_WEIGHTS: Record<string, number> = {
   migration: 0.35,
   security: 0.3,

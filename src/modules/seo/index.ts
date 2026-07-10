@@ -1,8 +1,7 @@
-import fg from "fast-glob";
 import path from "node:path";
+import { projectGlob } from "../../utils/glob.js";
 import { createFinding, createPassedFinding } from "../../core/findings.js";
 import { readTextFile } from "../../core/filesystem.js";
-import { SCAN_EXCLUDE_DIRS } from "../../config/default-rules.js";
 import type { CfReadyConfig, Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
 import { publicAssetExists } from "../../utils/public-assets.js";
@@ -12,11 +11,10 @@ export async function checkMetadata(
   config: CfReadyConfig,
 ): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(
+  const files = await projectGlob(
     ["**/*.{html,tsx,jsx,vue}", "app/**/layout.{tsx,jsx}", "index.html"],
     {
       cwd: inspection.rootDir,
-      ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
     },
   );
 
@@ -110,9 +108,8 @@ export async function checkMetadata(
 
 export async function checkImages(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{tsx,jsx,html}"], {
+  const files = await projectGlob(["**/*.{tsx,jsx,html}"], {
     cwd: inspection.rootDir,
-    ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
   });
 
   let imagesWithoutAlt = 0;
@@ -144,9 +141,8 @@ export async function checkImages(inspection: RepositoryInspection): Promise<Fin
 
 export async function checkHeadings(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{tsx,jsx,html}"], {
+  const files = await projectGlob(["**/*.{tsx,jsx,html}"], {
     cwd: inspection.rootDir,
-    ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
   });
 
   let missingH1 = 0;

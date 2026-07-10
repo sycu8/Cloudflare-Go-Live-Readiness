@@ -1,8 +1,8 @@
 import path from "node:path";
-import fg from "fast-glob";
+import { projectGlob } from "../../utils/glob.js";
 import { createFinding, createPassedFinding } from "../../core/findings.js";
 import { readTextFile } from "../../core/filesystem.js";
-import { SECRET_PATTERNS, SCAN_EXCLUDE_DIRS } from "../../config/default-rules.js";
+import { SECRET_PATTERNS } from "../../config/default-rules.js";
 import { relativeToRoot } from "../../utils/path.js";
 import type { Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
@@ -12,10 +12,9 @@ const PLACEHOLDER_PATTERN = /(example|placeholder|changeme|your[_-]?key|xxx+|dum
 
 export async function scanSecrets(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{ts,tsx,js,jsx,json,env,yml,yaml,toml}"], {
+  const files = await projectGlob(["**/*.{ts,tsx,js,jsx,json,env,yml,yaml,toml}"], {
     cwd: inspection.rootDir,
     ignore: [
-      ...SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
       "**/package-lock.json",
       "**/pnpm-lock.yaml",
       "**/yarn.lock",
@@ -108,9 +107,8 @@ export async function checkEnvFiles(inspection: RepositoryInspection): Promise<F
 
 export async function checkCors(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{ts,js,mjs}"], {
+  const files = await projectGlob(["**/*.{ts,js,mjs}"], {
     cwd: inspection.rootDir,
-    ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
   });
 
   for (const file of files.slice(0, 100)) {
@@ -140,7 +138,7 @@ export async function checkCors(inspection: RepositoryInspection): Promise<Findi
 
 export async function checkSourceMaps(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const maps = await fg(["public/**/*.map", "dist/**/*.map", "build/**/*.map"], {
+  const maps = await projectGlob(["public/**/*.map", "dist/**/*.map", "build/**/*.map"], {
     cwd: inspection.rootDir,
     onlyFiles: true,
   });
