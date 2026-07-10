@@ -56,14 +56,14 @@
     "test:e2e": "node scripts/e2e-web-agent.mjs",
     "test:qa": "node tests/qa/run-full-qa.mjs",
     "test:qa:cli": "bash tests/qa/run-qa.sh",
-    "prepublishOnly": "npm run build",
+    "validate:npm": "node scripts/validate-npm-package.mjs",
+    "prepublishOnly": "npm run build && npm run validate:npm",
     "pages:deploy": "npm run build:all && wrangler deploy"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@cloudflare/sandbox": "^0.12.3",
     "commander": "^12.1.0",
     "execa": "^9.5.2",
     "fast-glob": "^3.3.3",
@@ -72,6 +72,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@cloudflare/sandbox": "^0.12.3",
     "@cloudflare/workers-types": "^5.20260706.1",
     "@types/node": "^22.13.10",
     "eslint": "^9.22.0",

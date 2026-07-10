@@ -3,12 +3,19 @@ name: Publish to npm
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       dry_run:
         description: Run npm publish --dry-run only
         type: boolean
         default: true
+      version:
+        description: Optional version override (must match package.json unless dry run)
+        type: string
+        required: false
 
 jobs:
   publish:
@@ -27,22 +34,55 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
 
-      - name: Install and build
-        run: npm ci && npm run build
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Test CLI smoke
+      - name: Build CLI
+        run: npm run build
+
+      - name: Validate npm package
+        run: node scripts/validate-npm-package.mjs
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Resolve publish version
+        id: version
         run: |
-          node dist/index.js scan --cwd tests/fixtures/static-site --json > /tmp/scan.json
-          node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/scan.json','utf8')); if(!r.scores) process.exit(1)"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            TAG_VERSION="${TAG#v}"
+            if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+              echo "Tag $TAG does not match package.json version $PKG_VERSION"
+              exit 1
+            fi
+          fi
+          if [ -n "${{ inputs.version }}" ] && [ "${{ inputs.version }}" != "$PKG_VERSION" ]; then
+            if [ "${{ inputs.dry_run }}" != "true" ]; then
+              echo "Input version ${{ inputs.version }} does not match package.json $PKG_VERSION"
+              exit 1
+            fi
+          fi
+          echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Publish (dry run)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
-        run: npm publish --dry-run
+        run: npm publish --dry-run --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish to npm
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
-        run: npm publish --access public
+      - name: Publish to npmjs.org
+        if: github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish summary
+        if: success()
+        run: |
+          echo "### npm publish" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Package:** [@orangecloud/cf-ready](https://www.npmjs.com/package/@orangecloud/cf-ready)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Version:** ${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Install:** \`npm install -g @orangecloud/cf-ready\`" >> "$GITHUB_STEP_SUMMARY"
