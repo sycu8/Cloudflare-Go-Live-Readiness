@@ -567,8 +567,10 @@ async function mountAgentApp(
     try {
       const result = await execCommand(sessionId, trimmed, {
         onStatus: (status) => applyPolledStatus(status),
-        onRetry: (attempt) => {
-          writeln(`Sandbox đang khởi động… thử lại (${attempt}/2) sau vài giây.`);
+        onRetry: (attempt, maxAttempts) => {
+          writeln(
+            `Sandbox đang khởi động… thử lại (${attempt}/${maxAttempts - 1}) sau vài giây.`,
+          );
           setStatus("running");
         },
       });

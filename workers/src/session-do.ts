@@ -151,8 +151,14 @@ export class SessionDO implements DurableObject {
     }
   }
 
-  /** Wake module sandboxes sequentially before parallel scan to reduce cold-start errors. */
+  /** Wake primary + module sandboxes before parallel scan to reduce cold-start errors. */
   private async prewarmScanSandboxes(): Promise<void> {
+    await withSandboxRetry(
+      async () => {
+        await this.pingSandbox(this.sandbox());
+      },
+      SANDBOX_COLD_START_RETRY,
+    );
     await mapWithConcurrency([...SCAN_MODULE_NAMES], 2, async (module) => {
       await withSandboxRetry(
         async () => {
@@ -738,8 +744,9 @@ export class SessionDO implements DurableObject {
     });
   }
 
+  /** Parallel scan needs several warm containers; first scan uses one sandbox to avoid cold-start bursts. */
   private shouldRunParallelScan(req: ExecRequest): boolean {
-    return req.command === "scan" && !req.flags?.modules;
+    return req.command === "scan" && !req.flags?.modules && Boolean(this.session.lastResult);
   }
 
   private buildModuleScanCommand(module: ScanModuleName): string {
@@ -801,60 +808,78 @@ export class SessionDO implements DurableObject {
     }
   }
 
+  private async runExecOnce(req: ExecRequest): Promise<void> {
+    let parsed: unknown;
+    if (this.shouldRunParallelScan(req)) {
+      parsed = await this.runParallelScan();
+    } else if (req.command === "scan" && !req.flags?.modules) {
+      parsed = await this.runSingleSandboxFullScan();
+    } else {
+      const result = await this.withSandbox(async (sandbox) => {
+        await this.ensureProjectReady(sandbox);
+        await this.patchSession({ status: "running", lastError: undefined });
+        await this.pingSandbox(sandbox);
+        const cliArgs = this.buildCfReadyArgs(req);
+        const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
+
+        const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
+        const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
+
+        return sandbox.exec(`${envPrefix}${cmd}`, {
+          timeout: sandboxExecTimeoutMs(req.command),
+        });
+      }, SANDBOX_SCAN_RETRY);
+
+      if (!result.success && !result.stdout) {
+        const message = result.stderr || `Command failed with exit ${result.exitCode}`;
+        if (isRetryableSandboxError(new Error(message))) {
+          throw new Error(message);
+        }
+        await this.patchSession({ status: "error", lastError: message });
+        return;
+      }
+
+      try {
+        parsed = JSON.parse(result.stdout.trim());
+      } catch {
+        parsed = { stdout: result.stdout, stderr: result.stderr };
+      }
+    }
+
+    const patch: Partial<SessionState> = {
+      status: "done",
+      lastResult: parsed,
+      lastError: undefined,
+    };
+    if (typeof parsed === "object" && parsed && "markdown" in parsed) {
+      patch.lastMarkdown = String((parsed as { markdown: string }).markdown);
+    }
+    await this.patchSession(patch);
+
+    if (req.command === "scan" || req.command === "report") {
+      const commitSha = this.session.sourceCommitSha;
+      this.state.waitUntil(
+        (async () => {
+          await this.load();
+          await this.cachePdfFromScanData(parsed, commitSha);
+        })(),
+      );
+    }
+  }
+
   private async runExec(req: ExecRequest): Promise<void> {
+    const isScan = req.command === "scan";
     try {
-      let parsed: unknown;
-      if (this.shouldRunParallelScan(req)) {
-        parsed = await this.runParallelScan();
-      } else {
-        const result = await this.withSandbox(async (sandbox) => {
-          await this.ensureProjectReady(sandbox);
-          await this.patchSession({ status: "running", lastError: undefined });
-          await this.pingSandbox(sandbox);
-          const cliArgs = this.buildCfReadyArgs(req);
-          const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
-
-          const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
-          const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
-
-          return sandbox.exec(`${envPrefix}${cmd}`, {
-            timeout: sandboxExecTimeoutMs(req.command),
-          });
-        }, SANDBOX_SCAN_RETRY);
-
-        if (!result.success && !result.stdout) {
-          await this.patchSession({
-            status: "error",
-            lastError: result.stderr || `Command failed with exit ${result.exitCode}`,
-          });
-          return;
-        }
-
-        try {
-          parsed = JSON.parse(result.stdout.trim());
-        } catch {
-          parsed = { stdout: result.stdout, stderr: result.stderr };
-        }
-      }
-
-      const patch: Partial<SessionState> = {
-        status: "done",
-        lastResult: parsed,
-        lastError: undefined,
-      };
-      if (typeof parsed === "object" && parsed && "markdown" in parsed) {
-        patch.lastMarkdown = String((parsed as { markdown: string }).markdown);
-      }
-      await this.patchSession(patch);
-
-      if (req.command === "scan" || req.command === "report") {
-        const commitSha = this.session.sourceCommitSha;
-        this.state.waitUntil(
-          (async () => {
-            await this.load();
-            await this.cachePdfFromScanData(parsed, commitSha);
-          })(),
+      if (isScan) {
+        await withSandboxRetry(
+          async () => {
+            await this.patchSession({ status: "running", lastError: undefined });
+            await this.runExecOnce(req);
+          },
+          { maxAttempts: 3, baseDelayMs: 5000 },
         );
+      } else {
+        await this.runExecOnce(req);
       }
     } catch (error) {
       await this.patchSession({

@@ -254,15 +254,17 @@ export type ExecCommandResult = {
   markdown?: string;
 };
 
+export const EXEC_SANDBOX_MAX_RETRIES = 6;
+
 export async function execCommand(
   sessionId: string,
   line: string,
   options?: {
     onStatus?: (status: Record<string, unknown>) => void;
-    onRetry?: (attempt: number) => void;
+    onRetry?: (attempt: number, maxAttempts: number) => void;
   },
 ): Promise<ExecCommandResult> {
-  const maxAttempts = 3;
+  const maxAttempts = EXEC_SANDBOX_MAX_RETRIES;
   let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -296,8 +298,8 @@ export async function execCommand(
       lastError = error instanceof Error ? error : new Error(String(error));
       const canRetry = isSandboxStartingMessage(lastError.message) && attempt < maxAttempts;
       if (!canRetry) throw lastError;
-      options?.onRetry?.(attempt);
-      await sleep(4000 * attempt);
+      options?.onRetry?.(attempt, maxAttempts);
+      await sleep(Math.min(5000 * attempt, 25_000));
     }
   }
 

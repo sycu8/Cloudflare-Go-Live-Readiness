@@ -1,8 +1,8 @@
 const RETRYABLE =
-  /OperationInterruptedError|interrupted while the runtime connection|createSession|connection was closing|ECONNRESET|socket hang up|temporarily unavailable|reconnecting|not ready|503|service unavailable/i;
+  /OperationInterruptedError|interrupted while the runtime connection|createSession|connection was closing|sandbox container is starting|ECONNRESET|socket hang up|temporarily unavailable|reconnecting|not ready|503|service unavailable/i;
 
-export const SANDBOX_COLD_START_RETRY = { maxAttempts: 15, baseDelayMs: 2000 };
-export const SANDBOX_SCAN_RETRY = { maxAttempts: 20, baseDelayMs: 2500 };
+export const SANDBOX_COLD_START_RETRY = { maxAttempts: 20, baseDelayMs: 2000 };
+export const SANDBOX_SCAN_RETRY = { maxAttempts: 24, baseDelayMs: 2500 };
 
 export function isRetryableSandboxError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
