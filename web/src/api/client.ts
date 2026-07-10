@@ -106,6 +106,7 @@ export type SessionResults = {
 export type ChatResponse = {
   reply?: string;
   command?: string;
+  executed?: boolean;
   result?: {
     data?: ScanResultData;
     stdout?: string;

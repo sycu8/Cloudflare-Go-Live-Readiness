@@ -30,6 +30,7 @@ import {
   renderUserMenu,
 } from "./ui/auth.js";
 import {
+  formatStatusPillLabel,
   isBusyProcessStatus,
   mountProgressTimer,
   type ProgressTimerHandle,
@@ -129,7 +130,7 @@ async function mountAgentApp(
         ${auth.user ? renderUserMenu(auth.user.name ?? "", auth.user.email, auth.user.avatarUrl) : ""}
         <button type="button" class="help-btn mobile-chat-btn" id="mobile-chat-btn" title="Chat" aria-label="Chat">💬</button>
         <button type="button" class="help-btn" id="tour-btn" title="Hướng dẫn sử dụng" aria-label="Hướng dẫn sử dụng">?</button>
-        <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
+        <span class="status-pill idle" id="status-pill" title="Sẵn sàng">Sẵn sàng</span>
         <a class="link-btn link-btn--desktop" href="/">Docs</a>
       </div>
     </header>
@@ -364,9 +365,17 @@ async function mountAgentApp(
     term.write(`\r\n${prompt}`);
   }
 
+  let completedResetTimer: ReturnType<typeof setTimeout> | null = null;
+
   function setStatus(status: string) {
-    statusPill.textContent = status;
+    if (completedResetTimer) {
+      clearTimeout(completedResetTimer);
+      completedResetTimer = null;
+    }
+    const label = formatStatusPillLabel(status);
+    statusPill.textContent = label;
     statusPill.className = `status-pill ${status}`;
+    statusPill.title = label;
     if (isBusyProcessStatus(status)) {
       progressTimer.start(status);
       progressTimerHost.setAttribute("aria-hidden", "false");
@@ -374,6 +383,15 @@ async function mountAgentApp(
       progressTimer.stop();
       progressTimerHost.setAttribute("aria-hidden", "true");
     }
+  }
+
+  /** Show green completed pill briefly, then return to idle. */
+  function markCompleted(): void {
+    setStatus("done");
+    completedResetTimer = setTimeout(() => {
+      setStatus("idle");
+      completedResetTimer = null;
+    }, 8000);
   }
 
   function startStatusPollDuringWork(): () => void {
@@ -486,6 +504,7 @@ async function mountAgentApp(
     await refreshFiles();
     addChatBubble("agent", `Đã import ${short}. Gõ scan để trích xuất và phân tích.`);
     setMobileTab("workspace");
+    markCompleted();
   }
 
   function setMobileTab(tab: MobileTab) {
@@ -575,6 +594,7 @@ async function mountAgentApp(
     if (results.markdown) {
       showResults({ ...(results.result as ScanResultData), markdown: results.markdown });
     }
+    markCompleted();
   }
 
   async function handleUpload(file: File) {
@@ -586,10 +606,10 @@ async function mountAgentApp(
       const name = file.name.replace(/\.zip$/i, "");
       setProjectInfo(name, "Upload thành công — chạy scan để kiểm tra.");
       writeln("✓ Upload complete.");
-      setStatus("idle");
       await refreshFiles();
       addChatBubble("agent", `Đã import ${file.name}. Gõ "scan" hoặc hỏi tôi để bắt đầu.`);
       setMobileTab("workspace");
+      markCompleted();
     } catch (err) {
       writeln(`Upload failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
@@ -769,8 +789,10 @@ async function mountAgentApp(
     chatSend.setAttribute("disabled", "true");
     setStatus("running");
     const stopPoll = startStatusPollDuringWork();
+    let commandExecuted = false;
     try {
       const result = await chat(sessionId, msg);
+      commandExecuted = Boolean(result.executed);
       addChatBubble("agent", result.reply ?? "Đã xử lý.");
       if (result.command) writeln(`$ ${result.command}`);
       if (result.result?.data) showResults(result.result.data as ScanResultData);
@@ -792,6 +814,9 @@ async function mountAgentApp(
       chatSend.removeAttribute("disabled");
       try {
         await pollStatus();
+        if (commandExecuted) {
+          markCompleted();
+        }
       } catch {
         if (!progressTimer.isActive()) setStatus("idle");
       }

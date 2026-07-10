@@ -24,6 +24,26 @@ export function isBusyProcessStatus(status: string): boolean {
   return BUSY_STATUSES.has(status);
 }
 
+/** User-facing label for the header status pill. */
+export function formatStatusPillLabel(status: string): string {
+  switch (status) {
+    case "done":
+      return "Hoàn tất";
+    case "idle":
+      return "Sẵn sàng";
+    case "importing":
+      return "Đang import";
+    case "extracting":
+      return "Đang giải nén";
+    case "running":
+      return "Đang chạy";
+    case "error":
+      return "Lỗi";
+    default:
+      return status;
+  }
+}
+
 export type ProgressTimerHandle = {
   start(status: string): void;
   stop(): void;
