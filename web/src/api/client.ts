@@ -5,9 +5,41 @@ const fetchOpts: RequestInit = { credentials: "include" };
 
 /** Poll interval while waiting for long-running session work (import/exec). */
 export function sessionPollDelayMs(elapsedMs: number): number {
-  if (elapsedMs < 60_000) return 400;
-  if (elapsedMs < 300_000) return 750;
-  return 1000;
+  if (elapsedMs < 120_000) return 1500;
+  if (elapsedMs < 600_000) return 2500;
+  return 4000;
+}
+
+function parseRetryAfterSec(res: Response): number {
+  const header = res.headers.get("Retry-After");
+  if (!header) return 5;
+  const seconds = Number(header);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 5;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Fetch with limited retries on 429 / transient 5xx. */
+export async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  options?: { maxAttempts?: number },
+): Promise<Response> {
+  const maxAttempts = options?.maxAttempts ?? 4;
+  let lastResponse: Response | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(input, init);
+    if (res.status !== 429 && res.status < 500) return res;
+    lastResponse = res;
+    if (attempt === maxAttempts) return res;
+    const retryMs = res.status === 429 ? parseRetryAfterSec(res) * 1000 : 1000 * attempt;
+    await sleep(Math.min(retryMs, 30_000));
+  }
+
+  return lastResponse ?? fetch(input, init);
 }
 
 export function normalizeGitHubRepoUrl(input: string): string {
@@ -24,11 +56,12 @@ async function waitForSessionStatus(
   done: (status: Record<string, unknown>) => boolean,
   timeoutMs: number,
   timeoutMessage: string,
-  options?: { completeOnSourceR2Key?: boolean },
+  options?: { completeOnSourceR2Key?: boolean; onPoll?: (status: Record<string, unknown>) => void },
 ): Promise<Record<string, unknown>> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const status = (await getStatus(sessionId)) as Record<string, unknown>;
+    options?.onPoll?.(status);
     // Model B: import completes when source is staged in R2 (not used for exec polling).
     if (options?.completeOnSourceR2Key && status.sourceR2Key) return status;
     if (status.status === "error") {
@@ -68,12 +101,17 @@ export function execWaitTimeoutMs(line: string): number {
   return 420_000;
 }
 
-async function waitForExecComplete(sessionId: string, timeoutMs = 900_000) {
+async function waitForExecComplete(
+  sessionId: string,
+  timeoutMs = 900_000,
+  onPoll?: (status: Record<string, unknown>) => void,
+) {
   await waitForSessionStatus(
     sessionId,
     (status) => status.status === "done" || status.status === "idle",
     timeoutMs,
     "Command timed out after 15 minutes. Large projects may need another run — check Results if partial output exists.",
+    { onPoll },
   );
   return getResults(sessionId);
 }
@@ -128,7 +166,7 @@ export type ScanResultData = {
 };
 
 export async function createSession(): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
   if (!res.ok) {
     throw new Error(await readApiError(res, "Failed to create session"));
   }
@@ -141,7 +179,7 @@ export async function ensureWorkspaceSession(): Promise<string> {
   const stored = sessionStorage.getItem("cf-ready-session");
   if (stored) {
     try {
-      const res = await fetch(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
+      const res = await fetchWithRetry(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
       if (res.ok) {
         const status = await readApiJson<{ status?: string }>(res);
         if (status.status) return stored;
@@ -163,7 +201,7 @@ export async function getStatus(sessionId: string): Promise<{
   sourceR2Key?: string;
   projectName?: string;
 }> {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
   if (!res.ok) {
     throw new Error(await readApiError(res, "Failed to load session status"));
   }
@@ -215,8 +253,12 @@ export type ExecCommandResult = {
   markdown?: string;
 };
 
-export async function execCommand(sessionId: string, line: string): Promise<ExecCommandResult> {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/exec`, {
+export async function execCommand(
+  sessionId: string,
+  line: string,
+  options?: { onStatus?: (status: Record<string, unknown>) => void },
+): Promise<ExecCommandResult> {
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/exec`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ line }),
@@ -226,7 +268,9 @@ export async function execCommand(sessionId: string, line: string): Promise<Exec
   const data = await readApiJson<ExecCommandResult>(res);
 
   if (data.status === "running") {
-    const results = await waitForExecComplete(sessionId, execWaitTimeoutMs(line));
+    const results = await waitForExecComplete(sessionId, execWaitTimeoutMs(line), (status) => {
+      options?.onStatus?.(status);
+    });
     if (results.error) throw new Error(results.error);
     const payload = results.result ?? null;
     return {

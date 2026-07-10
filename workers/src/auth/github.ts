@@ -285,8 +285,18 @@ export async function getGitHubToken(
 }
 
 export async function listGitHubRepos(
+  env: Env,
   token: string,
+  userId?: string,
 ): Promise<Array<{ full_name: string; private: boolean }>> {
+  const cacheKey = userId ? `github:repos:${userId}` : undefined;
+  if (cacheKey && env.SESSIONS) {
+    const cached = await env.SESSIONS.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as Array<{ full_name: string; private: boolean }>;
+    }
+  }
+
   const res = await fetch("https://api.github.com/user/repos?per_page=100&sort=updated", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -294,9 +304,16 @@ export async function listGitHubRepos(
       "User-Agent": "cf-ready-agent",
     },
   });
+  if (res.status === 429) {
+    throw new Error("GitHub rate limit exceeded. Wait a minute and click Refresh.");
+  }
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
   const repos = (await res.json()) as Array<{ full_name: string; private: boolean }>;
-  return repos.map((r) => ({ full_name: r.full_name, private: r.private }));
+  const mapped = repos.map((r) => ({ full_name: r.full_name, private: r.private }));
+  if (cacheKey && env.SESSIONS) {
+    await env.SESSIONS.put(cacheKey, JSON.stringify(mapped), { expirationTtl: 120 });
+  }
+  return mapped;
 }
 
 export async function resolveGitHubConnectRedirect(

@@ -6,6 +6,12 @@ export async function readApiError(
   if (contentType.includes("application/json")) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
     const message = data.error ?? fallback;
+    if (res.status === 429) {
+      const retryAfter = res.headers.get("Retry-After");
+      return retryAfter
+        ? `Too many requests. Wait ${retryAfter}s and try again.`
+        : "Too many requests. Wait a moment and try again.";
+    }
     if (/OperationInterruptedError|createSession|runtime connection was closing/i.test(message)) {
       return "Sandbox is starting up. Wait a few seconds and try again, or run scan to continue.";
     }
@@ -17,6 +23,9 @@ export async function readApiError(
     return "Sandbox is starting up. Wait a few seconds and try again, or run scan to continue.";
   }
   if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+    if (res.status === 429) {
+      return "Too many requests. Wait a minute and try again.";
+    }
     if (res.status === 524 || res.status === 504) {
       return "Server timed out while importing. Try again or use a smaller repository.";
     }
