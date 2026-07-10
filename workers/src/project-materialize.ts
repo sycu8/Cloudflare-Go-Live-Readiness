@@ -1,7 +1,7 @@
 import type { Env } from "./types.js";
 import { readSourceBytes, type SourceArchiveFormat } from "./sources-cache.js";
 import { extractStagedArchive, projectDirHasFiles } from "./import-extract.js";
-import { withSandboxRetry } from "./sandbox-retry.js";
+import { withSandboxRetry, SANDBOX_COLD_START_RETRY } from "./sandbox-retry.js";
 
 type SandboxExec = {
   exec(
@@ -29,7 +29,7 @@ export type MaterializeProjectResult = {
   extracted: boolean;
 };
 
-const FILE_CHECK_RETRY = { maxAttempts: 4, baseDelayMs: 800 };
+const FILE_CHECK_RETRY = { maxAttempts: 8, baseDelayMs: 1500 };
 
 /**
  * Ensure project files exist in the sandbox. Skips R2 download when the current
@@ -52,6 +52,6 @@ export async function materializeProject(
 
   if (onExtracting) await onExtracting();
   const archive = await readSourceBytes(env, sourceR2Key);
-  await withSandboxRetry(() => extractStagedArchive(sandbox, archive, sourceFormat));
+  await withSandboxRetry(() => extractStagedArchive(sandbox, archive, sourceFormat), SANDBOX_COLD_START_RETRY);
   return { materializedSourceKey: sourceR2Key, extracted: true };
 }

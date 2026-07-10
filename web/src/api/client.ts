@@ -1,4 +1,5 @@
 import { readApiError, readApiJson } from "./errors.js";
+import { isSandboxStartingMessage } from "./sandbox-errors.js";
 
 const API_BASE = "";
 const fetchOpts: RequestInit = { credentials: "include" };
@@ -256,33 +257,51 @@ export type ExecCommandResult = {
 export async function execCommand(
   sessionId: string,
   line: string,
-  options?: { onStatus?: (status: Record<string, unknown>) => void },
+  options?: {
+    onStatus?: (status: Record<string, unknown>) => void;
+    onRetry?: (attempt: number) => void;
+  },
 ): Promise<ExecCommandResult> {
-  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/exec`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ line }),
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error(await readApiError(res, "Command failed"));
-  const data = await readApiJson<ExecCommandResult>(res);
+  const maxAttempts = 3;
+  let lastError: Error | undefined;
 
-  if (data.status === "running") {
-    const results = await waitForExecComplete(sessionId, execWaitTimeoutMs(line), (status) => {
-      options?.onStatus?.(status);
-    });
-    if (results.error) throw new Error(results.error);
-    const payload = results.result ?? null;
-    return {
-      exitCode: 0,
-      stdout: payload ? JSON.stringify(payload) : "",
-      stderr: "",
-      data: payload,
-      markdown: results.markdown,
-    };
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/exec`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ line }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(await readApiError(res, "Command failed"));
+      const data = await readApiJson<ExecCommandResult>(res);
+
+      if (data.status === "running") {
+        const results = await waitForExecComplete(sessionId, execWaitTimeoutMs(line), (status) => {
+          options?.onStatus?.(status);
+        });
+        if (results.error) throw new Error(results.error);
+        const payload = results.result ?? null;
+        return {
+          exitCode: 0,
+          stdout: payload ? JSON.stringify(payload) : "",
+          stderr: "",
+          data: payload,
+          markdown: results.markdown,
+        };
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const canRetry = isSandboxStartingMessage(lastError.message) && attempt < maxAttempts;
+      if (!canRetry) throw lastError;
+      options?.onRetry?.(attempt);
+      await sleep(4000 * attempt);
+    }
   }
 
-  return data;
+  throw lastError ?? new Error("Command failed");
 }
 
 export async function getResults(sessionId: string): Promise<SessionResults> {
