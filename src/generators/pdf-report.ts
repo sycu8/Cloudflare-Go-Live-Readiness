@@ -21,6 +21,8 @@ export type PdfReportInput = {
     title: string;
     description: string;
     recommendation: string;
+    evidence?: string;
+    remediationSteps?: string[];
   }>;
 };
 
@@ -94,6 +96,8 @@ export function pdfReportInputFromScanData(data: {
     description: string;
     recommendation: string;
     status?: string;
+    evidence?: string;
+    remediation?: { steps: string[] };
   }>;
   inspection?: {
     projectName?: string;
@@ -135,6 +139,8 @@ export function pdfReportInputFromScanData(data: {
       title: f.title,
       description: f.description ?? "",
       recommendation: f.recommendation ?? "",
+      evidence: f.evidence,
+      remediationSteps: f.remediation?.steps,
     })),
   };
 }
@@ -208,6 +214,24 @@ export async function generatePdfReport(input: PdfReportInput): Promise<Uint8Arr
       9,
       { color: rgb(0.25, 0.28, 0.35) },
     );
+    if (finding.evidence) {
+      drawLines(
+        writer,
+        wrapText(`Evidence: ${finding.evidence}`, font, 8, CONTENT_WIDTH),
+        8,
+        { color: rgb(0.4, 0.42, 0.48) },
+      );
+    }
+    if (finding.remediationSteps?.length) {
+      for (const step of finding.remediationSteps.slice(0, 3)) {
+        drawLines(
+          writer,
+          wrapText(`- ${step}`, font, 8, CONTENT_WIDTH),
+          8,
+          { color: rgb(0.15, 0.5, 0.35) },
+        );
+      }
+    }
     drawLines(
       writer,
       wrapText(`Recommendation: ${finding.recommendation}`, font, 9, CONTENT_WIDTH),

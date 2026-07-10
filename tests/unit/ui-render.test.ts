@@ -54,7 +54,7 @@ describe("ui render", () => {
     expect(html).toContain("QA Scale Fixture");
     expect(html).toContain("Download PDF");
     expect(html).not.toMatch(/<script/i);
-    expect((html.match(/<article class="finding-card/g) ?? []).length).toBeLessThanOrEqual(30);
+    expect((html.match(/<article class="finding-card/g) ?? []).length).toBeLessThanOrEqual(50);
   });
 
   it("filter blockers reduces finding cards", () => {

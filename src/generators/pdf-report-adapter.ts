@@ -27,6 +27,8 @@ export function pdfReportInputFromContext(context: ScanContext): PdfReportInput 
       title: f.title,
       description: f.description,
       recommendation: f.recommendation,
+      evidence: f.evidence,
+      remediationSteps: f.remediation?.steps,
     })),
   };
 }

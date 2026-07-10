@@ -4,7 +4,12 @@ import type { Finding } from "../config/schema.js";
 import type { RepositoryInspection } from "../inspectors/types.js";
 import type { ReadinessScores } from "./scoring.js";
 import { inspectRepository, loadConfig } from "../inspectors/repository.js";
-import { dedupeFindings, resetFindingCounter } from "./findings.js";
+import {
+  applyBaseline,
+  dedupeCrossModuleAssets,
+  dedupeFindings,
+  resetFindingCounter,
+} from "./findings.js";
 import { calculateScores, isProductionReady } from "./scoring.js";
 import { validateProjectRoot } from "./validate.js";
 import { runMigrationChecks } from "../modules/migration/index.js";
@@ -12,6 +17,7 @@ import { runSecurityChecks } from "../modules/security/index.js";
 import { runAiReadinessChecks } from "../modules/ai-readiness/index.js";
 import { runSeoChecks } from "../modules/seo/index.js";
 import { runDeploymentChecks } from "../modules/deployment/index.js";
+import { runSmokeTest } from "../modules/smoke-test/index.js";
 
 export type ScanContext = {
   rootDir: string;
@@ -67,7 +73,18 @@ export async function createScanContext(options: ScanOptions): Promise<ScanConte
     allFindings.push(...(await runDeploymentChecks(inspection, config)));
   }
 
-  const findings = dedupeFindings(allFindings);
+  if (config.productionUrl && modules.includes("deployment")) {
+    try {
+      const smoke = await runSmokeTest(config.productionUrl, config, inspection);
+      allFindings.push(...smoke.findings);
+    } catch {
+      /* smoke test optional when URL unreachable */
+    }
+  }
+
+  let findings = dedupeFindings(allFindings);
+  findings = dedupeCrossModuleAssets(findings);
+  findings = applyBaseline(findings, config);
   const scores = calculateScores(findings);
   const blockers = findings.filter((f) => f.severity === "blocker" && f.status === "open");
   const productionReady = isProductionReady(

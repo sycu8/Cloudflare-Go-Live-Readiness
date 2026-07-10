@@ -46,6 +46,8 @@ export type CommandOptions = ServiceOptions & {
   aiReadiness?: boolean;
   seo?: boolean;
   force?: boolean;
+  findingId?: string;
+  rescan?: boolean;
 };
 
 export type CommandResult = {

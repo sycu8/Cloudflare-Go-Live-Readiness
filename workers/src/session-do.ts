@@ -724,6 +724,7 @@ export class SessionDO implements DurableObject {
       "report",
       "ai-optimize",
       "smoke-test",
+      "fix",
     ]);
     if (!allowed.has(req.command)) {
       return Response.json({ error: `Command not allowed: ${req.command}` }, { status: 400 });

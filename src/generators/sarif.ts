@@ -11,7 +11,7 @@ const SEVERITY_TO_LEVEL: Record<string, string> = {
 
 export function generateSarif(findings: Finding[], rootDir: string): string {
   const securityFindings = findings.filter(
-    (f) => f.category === "security" && f.severity !== "passed",
+    (f) => f.category === "security" && f.severity !== "passed" && f.status === "open",
   );
 
   const sarif = {
@@ -23,12 +23,18 @@ export function generateSarif(findings: Finding[], rootDir: string): string {
           driver: {
             name: "cf-ready",
             informationUri: "https://ready.orangecloud.vn",
-            version: "0.1.0",
+            version: "0.2.0",
             rules: securityFindings.map((f) => ({
               id: f.id,
               name: f.title,
               shortDescription: { text: f.title },
               fullDescription: { text: f.description },
+              help: {
+                text: [
+                  f.recommendation,
+                  ...(f.remediation?.steps ?? []).map((s, i) => `${i + 1}. ${s}`),
+                ].join("\n"),
+              },
               defaultConfiguration: { level: SEVERITY_TO_LEVEL[f.severity] ?? "warning" },
             })),
           },
@@ -37,14 +43,20 @@ export function generateSarif(findings: Finding[], rootDir: string): string {
           ruleId: f.id,
           level: SEVERITY_TO_LEVEL[f.severity] ?? "warning",
           message: { text: f.description },
-          locations: (f.affectedFiles ?? []).map((file) => ({
-            physicalLocation: {
-              artifactLocation: {
-                uri: file,
-                uriBaseId: rootDir,
-              },
-            },
-          })),
+          locations: (f.evidenceItems?.length
+            ? f.evidenceItems.map((item) => ({
+                physicalLocation: {
+                  artifactLocation: { uri: item.file, uriBaseId: rootDir },
+                  region: item.line
+                    ? { startLine: item.line, startColumn: item.column }
+                    : undefined,
+                },
+              }))
+            : (f.affectedFiles ?? []).map((file) => ({
+                physicalLocation: {
+                  artifactLocation: { uri: file, uriBaseId: rootDir },
+                },
+              }))),
         })),
       },
     ],

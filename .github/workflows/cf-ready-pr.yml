@@ -36,8 +36,16 @@ jobs:
             const fs = require('fs');
             const data = JSON.parse(fs.readFileSync('cf-ready-scan.json', 'utf8'));
             const scores = data.scores || {};
-            const blockers = (data.blockers || []).length;
+            const blockerList = (data.findings || []).filter((f) => f.severity === 'blocker' && f.status === 'open');
             const ready = data.productionReady ? '✅ Production ready' : '❌ Not production ready';
+            const topBlockers = blockerList.slice(0, 3).map((b) => {
+              const ev = b.evidence ? ` — ${b.evidence.slice(0, 80)}` : '';
+              return `- **${b.title}**${ev}`;
+            });
+            const autoFix = (data.findings || [])
+              .filter((f) => f.autoFixAvailable && f.status === 'open')
+              .slice(0, 3)
+              .map((f) => `- ${f.title}: \`${f.remediation?.cfReadyCommand || 'cf-ready fix'}\``);
             const body = [
               '## CF Ready — fixture scan',
               '',
@@ -47,14 +55,16 @@ jobs:
               `|---|---|`,
               `| Status | ${ready} |`,
               `| Overall | **${scores.overall ?? '—'}/100** |`,
-              `| Blockers | ${blockers} |`,
+              `| Blockers | ${blockerList.length} |`,
               `| Migration | ${scores.migration ?? '—'} |`,
               `| Security | ${scores.security ?? '—'} |`,
               '',
+              topBlockers.length ? '### Top blockers\n' + topBlockers.join('\n') + '\n' : '',
+              autoFix.length ? '### Suggested fixes\n' + autoFix.join('\n') + '\n' : '',
               'SARIF uploaded when available. Use the composite action in your repo:',
               '',
               '```yaml',
-              '- uses: sycu8/Cloudflare-Go-Live-Readiness/action@main',
+              '- uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.2.0',
               '  with:',
               '    cwd: .',
               '```',

@@ -4,6 +4,12 @@ import { readTextFile } from "../../core/filesystem.js";
 import { createFinding, createPassedFinding } from "../../core/findings.js";
 import { relativeToRoot } from "../../utils/path.js";
 import { projectGlob } from "../../utils/glob.js";
+import {
+  findLineMatch,
+  summarizeEvidence,
+  type EvidenceItem,
+} from "../../core/evidence.js";
+import { getRemediationForRule } from "../../config/remediation-templates.js";
 import type { Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
 
@@ -19,57 +25,79 @@ export async function scanRuntimeBlockers(
   });
 
   const toScan = files.slice(0, MAX_FILES);
-  const hitFiles = new Map<string, Set<string>>();
+  const hits = new Map<string, EvidenceItem[]>();
 
   for (const file of toScan) {
     const content = await readTextFile(path.join(inspection.rootDir, file));
     if (!content) continue;
+    const rel = relativeToRoot(inspection.rootDir, path.join(inspection.rootDir, file));
 
-    if (/require\s*\(\s*['"][^'"]+\.node['"]\s*\)/.test(content) || /from\s+['"][^'"]+\.node['"]/.test(content)) {
-      const rel = relativeToRoot(inspection.rootDir, path.join(inspection.rootDir, file));
-      if (!hitFiles.has("native-module")) hitFiles.set("native-module", new Set());
-      hitFiles.get("native-module")!.add(rel);
+    const nativeMatch = findLineMatch(
+      content,
+      /require\s*\(\s*['"][^'"]+\.node['"]\s*\)|from\s+['"][^'"]+\.node['"]/,
+    );
+    if (nativeMatch) {
+      if (!hits.has("native-module")) hits.set("native-module", []);
+      hits.get("native-module")!.push({
+        file: rel,
+        line: nativeMatch.line,
+        column: nativeMatch.column,
+        snippet: nativeMatch.snippet,
+        ruleId: "native-module",
+      });
     }
 
     for (const rule of RUNTIME_BLOCKER_PATTERNS) {
       for (const pattern of rule.patterns) {
-        if (pattern.test(content)) {
-          const rel = relativeToRoot(inspection.rootDir, path.join(inspection.rootDir, file));
-          if (!hitFiles.has(rule.id)) hitFiles.set(rule.id, new Set());
-          hitFiles.get(rule.id)!.add(rel);
-          break;
-        }
+        const match = findLineMatch(content, pattern);
+        if (!match) continue;
+        if (!hits.has(rule.id)) hits.set(rule.id, []);
+        hits.get(rule.id)!.push({
+          file: rel,
+          line: match.line,
+          column: match.column,
+          snippet: match.snippet,
+          ruleId: rule.id,
+        });
+        break;
       }
     }
   }
 
-  for (const [id, filesSet] of hitFiles) {
+  for (const [id, evidenceItems] of hits) {
     const rule = RUNTIME_BLOCKER_PATTERNS.find((r) => r.id === id) ?? {
       id: "native-module",
       module: "native module",
       severity: "blocker" as const,
       patterns: [],
     };
-    const affected = [...filesSet];
+    const affected = [...new Set(evidenceItems.map((e) => e.file))];
+    const remediation = getRemediationForRule(id, inspection.framework);
+    const recommendation =
+      id === "process-env"
+        ? "Document required environment variables in wrangler.toml / Cloudflare dashboard. Use env bindings instead of direct filesystem access."
+        : `Refactor to use Workers-compatible APIs. Consider Durable Objects, R2, KV, or external services instead of ${rule.module}.`;
+
     findings.push(
       createFinding({
+        id: `migration-${id}`,
         category: "migration",
         severity: id === "native-module" ? "blocker" : rule.severity,
         title: `Runtime blocker: ${rule.module}`,
         description: `Detected ${rule.module} usage incompatible with Cloudflare Workers runtime.`,
-        evidence: `Found in ${affected.length} file(s)`,
+        evidence: summarizeEvidence(evidenceItems),
+        evidenceItems: evidenceItems.slice(0, 10),
+        confidence: "high",
         affectedFiles: affected.slice(0, 10),
-        recommendation:
-          id === "process-env"
-            ? "Document required environment variables in wrangler.toml / Cloudflare dashboard. Use env bindings instead of direct filesystem access."
-            : `Refactor to use Workers-compatible APIs. Consider Durable Objects, R2, KV, or external services instead of ${rule.module}.`,
+        recommendation,
+        remediation,
         autoFixAvailable: false,
         requiresApproval: true,
       }),
     );
   }
 
-  if (hitFiles.size === 0) {
+  if (hits.size === 0) {
     findings.push(
       createPassedFinding(
         "migration",

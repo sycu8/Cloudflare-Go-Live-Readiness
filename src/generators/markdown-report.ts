@@ -1,5 +1,45 @@
 import type { ScanContext } from "../core/context.js";
 import { sortFindings } from "../core/findings.js";
+import type { Finding } from "../config/schema.js";
+
+function formatEvidenceBlock(f: Finding): string[] {
+  const lines: string[] = [];
+  if (f.evidenceItems?.length) {
+    lines.push("**Evidence:**", "");
+    lines.push("| File | Line | Snippet |", "| --- | ---: | --- |");
+    for (const item of f.evidenceItems.slice(0, 5)) {
+      const line = item.line ?? "—";
+      const snippet = (item.snippet ?? "").replace(/\|/g, "\\|").slice(0, 80);
+      lines.push(`| ${item.file} | ${line} | ${snippet} |`);
+    }
+    if (f.evidenceItems.length > 5) {
+      lines.push(`| … | | +${f.evidenceItems.length - 5} more |`);
+    }
+    lines.push("");
+  } else if (f.evidence) {
+    lines.push(`**Evidence:** ${f.evidence}`, "");
+  }
+  return lines;
+}
+
+function formatRemediationBlock(f: Finding): string[] {
+  if (!f.remediation?.steps.length) return [];
+  const lines = ["**Remediation steps:**", ""];
+  for (const step of f.remediation.steps) {
+    lines.push(`1. ${step}`);
+  }
+  if (f.remediation.cfReadyCommand) {
+    lines.push("", "```bash", f.remediation.cfReadyCommand, "```");
+  }
+  if (f.remediation.docsUrl) {
+    lines.push("", `Docs: ${f.remediation.docsUrl}`);
+  }
+  if (f.remediation.wranglerSnippet) {
+    lines.push("", "```toml", f.remediation.wranglerSnippet, "```");
+  }
+  lines.push("");
+  return lines;
+}
 
 export function generateMarkdownReport(context: ScanContext): string {
   const { inspection, scores, findings, productionReady, blockers } = context;
@@ -42,6 +82,7 @@ export function generateMarkdownReport(context: ScanContext): string {
     lines.push("## Blockers", "");
     for (const b of blockers) {
       lines.push(`- **${b.title}**: ${b.description}`);
+      if (b.evidence) lines.push(`  - Evidence: ${b.evidence}`);
     }
     lines.push("");
   }
@@ -49,57 +90,44 @@ export function generateMarkdownReport(context: ScanContext): string {
   if (autoFixes.length > 0) {
     lines.push("## Auto-fixes available", "");
     for (const f of autoFixes) {
-      lines.push(`- ${f.title}`);
+      const cmd = f.remediation?.cfReadyCommand ?? "cf-ready fix";
+      lines.push(`- ${f.title} → \`${cmd}\``);
     }
-    lines.push("", "```bash", "cf-ready fix --ai-readiness", "cf-ready fix --seo", "```", "");
+    lines.push("");
   }
 
   lines.push("## Findings", "");
-  for (const f of openFindings.slice(0, 50)) {
-    lines.push(
-      `### [${f.severity.toUpperCase()}] ${f.title}`,
-      "",
-      f.description,
-      "",
-      f.evidence ? `**Evidence:** ${f.evidence}` : "",
-      f.affectedFiles?.length ? `**Files:** ${f.affectedFiles.join(", ")}` : "",
-      "",
-      `**Recommendation:** ${f.recommendation}`,
-      "",
-    );
+  for (const f of openFindings) {
+    lines.push(`### [${f.severity.toUpperCase()}] ${f.title}`, "", f.description, "");
+    lines.push(...formatEvidenceBlock(f));
+    if (f.affectedFiles?.length) {
+      lines.push(`**Files:** ${f.affectedFiles.join(", ")}`, "");
+    }
+    if (f.confidence) lines.push(`**Confidence:** ${f.confidence}`, "");
+    if (f.requiresApproval) lines.push(`**Requires approval:** yes`, "");
+    lines.push(...formatRemediationBlock(f));
+    lines.push(`**Recommendation:** ${f.recommendation}`, "");
   }
 
   return lines.filter((l) => l !== undefined).join("\n");
 }
 
 export function generateGoLiveChecklist(context: ScanContext): string {
-  const items = context.findings.filter((f) => f.severity !== "info");
+  const items = context.findings.filter((f) => f.severity !== "info" && f.status === "open");
   const lines = [
     "# Go-Live Checklist",
     "",
     `**Project:** ${context.config.projectName ?? context.inspection.projectName}`,
-    `**Overall score:** ${context.scores.overall}/100`,
     "",
-    "## Checklist",
-    "",
+    "| Status | Severity | Item | Recommendation |",
+    "|--------|----------|------|----------------|",
   ];
 
   for (const f of items) {
-    const checked = f.severity === "passed" ? "[x]" : "[ ]";
-    lines.push(`${checked} ${f.title} (${f.severity})`);
+    const status = f.severity === "passed" ? "✅" : "⬜";
+    const rec = f.recommendation.replace(/\|/g, "\\|").slice(0, 80);
+    lines.push(`| ${status} | ${f.severity} | ${f.title} | ${rec} |`);
   }
-
-  lines.push(
-    "",
-    "## Pre-launch commands",
-    "",
-    "```bash",
-    "cf-ready scan",
-    "cf-ready deploy-check",
-    "cf-ready smoke-test --url <production-url>",
-    "```",
-    "",
-  );
 
   return lines.join("\n");
 }

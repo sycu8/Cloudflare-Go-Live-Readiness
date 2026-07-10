@@ -5,6 +5,7 @@ import { readTextFile } from "../../core/filesystem.js";
 import type { CfReadyConfig, Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
 import { publicAssetExists } from "../../utils/public-assets.js";
+import { getAssetRemediation, getSeoMetadataRemediation } from "../../config/remediation-templates.js";
 
 export async function checkMetadata(
   inspection: RepositoryInspection,
@@ -40,16 +41,17 @@ export async function checkMetadata(
   }
 
   const checks = [
-    { ok: hasTitle, title: "Page title", fix: "Add <title> or metadata title export." },
+    { ok: hasTitle, title: "Page title", id: "seo-missing-page-title", fix: "Add <title> or metadata title export." },
     {
       ok: hasDescription,
       title: "Meta description",
+      id: "seo-missing-meta-description",
       fix: "Add meta description tag or Next.js metadata.description.",
     },
-    { ok: hasOg, title: "Open Graph metadata", fix: "Add og:title, og:description, og:image." },
-    { ok: hasTwitter, title: "Twitter/X card metadata", fix: "Add twitter:card and twitter:title." },
-    { ok: hasCanonical, title: "Canonical URL", fix: "Add canonical link for primary pages." },
-    { ok: hasJsonLd, title: "JSON-LD structured data", fix: "Add Organization or WebSite schema." },
+    { ok: hasOg, title: "Open Graph metadata", id: "seo-missing-open-graph", fix: "Add og:title, og:description, og:image." },
+    { ok: hasTwitter, title: "Twitter/X card metadata", id: "seo-missing-twitter-card", fix: "Add twitter:card and twitter:title." },
+    { ok: hasCanonical, title: "Canonical URL", id: "seo-missing-canonical", fix: "Add canonical link for primary pages." },
+    { ok: hasJsonLd, title: "JSON-LD structured data", id: "seo-missing-json-ld", fix: "Add Organization or WebSite schema." },
   ];
 
   for (const check of checks) {
@@ -58,6 +60,7 @@ export async function checkMetadata(
     } else {
       findings.push(
         createFinding({
+          id: check.id,
           category: "seo",
           severity: "medium",
           title: `Missing ${check.title}`,
@@ -65,7 +68,8 @@ export async function checkMetadata(
           recommendation: config.seo?.defaultTitle
             ? `${check.fix} Suggested title: "${config.seo.defaultTitle}"`
             : check.fix,
-          autoFixAvailable: true,
+          remediation: getSeoMetadataRemediation(check.title),
+          autoFixAvailable: false,
           requiresApproval: false,
         }),
       );
@@ -78,11 +82,13 @@ export async function checkMetadata(
   if (!hasSitemap) {
     findings.push(
       createFinding({
+        id: "seo-missing-sitemap-xml",
         category: "seo",
         severity: "medium",
         title: "Missing sitemap.xml",
         description: "No sitemap found for search engine discovery.",
         recommendation: "Run cf-ready fix --seo to generate sitemap draft.",
+        remediation: getAssetRemediation("sitemap.xml", "cf-ready fix --seo"),
         autoFixAvailable: true,
         requiresApproval: false,
       }),
@@ -92,11 +98,13 @@ export async function checkMetadata(
   if (!hasRobots) {
     findings.push(
       createFinding({
+        id: "seo-missing-robots-txt",
         category: "seo",
         severity: "low",
         title: "Missing robots.txt",
         description: "robots.txt helps control crawler access.",
-        recommendation: "Run cf-ready fix --seo or fix --ai-readiness.",
+        recommendation: "Run cf-ready fix --seo to generate robots.txt draft.",
+        remediation: getAssetRemediation("robots.txt", "cf-ready fix --seo"),
         autoFixAvailable: true,
         requiresApproval: false,
       }),
@@ -193,13 +201,20 @@ export function generateSeoReadinessReport(
     "",
     "## Findings",
     "",
-    ...seoFindings.flatMap((f) => [
-      `### [${f.severity}] ${f.title}`,
-      "",
-      f.description,
-      "",
-      f.recommendation,
-      "",
-    ]),
+    ...seoFindings.flatMap((f) => {
+      const block = [
+        `### [${f.severity}] ${f.title}`,
+        "",
+        f.description,
+        "",
+      ];
+      if (f.evidence) block.push(`**Evidence:** ${f.evidence}`, "");
+      if (f.affectedFiles?.length) block.push(`**Files:** ${f.affectedFiles.join(", ")}`, "");
+      if (f.remediation?.steps.length) {
+        block.push("**Remediation steps:**", ...f.remediation.steps.map((s) => `- ${s}`), "");
+      }
+      block.push(`**Recommendation:** ${f.recommendation}`, "");
+      return block;
+    }),
   ].join("\n");
 }
