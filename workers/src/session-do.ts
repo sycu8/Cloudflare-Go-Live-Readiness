@@ -25,6 +25,7 @@ import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from ".
 import { mergePartialScanResults } from "../../src/service/merge-scan.js";
 import { SCAN_MODULE_NAMES, type ScanModuleName } from "../../src/service/scan-modules.js";
 import { buildModuleSandboxId } from "./module-sandbox-id.js";
+import { resolveSessionId } from "./session-id.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 /** Server-side poll while exec/chat runs in waitUntil (must exceed sandbox exec + cold start). */
