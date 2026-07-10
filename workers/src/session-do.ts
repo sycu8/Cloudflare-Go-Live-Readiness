@@ -22,6 +22,9 @@ import { PROJECT_DIR } from "./import-extract.js";
 import { materializeProject } from "./project-materialize.js";
 import { formatSandboxError, isRetryableSandboxError, withSandboxRetry } from "./sandbox-retry.js";
 
+import { mergePartialScanResults } from "../../src/service/merge-scan.js";
+import { SCAN_MODULE_NAMES, type ScanModuleName } from "../../src/service/scan-modules.js";
+import { buildModuleSandboxId } from "./module-sandbox-id.js";
 import { resolveSessionId } from "./session-id.js";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -79,12 +82,20 @@ export class SessionDO implements DurableObject {
     await this.save();
   }
 
-  private sandbox(): SandboxHandle {
-    const sandboxId = resolveSessionId(this.state, this.session.id);
+  private sandboxForId(sandboxId: string): SandboxHandle {
     return getSandbox(
       this.env.Sandbox as unknown as Parameters<typeof getSandbox>[0],
       sandboxId,
     );
+  }
+
+  private sandbox(): SandboxHandle {
+    const sandboxId = resolveSessionId(this.state, this.session.id);
+    return this.sandboxForId(sandboxId);
+  }
+
+  private sandboxForModule(module: ScanModuleName): SandboxHandle {
+    return this.sandboxForId(buildModuleSandboxId(this.session.id, module));
   }
 
   private async ensureProjectReady(sandbox: SandboxHandle): Promise<void> {
@@ -126,24 +137,37 @@ export class SessionDO implements DurableObject {
     return withSandboxRetry(async () => fn(this.sandbox()));
   }
 
-  /** Pre-extract staged source after import so first scan skips cold extract. */
+  /** Pre-extract staged source on primary + per-module sandboxes after import. */
   private async warmSandbox(): Promise<void> {
     if (!this.session.sourceR2Key || !this.session.sourceFormat) return;
+    const primaryId = resolveSessionId(this.state, this.session.id);
+    const sandboxIds = [
+      primaryId,
+      ...SCAN_MODULE_NAMES.map((module) => buildModuleSandboxId(this.session.id, module)),
+    ];
     try {
-      await withSandboxRetry(
-        async () => {
-          const result = await materializeProject({
-            env: this.env,
-            sandbox: this.sandbox(),
-            sourceR2Key: this.session.sourceR2Key!,
-            sourceFormat: this.session.sourceFormat!,
-            materializedSourceKey: this.session.materializedSourceKey,
-          });
-          if (this.session.materializedSourceKey !== result.materializedSourceKey) {
-            await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
-          }
-        },
-        { maxAttempts: 6, baseDelayMs: 1000 },
+      await Promise.all(
+        sandboxIds.map((sandboxId) =>
+          withSandboxRetry(
+            async () => {
+              const result = await materializeProject({
+                env: this.env,
+                sandbox: this.sandboxForId(sandboxId),
+                sourceR2Key: this.session.sourceR2Key!,
+                sourceFormat: this.session.sourceFormat!,
+                materializedSourceKey:
+                  sandboxId === primaryId ? this.session.materializedSourceKey : undefined,
+              });
+              if (
+                sandboxId === primaryId &&
+                this.session.materializedSourceKey !== result.materializedSourceKey
+              ) {
+                await this.patchSession({ materializedSourceKey: result.materializedSourceKey });
+              }
+            },
+            { maxAttempts: 6, baseDelayMs: 1000 },
+          ),
+        ),
       );
     } catch {
       /* first exec/files will retry extract */
@@ -655,35 +679,88 @@ export class SessionDO implements DurableObject {
     });
   }
 
+  private shouldRunParallelScan(req: ExecRequest): boolean {
+    return req.command === "scan" && !req.flags?.modules;
+  }
+
+  private buildModuleScanCommand(module: ScanModuleName): string {
+    const args = [
+      "scan",
+      "--modules",
+      module,
+      "--json",
+      "--cwd",
+      PROJECT_DIR,
+      "--no-color",
+      "--skip-reports",
+    ];
+    const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
+    const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
+    const cmd = `cf-ready ${args.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
+    return `${envPrefix}${cmd}`;
+  }
+
+  private async runModuleScan(module: ScanModuleName): Promise<unknown> {
+    return withSandboxRetry(async () => {
+      const sandbox = this.sandboxForModule(module);
+      await materializeProject({
+        env: this.env,
+        sandbox,
+        sourceR2Key: this.session.sourceR2Key!,
+        sourceFormat: this.session.sourceFormat!,
+      });
+      const result = await sandbox.exec(this.buildModuleScanCommand(module), {
+        timeout: sandboxExecTimeoutMs("scan"),
+      });
+      if (!result.success && !result.stdout) {
+        throw new Error(result.stderr || `Module ${module} failed with exit ${result.exitCode}`);
+      }
+      return JSON.parse(result.stdout.trim());
+    });
+  }
+
+  private async runParallelScan(): Promise<unknown> {
+    if (!this.session.sourceR2Key || !this.session.sourceFormat) {
+      throw new Error("No project imported. Upload a ZIP or import from GitHub first.");
+    }
+    await this.patchSession({ status: "running", lastError: undefined });
+    const partials = await Promise.all(SCAN_MODULE_NAMES.map((module) => this.runModuleScan(module)));
+    return mergePartialScanResults(partials);
+  }
+
   private async runExec(req: ExecRequest): Promise<void> {
     try {
-      const result = await this.withSandbox(async (sandbox) => {
-        await this.ensureProjectReady(sandbox);
-        await this.patchSession({ status: "running", lastError: undefined });
-        const cliArgs = this.buildCfReadyArgs(req);
-        const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
+      let parsed: unknown;
+      if (this.shouldRunParallelScan(req)) {
+        parsed = await this.runParallelScan();
+      } else {
+        const result = await this.withSandbox(async (sandbox) => {
+          await this.ensureProjectReady(sandbox);
+          await this.patchSession({ status: "running", lastError: undefined });
+          const cliArgs = this.buildCfReadyArgs(req);
+          const cmd = `cf-ready ${cliArgs.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(" ")}`;
 
-        const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
-        const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
+          const workerUrl = this.env.WORKER_PUBLIC_URL ?? "";
+          const envPrefix = workerUrl ? `CF_READY_AI_WORKER_URL="${workerUrl}" ` : "";
 
-        return sandbox.exec(`${envPrefix}${cmd}`, {
-          timeout: sandboxExecTimeoutMs(req.command),
+          return sandbox.exec(`${envPrefix}${cmd}`, {
+            timeout: sandboxExecTimeoutMs(req.command),
+          });
         });
-      });
 
-      if (!result.success && !result.stdout) {
-        await this.patchSession({
-          status: "error",
-          lastError: result.stderr || `Command failed with exit ${result.exitCode}`,
-        });
-        return;
-      }
+        if (!result.success && !result.stdout) {
+          await this.patchSession({
+            status: "error",
+            lastError: result.stderr || `Command failed with exit ${result.exitCode}`,
+          });
+          return;
+        }
 
-      let parsed: unknown = null;
-      try {
-        parsed = JSON.parse(result.stdout.trim());
-      } catch {
-        parsed = { stdout: result.stdout, stderr: result.stderr };
+        try {
+          parsed = JSON.parse(result.stdout.trim());
+        } catch {
+          parsed = { stdout: result.stdout, stderr: result.stderr };
+        }
       }
 
       const patch: Partial<SessionState> = {
