@@ -17,7 +17,11 @@ export function serializeScanContext(context: ScanContext, reports?: string[]): 
 }
 
 export async function runScan(options: ServiceOptions): Promise<ScanResult> {
-  const context = await createScanContext(options);
+  const context = await createScanContext({
+    rootDir: options.rootDir,
+    configPath: options.configPath,
+    modules: options.modules,
+  });
   const reportNames = options.skipReports
     ? []
     : (await writeAllReports(context)).map((r) => r.name);
