@@ -7,7 +7,7 @@
 | **Website** | [ready.orangecloud.vn](https://ready.orangecloud.vn) |
 | **Web Agent** | [ready.orangecloud.vn/app](https://ready.orangecloud.vn/app/) — upload source or import GitHub, run scans in the browser |
 | **CLI** | `cf-ready` |
-| **npm** | `@orangecloud/cf-ready` (publish pending — install from source below) |
+| **npm** | [`@orangecloud/cf-ready`](https://www.npmjs.com/package/@orangecloud/cf-ready) |
 | **License** | MIT |
 
 Community open-source tool; not affiliated with Cloudflare, Inc.
@@ -135,7 +135,7 @@ Open [ready.orangecloud.vn/app](https://ready.orangecloud.vn/app/), upload a ZIP
 
 ## Quick start
 
-From your project root (after building from source, or via npm when published):
+From your project root:
 
 ```bash
 npx @orangecloud/cf-ready scan

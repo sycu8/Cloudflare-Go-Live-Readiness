@@ -14,7 +14,7 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 
 | Item | Status | Notes |
 |------|--------|-------|
-| npm publish `@orangecloud/cf-ready` | Workflow ready | Add `NPM_TOKEN` secret; publish on GitHub Release |
+| npm publish `@orangecloud/cf-ready` | Ready | Add `NPM_TOKEN` secret; publish on GitHub Release or tag `v*` |
 | GitHub Action (PR readiness) | Shipped | [`action/action.yml`](action/action.yml), [docs](docs/docs/github-action.html) |
 | Private repo import UI | Shipped | Web Agent repo picker + OAuth token import |
 | OG / SEO polish | Shipped | `docs/assets/og.png`, meta on doc pages |
