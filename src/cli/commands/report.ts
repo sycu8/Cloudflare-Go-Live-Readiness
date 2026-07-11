@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { runCommand } from "../../service/run-command.js";
-import { getGlobalOptions } from "../options.js";
+import { getGlobalOptions, serviceOptionsFromGlobal } from "../options.js";
 import { logger, setVerbose, setUseColor } from "../../utils/logger.js";
 
 export function registerReportCommand(program: Command): void {
@@ -13,10 +13,7 @@ export function registerReportCommand(program: Command): void {
       setUseColor(opts.color);
 
       try {
-        const result = await runCommand("report", {
-          rootDir: opts.cwd,
-          configPath: opts.config,
-        });
+        const result = await runCommand("report", serviceOptionsFromGlobal(opts));
 
         const data = result.data as { reports: string[] };
 

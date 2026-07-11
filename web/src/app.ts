@@ -5,12 +5,14 @@ import {
   chat,
   ensureWorkspaceSession,
   execCommand,
+  execWaitTimeoutMs,
   getResults,
   getStatus,
   githubAuthUrl,
   importGitHub,
   listFiles,
   listGitHubRepos,
+  sessionPollDelayMs,
   uploadZip,
   regenerateReport,
 } from "./api/client.js";
@@ -18,6 +20,7 @@ import { getAuthState, getAuthConfig, logout, type AuthState, type AuthProviderC
 import {
   renderEmptyResults,
   renderResults,
+  escapeHtml,
   type ScanResultData,
 } from "./ui/render.js";
 import {
@@ -27,6 +30,17 @@ import {
   renderOpenModeBanner,
   renderUserMenu,
 } from "./ui/auth.js";
+import {
+  formatStatusPillLabel,
+  isBusyProcessStatus,
+  mountProgressTimer,
+  type ProgressTimerHandle,
+} from "./ui/progress-timer.js";
+import {
+  hasCompletedOnboarding,
+  mountOnboarding,
+  type OnboardingHandle,
+} from "./ui/onboarding.js";
 
 const COMMANDS: Array<{ name: string; desc: string }> = [
   { name: "scan", desc: "Full readiness scan" },
@@ -115,10 +129,19 @@ async function mountAgentApp(
       </div>
       <div class="header-actions">
         ${auth.user ? renderUserMenu(auth.user.name ?? "", auth.user.email, auth.user.avatarUrl) : ""}
-        <span class="status-pill idle" id="status-pill" title="Session status">idle</span>
-        <a class="link-btn" href="/">Docs</a>
+        <button type="button" class="help-btn mobile-chat-btn" id="mobile-chat-btn" title="Chat" aria-label="Chat">💬</button>
+        <button type="button" class="help-btn" id="tour-btn" title="Hướng dẫn sử dụng" aria-label="Hướng dẫn sử dụng">?</button>
+        <span class="status-pill idle" id="status-pill" title="Sẵn sàng">Sẵn sàng</span>
+        <a class="link-btn link-btn--desktop" href="/">Docs</a>
       </div>
     </header>
+
+    <div class="mobile-context-bar" id="mobile-context-bar" aria-hidden="true">
+      <span class="mobile-context-bar__label" id="mobile-context-label">Project</span>
+      <span class="mobile-context-bar__hint" id="mobile-context-hint">Import source để bắt đầu</span>
+    </div>
+
+    <div class="process-timer-host" id="process-timer-host" aria-hidden="true"></div>
 
     <div class="app-shell">
       <div class="layout">
@@ -128,6 +151,10 @@ async function mountAgentApp(
             <span id="file-count-label">Chưa có source</span>
           </div>
           <div class="panel-body">
+            <div class="mobile-quick-start" id="mobile-quick-start">
+              <button type="button" class="ghost mobile-quick-start__tour" id="quick-tour-btn">📖 Hướng dẫn 3 bước</button>
+            </div>
+
             <div class="project-card" id="project-card">
               <p class="project-card__name" id="project-name">Chưa import project</p>
               <p class="project-card__hint">Upload ZIP hoặc import GitHub để bắt đầu scan.</p>
@@ -199,8 +226,10 @@ async function mountAgentApp(
             <div class="workspace-view" data-view="cli" id="view-cli">
               <div class="cli-section">
                 <div class="commands-section">
-                  <h3>Quick commands</h3>
-                  <div class="chips" id="chips"></div>
+                  <h3 class="commands-section__title">Quick commands</h3>
+                  <div class="commands-section__row">
+                    <div class="chips" id="chips"></div>
+                  </div>
                 </div>
                 <div class="terminal-wrap" id="terminal" aria-label="cf-ready terminal"></div>
               </div>
@@ -223,15 +252,15 @@ async function mountAgentApp(
     <nav class="mobile-tabs" aria-label="Mobile navigation">
       <button type="button" class="active" data-tab="project" aria-current="page">
         <span class="tab-icon" aria-hidden="true">📁</span>
-        Project
+        <span class="tab-label">Import</span>
       </button>
       <button type="button" data-tab="workspace">
         <span class="tab-icon" aria-hidden="true">⚡</span>
-        Workspace
+        <span class="tab-label">Scan</span>
       </button>
       <button type="button" data-tab="results">
         <span class="tab-icon" aria-hidden="true">📊</span>
-        Results
+        <span class="tab-label">Kết quả</span>
       </button>
     </nav>
   `;
@@ -269,13 +298,32 @@ async function mountAgentApp(
   const chatMessages = $("#chat-messages");
   const chatInput = $("#chat-input") as HTMLInputElement;
   const chatSend = $("#chat-send");
+  const progressTimerHost = $("#process-timer-host");
+  const progressTimer: ProgressTimerHandle = mountProgressTimer(progressTimerHost);
+  const mobileContextLabel = $("#mobile-context-label");
+  const mobileContextHint = $("#mobile-context-hint");
+  const tourBtn = $("#tour-btn");
+  const quickTourBtn = $("#quick-tour-btn");
+  const mobileChatBtn = $("#mobile-chat-btn");
+  const isMobileLayout = () => window.innerWidth <= 1024;
+
+  const MOBILE_TAB_META: Record<MobileTab, { label: string; hint: string }> = {
+    project: { label: "Import project", hint: "Upload ZIP hoặc GitHub URL" },
+    workspace: { label: "Scan & Chat", hint: "Gõ scan hoặc hỏi bằng chat" },
+    results: { label: "Kết quả", hint: "Điểm số và khuyến nghị" },
+  };
+
+  const onboarding: OnboardingHandle = mountOnboarding(root, {
+    onNavigateTab: (tab) => setMobileTab(tab),
+    onNavigateWorkspace: (view) => setWorkspaceView(view),
+  });
 
   window.cfReadyTheme?.remount();
 
   const term = new Terminal({
     theme: { ...TERMINAL_THEMES.dark },
     fontFamily: "JetBrains Mono, ui-monospace, monospace",
-    fontSize: 13,
+    fontSize: window.innerWidth <= 1024 ? 11 : 13,
     lineHeight: 1.35,
     cursorBlink: true,
     scrollback: 2000,
@@ -318,9 +366,49 @@ async function mountAgentApp(
     term.write(`\r\n${prompt}`);
   }
 
+  let completedResetTimer: ReturnType<typeof setTimeout> | null = null;
+
   function setStatus(status: string) {
-    statusPill.textContent = status;
+    if (completedResetTimer) {
+      clearTimeout(completedResetTimer);
+      completedResetTimer = null;
+    }
+    const label = formatStatusPillLabel(status);
+    statusPill.textContent = label;
     statusPill.className = `status-pill ${status}`;
+    statusPill.title = label;
+    if (isBusyProcessStatus(status)) {
+      progressTimer.start(status);
+      progressTimerHost.setAttribute("aria-hidden", "false");
+    } else {
+      progressTimer.stop();
+      progressTimerHost.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  /** Show green completed pill briefly, then return to idle. */
+  function markCompleted(): void {
+    setStatus("done");
+    completedResetTimer = setTimeout(() => {
+      setStatus("idle");
+      completedResetTimer = null;
+    }, 8000);
+  }
+
+  function applyPolledStatus(status: Record<string, unknown>): void {
+    const next = String(status.status ?? "idle");
+    if (isBusyProcessStatus(next)) setStatus(next);
+  }
+
+  function startStatusPollDuringWork(): () => void {
+    const id = setInterval(() => {
+      void getStatus(sessionId)
+        .then((status) => applyPolledStatus(status as Record<string, unknown>))
+        .catch(() => {
+          /* ignore transient poll errors */
+        });
+    }, 2500);
+    return () => clearInterval(id);
   }
 
   function setProjectInfo(name: string, hint: string) {
@@ -394,18 +482,32 @@ async function mountAgentApp(
 
   async function refreshFiles() {
     try {
-      const { files } = await listFiles(sessionId);
+      const { files, warning } = await listFiles(sessionId);
       fileCount = files.length;
       fileCountEl.textContent = String(fileCount);
       fileCountLabel.textContent = `${fileCount} files`;
       fileList.innerHTML = files
         .slice(0, 80)
-        .map((f) => `<li title="${f}">${f}</li>`)
+        .map((f) => `<li title="${escapeHtml(f)}">${escapeHtml(f)}</li>`)
         .join("");
       fileTree.hidden = files.length === 0;
+      if (warning && files.length === 0) {
+        writeln(warning);
+      }
     } catch {
       fileTree.hidden = true;
     }
+  }
+
+  async function finishGitHubImportUi(short: string, sandboxNote?: string) {
+    setProjectInfo(short, "Source staged — chạy scan để phân tích.");
+    writeln("✓ GitHub import complete (source staged in cloud).");
+    if (sandboxNote) writeln(sandboxNote);
+    setStatus("idle");
+    await refreshFiles();
+    addChatBubble("agent", `Đã import ${short}. Gõ scan để trích xuất và phân tích.`);
+    setMobileTab("workspace");
+    markCompleted();
   }
 
   function setMobileTab(tab: MobileTab) {
@@ -418,7 +520,13 @@ async function mountAgentApp(
       panel.classList.remove("is-active");
     });
     $(`#panel-${tab}`).classList.add("is-active");
-    if (tab === "workspace") fitTerminal();
+    const meta = MOBILE_TAB_META[tab];
+    mobileContextLabel.textContent = meta.label;
+    mobileContextHint.textContent = meta.hint;
+    if (tab === "workspace") {
+      if (isMobileLayout()) setWorkspaceView("cli");
+      fitTerminal();
+    }
   }
 
   function setWorkspaceView(view: WorkspaceView) {
@@ -430,13 +538,23 @@ async function mountAgentApp(
     root.querySelectorAll(".workspace-view").forEach((el) => {
       el.classList.toggle("active", (el as HTMLElement).dataset.view === view);
     });
+    mobileChatBtn.classList.toggle("active", view === "chat");
     if (view === "cli") fitTerminal();
   }
 
   async function pollStatus() {
-    const status = await getStatus(sessionId);
-    setStatus(status.status ?? "idle");
-    return status;
+    try {
+      const status = await getStatus(sessionId);
+      setStatus(status.status ?? "idle");
+      return status;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("Session expired") || message.includes("Authentication required")) {
+        sessionStorage.removeItem("cf-ready-session");
+        window.location.reload();
+      }
+      throw err;
+    }
   }
 
   async function runLine(line: string) {
@@ -448,7 +566,15 @@ async function mountAgentApp(
     writeln(`$ cf-ready ${trimmed}`);
 
     try {
-      const result = await execCommand(sessionId, trimmed);
+      const result = await execCommand(sessionId, trimmed, {
+        onStatus: (status) => applyPolledStatus(status),
+        onRetry: (attempt, maxAttempts) => {
+          writeln(
+            `Sandbox đang khởi động… thử lại (${attempt}/${maxAttempts - 1}) sau vài giây.`,
+          );
+          setStatus("running");
+        },
+      });
       if (result.stderr) writeln(result.stderr);
       if (result.stdout) {
         try {
@@ -460,6 +586,9 @@ async function mountAgentApp(
         }
       }
       if (result.data) showResults(result.data as ScanResultData);
+      if ("markdown" in result && result.markdown) {
+        showResults({ ...(result.data as ScanResultData), markdown: String(result.markdown) });
+      }
       if (result.error) writeln(`Error: ${result.error}`);
     } catch (err) {
       writeln(`Error: ${err instanceof Error ? err.message : String(err)}`);
@@ -473,28 +602,34 @@ async function mountAgentApp(
     if (results.markdown) {
       showResults({ ...(results.result as ScanResultData), markdown: results.markdown });
     }
+    markCompleted();
   }
 
   async function handleUpload(file: File) {
     setStatus("importing");
     writeln(`Uploading ${file.name}…`);
+    const stopPoll = startStatusPollDuringWork();
     try {
       await uploadZip(sessionId, file);
       const name = file.name.replace(/\.zip$/i, "");
       setProjectInfo(name, "Upload thành công — chạy scan để kiểm tra.");
       writeln("✓ Upload complete.");
-      setStatus("idle");
       await refreshFiles();
       addChatBubble("agent", `Đã import ${file.name}. Gõ "scan" hoặc hỏi tôi để bắt đầu.`);
       setMobileTab("workspace");
+      markCompleted();
     } catch (err) {
       writeln(`Upload failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
+    } finally {
+      stopPoll();
     }
   }
 
-  writeln("cf-ready Web Agent");
-  writeln("Import project → run scan → xem Results tab.");
+  writeln(isMobileLayout() ? "Gõ scan hoặc chọn lệnh bên trên." : "cf-ready Web Agent");
+  if (!isMobileLayout()) {
+    writeln("Import project → run scan → xem Results tab.");
+  }
   writePrompt();
   fitTerminal();
 
@@ -558,18 +693,29 @@ async function mountAgentApp(
     }
     setStatus("importing");
     writeln(`Importing ${url}…`);
+    const stopPoll = startStatusPollDuringWork();
     try {
-      await importGitHub(sessionId, url);
-      const short = url.replace(/^https?:\/\/github\.com\//, "");
-      setProjectInfo(short, "GitHub import thành công — chạy scan để kiểm tra.");
-      writeln("✓ GitHub import complete.");
-      setStatus("idle");
-      await refreshFiles();
-      addChatBubble("agent", `Đã import ${short}. Thử lệnh scan.`);
-      setMobileTab("workspace");
+      const result = await importGitHub(sessionId, url);
+      const short = url.replace(/^https?:\/\/github\.com\//, "").replace(/^\/+/, "");
+      const note =
+        result && typeof result === "object" && "sandboxPending" in result && result.sandboxPending
+          ? "Sandbox đang khởi động — chạy scan sau vài giây."
+          : undefined;
+      await finishGitHubImportUi(short, note);
     } catch (err) {
+      const status = await getStatus(sessionId).catch(() => ({}));
+      if (status.sourceR2Key) {
+        const short = url.replace(/^https?:\/\/github\.com\//, "").replace(/^\/+/, "");
+        await finishGitHubImportUi(
+          short,
+          "Sandbox chưa sẵn sàng — chạy scan sau vài giây để tiếp tục.",
+        );
+        return;
+      }
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
+    } finally {
+      stopPoll();
     }
   };
 
@@ -581,17 +727,27 @@ async function mountAgentApp(
     const url = `https://github.com/${fullName}`;
     setStatus("importing");
     writeln(`Importing ${fullName}…`);
+    const stopPoll = startStatusPollDuringWork();
     try {
-      await importGitHub(sessionId, url);
-      setProjectInfo(fullName, "GitHub import thành công — chạy scan để kiểm tra.");
-      writeln("✓ GitHub import complete.");
-      setStatus("idle");
-      await refreshFiles();
-      addChatBubble("agent", `Đã import ${fullName}. Thử lệnh scan.`);
-      setMobileTab("workspace");
+      const result = await importGitHub(sessionId, url);
+      const note =
+        result && typeof result === "object" && "sandboxPending" in result && result.sandboxPending
+          ? "Sandbox đang khởi động — chạy scan sau vài giây."
+          : undefined;
+      await finishGitHubImportUi(fullName, note);
     } catch (err) {
+      const status = await getStatus(sessionId).catch(() => ({}));
+      if (status.sourceR2Key) {
+        await finishGitHubImportUi(
+          fullName,
+          "Sandbox chưa sẵn sàng — chạy scan sau vài giây để tiếp tục.",
+        );
+        return;
+      }
       writeln(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
       setStatus("error");
+    } finally {
+      stopPoll();
     }
   }
 
@@ -616,7 +772,7 @@ async function mountAgentApp(
           }
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "ghost repo-list__import";
+          btn.className = "primary repo-list__import";
           btn.textContent = "Import";
           btn.onclick = () => void importRepoByName(repo.full_name);
           li.append(label, btn);
@@ -639,8 +795,11 @@ async function mountAgentApp(
     chatInput.value = "";
     addChatBubble("user", msg);
     chatSend.setAttribute("disabled", "true");
+    setStatus("running");
+    let commandExecuted = false;
     try {
       const result = await chat(sessionId, msg);
+      commandExecuted = Boolean(result.executed);
       addChatBubble("agent", result.reply ?? "Đã xử lý.");
       if (result.command) writeln(`$ ${result.command}`);
       if (result.result?.data) showResults(result.result.data as ScanResultData);
@@ -656,8 +815,23 @@ async function mountAgentApp(
       }
     } catch (err) {
       addChatBubble("agent", `Lỗi: ${err instanceof Error ? err.message : String(err)}`);
+      setStatus("error");
     } finally {
       chatSend.removeAttribute("disabled");
+      if (commandExecuted) {
+        try {
+          await pollStatus();
+          markCompleted();
+        } catch {
+          if (!progressTimer.isActive()) setStatus("idle");
+        }
+      } else {
+        try {
+          await pollStatus();
+        } catch {
+          if (!progressTimer.isActive()) setStatus("idle");
+        }
+      }
     }
   }
 
@@ -689,5 +863,66 @@ async function mountAgentApp(
     }
   }
 
-  await pollStatus();
+  tourBtn.onclick = () => onboarding.open(0);
+  quickTourBtn.onclick = () => onboarding.open(0);
+  mobileChatBtn.onclick = () => {
+    setWorkspaceView(
+      root.querySelector(".workspace-view.active")?.getAttribute("data-view") === "chat"
+        ? "cli"
+        : "chat",
+    );
+    if (isMobileLayout()) setMobileTab("workspace");
+  };
+
+  async function waitForBusySession(timeoutMs = execWaitTimeoutMs("scan")): Promise<void> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const status = await getStatus(sessionId);
+      const next = status.status ?? "idle";
+      if (next === "done" || next === "idle") return;
+      if (next === "error") throw new Error(status.lastError ?? "Operation failed");
+      if (isBusyProcessStatus(next)) setStatus(next);
+      await new Promise((resolve) => setTimeout(resolve, sessionPollDelayMs(Date.now() - start)));
+    }
+  }
+
+  try {
+    const status = await pollStatus();
+    if (status.sourceR2Key) {
+      await refreshFiles();
+      if (status.projectName) {
+        setProjectInfo(status.projectName, "Source đã import — chạy scan để phân tích.");
+      }
+    }
+    if (status.status === "running" || status.status === "extracting") {
+      const stopPoll = startStatusPollDuringWork();
+      try {
+        await waitForBusySession();
+        const restored = await getResults(sessionId);
+        if (restored.result) showResults(restored.result as ScanResultData);
+      } finally {
+        stopPoll();
+        await pollStatus();
+      }
+    } else {
+      const results = await getResults(sessionId);
+      if (results.result) showResults(results.result as ScanResultData);
+    }
+  } catch {
+    // Session may be stale after deploy or sign-out; app still usable for import/scan.
+    setStatus("idle");
+  }
+
+  if (!hasCompletedOnboarding()) {
+    requestAnimationFrame(() => onboarding.open(0));
+  }
+
+  if (isMobileLayout()) {
+    setWorkspaceView("cli");
+    setMobileTab("project");
+  }
+
+  window.addEventListener("resize", () => {
+    if (isMobileLayout()) fitTerminal();
+  });
 }

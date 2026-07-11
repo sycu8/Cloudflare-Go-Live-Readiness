@@ -1,4 +1,4 @@
-import fg from "fast-glob";
+import { projectGlob } from "../utils/glob.js";
 import path from "node:path";
 import { fileExists } from "../core/filesystem.js";
 import type { PackageManager } from "../config/schema.js";
@@ -57,7 +57,7 @@ export async function findDetectedFiles(rootDir: string): Promise<string[]> {
     ".github/workflows/*",
   ];
 
-  const matches = await fg(patterns, {
+  const matches = await projectGlob(patterns, {
     cwd: rootDir,
     onlyFiles: true,
     dot: true,

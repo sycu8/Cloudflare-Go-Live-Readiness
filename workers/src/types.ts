@@ -29,7 +29,7 @@ export type AiOptimizeResponse = {
   markdown: string;
 };
 
-export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
+export type SessionStatus = "idle" | "importing" | "extracting" | "running" | "done" | "error";
 
 export type GitHubRepoRef = {
   owner: string;
@@ -45,6 +45,8 @@ export type ReportCacheMeta = {
   format: "pdf";
 };
 
+export type SourceArchiveFormat = "tar.gz" | "zip";
+
 export type SessionState = {
   id: string;
   status: SessionStatus;
@@ -52,6 +54,11 @@ export type SessionState = {
   source?: "upload" | "github";
   githubRepo?: GitHubRepoRef;
   sourceCommitSha?: string;
+  /** R2 key for staged source archive (Model B). */
+  sourceR2Key?: string;
+  sourceFormat?: SourceArchiveFormat;
+  /** Last sourceR2Key successfully extracted into the sandbox container. */
+  materializedSourceKey?: string;
   reportCache?: ReportCacheMeta;
   lastCommand?: string;
   lastError?: string;

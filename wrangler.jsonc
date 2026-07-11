@@ -18,7 +18,7 @@
       "class_name": "Sandbox",
       "image": "./Dockerfile",
       "instance_type": "lite",
-      "max_instances": 10
+      "max_instances": 20
     }
   ],
   "durable_objects": {
@@ -48,8 +48,19 @@
     "DEFAULT_AI_MODEL": "openai/gpt-4o-mini",
     "FALLBACK_AI_MODEL": "@cf/meta/llama-3.1-8b-instruct-fast",
     "AI_GATEWAY_ID": "default",
+    "SANDBOX_TRANSPORT": "rpc",
     "WORKER_PUBLIC_URL": "https://ready.orangecloud.vn",
     "GITHUB_REDIRECT_URI": "https://ready.orangecloud.vn/api/auth/github/callback",
     "GOOGLE_REDIRECT_URI": "https://ready.orangecloud.vn/api/auth/google/callback"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true
+    }
   }
 }

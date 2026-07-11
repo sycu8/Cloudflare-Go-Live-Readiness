@@ -1,55 +1,78 @@
 import path from "node:path";
-import fg from "fast-glob";
+import { projectGlob } from "../../utils/glob.js";
 import { createFinding, createPassedFinding } from "../../core/findings.js";
 import { readTextFile } from "../../core/filesystem.js";
-import { SECRET_PATTERNS, SCAN_EXCLUDE_DIRS } from "../../config/default-rules.js";
+import { SECRET_PATTERNS } from "../../config/default-rules.js";
 import { relativeToRoot } from "../../utils/path.js";
+import {
+  findLineMatch,
+  isCommentOnlyLine,
+  redactSecretSnippet,
+  summarizeEvidence,
+} from "../../core/evidence.js";
+import { getSecretRemediation } from "../../config/remediation-templates.js";
 import type { Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
 
 const TEST_FILE_PATTERN = /(\.test\.|\.spec\.|__tests__|fixtures?\/|mock)/i;
 const PLACEHOLDER_PATTERN = /(example|placeholder|changeme|your[_-]?key|xxx+|dummy|fake|test)/i;
+const SKIP_EXTENSIONS = /\.(md|example)$/i;
 
 export async function scanSecrets(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{ts,tsx,js,jsx,json,env,yml,yaml,toml}"], {
+  const files = await projectGlob(["**/*.{ts,tsx,js,jsx,json,env,yml,yaml,toml}"], {
     cwd: inspection.rootDir,
     ignore: [
-      ...SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
       "**/package-lock.json",
       "**/pnpm-lock.yaml",
       "**/yarn.lock",
+      "**/*.md",
     ],
     dot: true,
     onlyFiles: true,
   });
 
   for (const file of files.slice(0, 300)) {
-    if (TEST_FILE_PATTERN.test(file)) continue;
+    if (TEST_FILE_PATTERN.test(file) || SKIP_EXTENSIONS.test(file)) continue;
     const content = await readTextFile(path.join(inspection.rootDir, file));
     if (!content) continue;
 
     for (const rule of SECRET_PATTERNS) {
-      if (rule.pattern.test(content)) {
-        const line = content.split("\n").find((l) => rule.pattern.test(l))?.trim();
-        if (line && PLACEHOLDER_PATTERN.test(line)) continue;
+      const match = findLineMatch(content, rule.pattern);
+      if (!match) continue;
+      if (isCommentOnlyLine(match.snippet)) continue;
+      if (PLACEHOLDER_PATTERN.test(match.snippet)) continue;
 
-        findings.push(
-          createFinding({
-            id: `security-${rule.id}-${file}`,
-            category: "security",
-            severity: rule.severity,
-            title: `Possible ${rule.name} in source`,
-            description: `Pattern matching ${rule.name} found in repository.`,
-            evidence: line?.slice(0, 120),
-            affectedFiles: [relativeToRoot(inspection.rootDir, path.join(inspection.rootDir, file))],
-            recommendation: "Rotate the credential immediately. Move secrets to environment variables or Cloudflare secrets store.",
-            autoFixAvailable: false,
-            requiresApproval: true,
-          }),
-        );
-        break;
-      }
+      const rel = relativeToRoot(inspection.rootDir, path.join(inspection.rootDir, file));
+      const evidenceItems = [
+        {
+          file: rel,
+          line: match.line,
+          column: match.column,
+          snippet: redactSecretSnippet(match.snippet),
+          ruleId: rule.id,
+        },
+      ];
+
+      findings.push(
+        createFinding({
+          id: `security-${rule.id}-${file}`,
+          category: "security",
+          severity: rule.severity,
+          title: `Possible ${rule.name} in source`,
+          description: `Pattern matching ${rule.name} found in repository.`,
+          evidence: summarizeEvidence(evidenceItems),
+          evidenceItems,
+          confidence: "high",
+          affectedFiles: [rel],
+          recommendation:
+            "Rotate the credential immediately. Move secrets to environment variables or Cloudflare secrets store.",
+          remediation: getSecretRemediation(),
+          autoFixAvailable: false,
+          requiresApproval: true,
+        }),
+      );
+      break;
     }
   }
 
@@ -108,9 +131,8 @@ export async function checkEnvFiles(inspection: RepositoryInspection): Promise<F
 
 export async function checkCors(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const files = await fg(["**/*.{ts,js,mjs}"], {
+  const files = await projectGlob(["**/*.{ts,js,mjs}"], {
     cwd: inspection.rootDir,
-    ignore: SCAN_EXCLUDE_DIRS.map((d) => `**/${d}/**`),
   });
 
   for (const file of files.slice(0, 100)) {
@@ -140,7 +162,7 @@ export async function checkCors(inspection: RepositoryInspection): Promise<Findi
 
 export async function checkSourceMaps(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
-  const maps = await fg(["public/**/*.map", "dist/**/*.map", "build/**/*.map"], {
+  const maps = await projectGlob(["public/**/*.map", "dist/**/*.map", "build/**/*.map"], {
     cwd: inspection.rootDir,
     onlyFiles: true,
   });

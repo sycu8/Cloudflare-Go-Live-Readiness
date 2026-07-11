@@ -10,6 +10,7 @@ on:
       - "workers/**"
       - "src/**"
       - "scripts/**"
+      - "container/**"
       - "Dockerfile"
       - "wrangler.jsonc"
       - ".github/workflows/deploy-pages.yml"

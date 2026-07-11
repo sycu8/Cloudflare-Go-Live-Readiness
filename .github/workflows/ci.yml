@@ -26,9 +26,62 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
+      - run: npm run validate:npm
       - run: npm test
 
       - name: Scan Next.js fixture
         run: |
           node dist/index.js scan --cwd tests/fixtures/nextjs-app --json > /tmp/scan.json || test $? -eq 1
           node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/scan.json','utf8')); if(!r.scores) process.exit(1)"
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+      - name: Scan static-site fixture
+        shell: bash
+        run: |
+          OUT="${RUNNER_TEMP:-/tmp}/scan.json"
+          node dist/index.js scan --cwd tests/fixtures/static-site --json > "$OUT" || test $? -eq 1
+          SCAN_OUT="$OUT" node -e "const r=JSON.parse(require('fs').readFileSync(process.env.SCAN_OUT,'utf8')); if(!r.scores) process.exit(1)"
+
+  qa-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:qa:cli
+
+  web-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build:all
+      - run: npm run typecheck

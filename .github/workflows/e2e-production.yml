@@ -1,0 +1,64 @@
+name: E2E Production Web Agent
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy to Cloudflare"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: e2e-production
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify OAuth config
+        run: node scripts/verify-oauth-config.mjs
+        env:
+          BASE_URL: https://ready.orangecloud.vn
+
+      - name: E2E Web Agent
+        env:
+          BASE_URL: https://ready.orangecloud.vn
+          CF_READY_AUTH_COOKIE: ${{ secrets.CF_READY_AUTH_COOKIE }}
+          E2E_GITHUB_REPO: https://github.com/sycu8/Cloudflare-Go-Live-Readiness
+          E2E_IMPORT_ONLY: ${{ vars.E2E_IMPORT_ONLY || '1' }}
+        run: |
+          COOKIE="${{ secrets.CF_READY_AUTH_COOKIE }}"
+          if [ -z "$COOKIE" ]; then
+            echo "::warning::Add repository secret CF_READY_AUTH_COOKIE for full production E2E."
+            echo "Sign in at https://ready.orangecloud.vn/app/ then copy cf_ready_auth cookie."
+            exit 0
+          fi
+          if [[ "$COOKIE" != cf_ready_auth=* ]]; then
+            COOKIE="cf_ready_auth=$COOKIE"
+          fi
+          export CF_READY_AUTH_COOKIE="$COOKIE"
+          node scripts/e2e-web-agent.mjs
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Production E2E" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- OAuth verify always runs" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Import E2E runs when \`CF_READY_AUTH_COOKIE\` secret is set" >> "$GITHUB_STEP_SUMMARY"

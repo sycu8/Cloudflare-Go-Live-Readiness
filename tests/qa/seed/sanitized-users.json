@@ -1,0 +1,33 @@
+{
+  "description": "Sanitized fake users for local QA — no real emails or tokens",
+  "users": [
+    {
+      "id": "usr_qa_001",
+      "email": "qa-alpha@example.invalid",
+      "name": "QA Alpha",
+      "avatarUrl": "https://avatars.example.invalid/u/qa-alpha.png",
+      "providers": ["github"],
+      "githubConnected": true
+    },
+    {
+      "id": "usr_qa_002",
+      "email": "qa-beta@example.invalid",
+      "name": "QA Beta",
+      "avatarUrl": null,
+      "providers": ["google"],
+      "githubConnected": false
+    },
+    {
+      "id": "usr_qa_003",
+      "email": "qa-gamma@example.invalid",
+      "name": "QA Gamma <script>",
+      "avatarUrl": "https://avatars.example.invalid/u/qa-gamma.png",
+      "providers": ["google", "github"],
+      "githubConnected": true
+    }
+  ],
+  "workspaceSessions": [
+    { "id": "ws_qa_001", "userId": "usr_qa_001", "status": "idle" },
+    { "id": "ws_qa_002", "userId": "usr_qa_002", "status": "done" }
+  ]
+}

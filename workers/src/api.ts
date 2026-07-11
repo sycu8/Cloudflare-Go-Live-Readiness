@@ -19,6 +19,7 @@ import {
   getUserFromRequest,
   linkWorkspaceSession,
 } from "./auth/session.js";
+import { checkRateLimitSafe, rateLimitResponse } from "./rate-limit.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,21 @@ function json(data: unknown, status = 200, extraHeaders?: Record<string, string>
 function sessionIdFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/api\/sessions\/([^/]+)/);
   return match?.[1] ?? null;
+}
+
+function withCors(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    headers.set(key, value);
+  }
+  if (!headers.get("Content-Type") && response.status !== 204) {
+    headers.set("Content-Type", "application/json");
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function apiError(message: string, status = 500): Response {
+  return json({ error: message }, status);
 }
 
 function stubId(): string {
@@ -118,6 +134,9 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   }
 
   if (pathname === "/api/sessions" && request.method === "POST") {
+    const limit = await checkRateLimitSafe(env, request, pathname);
+    if (!limit.allowed) return rateLimitResponse(limit);
+
     const id = stubId();
     const doId = env.SESSION.idFromName(id);
     const stub = env.SESSION.get(doId);
@@ -137,6 +156,9 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
     return json({ error: "Not found" }, 404);
   }
 
+  const limit = await checkRateLimitSafe(env, request, pathname, sessionId);
+  if (!limit.allowed) return rateLimitResponse(limit);
+
   if (isAuthEnforced(env)) {
     const user = await getUserFromRequest(request, env);
     if (!user) {
@@ -154,34 +176,46 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   const stub = env.SESSION.get(env.SESSION.idFromName(sessionId));
 
   if (pathname.endsWith("/auth/github/repos") && request.method === "GET") {
-    const token = await getGitHubToken(env, sessionId, user?.id);
-    if (!token) return json({ error: "GitHub not connected for private repos" }, 401);
-    const repos = await listGitHubRepos(token);
-    return json({ repos });
+    try {
+      const token = await getGitHubToken(env, sessionId, user?.id);
+      if (!token) return json({ error: "GitHub not connected for private repos" }, 401);
+      const repos = await listGitHubRepos(env, token, user?.id);
+      return json({ repos });
+    } catch (error) {
+      return apiError(error instanceof Error ? error.message : "GitHub repo list failed", 502);
+    }
   }
 
   if (pathname.endsWith("/import/github") && request.method === "POST") {
-    const token = await getGitHubToken(env, sessionId, user?.id);
-    if (token) {
+    try {
       const body = (await request.json()) as Record<string, unknown>;
-      body.token = token;
-      return stub.fetch(
-        new Request(request.url, {
+      const token = await getGitHubToken(env, sessionId, user?.id);
+      if (token) body.token = token;
+      const response = await stub.fetch(
+        new Request("http://do/import/github", {
           method: "POST",
-          headers: request.headers,
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         }),
       );
+      return withCors(response);
+    } catch (error) {
+      return apiError(error instanceof Error ? error.message : "GitHub import failed");
     }
   }
 
   const subPath = pathname.replace(`/api/sessions/${sessionId}`, "");
   const doUrl = `http://do${subPath || "/status"}`;
-  return stub.fetch(
-    new Request(doUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.method !== "GET" && request.method !== "HEAD" ? request.body : undefined,
-    }),
-  );
+  try {
+    const response = await stub.fetch(
+      new Request(doUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.method !== "GET" && request.method !== "HEAD" ? request.body : undefined,
+      }),
+    );
+    return withCors(response);
+  } catch (error) {
+    return apiError(error instanceof Error ? error.message : "Session request failed");
+  }
 }

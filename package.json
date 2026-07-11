@@ -1,6 +1,6 @@
 {
   "name": "@orangecloud/cf-ready",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cloudflare Go-Live Readiness CLI — migration, security, AI, SEO, and deployment readiness checks",
   "type": "module",
   "license": "MIT",
@@ -50,14 +50,20 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run tests/integration",
-    "prepublishOnly": "npm run build",
+    "test:web-agent": "vitest run tests/integration/web-agent-commands.test.ts",
+    "test:cli": "node scripts/test-cli.mjs",
+    "test:cli:vitest": "vitest run tests/integration/cli-all-commands.test.ts",
+    "test:e2e": "node scripts/e2e-web-agent.mjs",
+    "test:qa": "node tests/qa/run-full-qa.mjs",
+    "test:qa:cli": "bash tests/qa/run-qa.sh",
+    "validate:npm": "node scripts/validate-npm-package.mjs",
+    "prepublishOnly": "npm run build && npm run validate:npm",
     "pages:deploy": "npm run build:all && wrangler deploy"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@cloudflare/sandbox": "^0.12.3",
     "commander": "^12.1.0",
     "execa": "^9.5.2",
     "fast-glob": "^3.3.3",
@@ -66,6 +72,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@cloudflare/sandbox": "^0.12.3",
     "@cloudflare/workers-types": "^5.20260706.1",
     "@types/node": "^22.13.10",
     "eslint": "^9.22.0",

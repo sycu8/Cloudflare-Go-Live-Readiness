@@ -22,23 +22,31 @@ export type AuthProviderConfig = {
   googleCallbackUrl: string;
 };
 
+import { readApiError, readApiJson } from "./errors.js";
+
 const API_BASE = "";
 const fetchOpts: RequestInit = { credentials: "include" };
+
+const OPEN_MODE_DEFAULTS: AuthProviderConfig = {
+  google: false,
+  github: false,
+  authEnforced: false,
+  openMode: true,
+  publicUrl: "https://ready.orangecloud.vn",
+  githubCallbackUrl: "https://ready.orangecloud.vn/api/auth/github/callback",
+  googleCallbackUrl: "https://ready.orangecloud.vn/api/auth/google/callback",
+};
 
 export async function getAuthConfig(): Promise<AuthProviderConfig> {
   const res = await fetch(`${API_BASE}/api/auth/config`, fetchOpts);
   if (!res.ok) {
-    return {
-      google: false,
-      github: false,
-      authEnforced: false,
-      openMode: true,
-      publicUrl: "https://ready.orangecloud.vn",
-      githubCallbackUrl: "https://ready.orangecloud.vn/api/auth/github/callback",
-      googleCallbackUrl: "https://ready.orangecloud.vn/api/auth/google/callback",
-    };
+    return OPEN_MODE_DEFAULTS;
   }
-  return res.json() as Promise<AuthProviderConfig>;
+  try {
+    return await readApiJson<AuthProviderConfig>(res);
+  } catch {
+    return OPEN_MODE_DEFAULTS;
+  }
 }
 
 export async function getAuthState(): Promise<AuthState> {
@@ -51,8 +59,10 @@ export async function getAuthState(): Promise<AuthState> {
       githubConnected: false,
     };
   }
-  if (!res.ok) throw new Error("Failed to load auth state");
-  return res.json() as Promise<AuthState>;
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load auth state"));
+  }
+  return readApiJson<AuthState>(res);
 }
 
 export async function logout(): Promise<void> {

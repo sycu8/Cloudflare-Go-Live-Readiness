@@ -53,12 +53,55 @@ export function sortFindings(findings: Finding[]): Finding[] {
 export function dedupeFindings(findings: Finding[]): Finding[] {
   const seen = new Map<string, Finding>();
   for (const finding of findings) {
-    const key = `${finding.category}:${finding.title}:${finding.affectedFiles?.join(",") ?? ""}`;
+    const firstEvidence = finding.evidenceItems?.[0];
+    const key =
+      finding.id ||
+      `${finding.category}:${finding.title}:${firstEvidence?.file ?? ""}:${firstEvidence?.line ?? ""}:${finding.affectedFiles?.join(",") ?? ""}`;
     if (!seen.has(key)) {
       seen.set(key, finding);
+      continue;
     }
+    const existing = seen.get(key)!;
+    const mergedFiles = [
+      ...new Set([...(existing.affectedFiles ?? []), ...(finding.affectedFiles ?? [])]),
+    ];
+    const mergedEvidence = [
+      ...(existing.evidenceItems ?? []),
+      ...(finding.evidenceItems ?? []),
+    ].slice(0, 10);
+    seen.set(key, {
+      ...existing,
+      affectedFiles: mergedFiles.length ? mergedFiles : existing.affectedFiles,
+      evidenceItems: mergedEvidence.length ? mergedEvidence : existing.evidenceItems,
+      evidence: existing.evidence ?? finding.evidence,
+    });
   }
   return [...seen.values()];
+}
+
+/** Remove cross-module duplicate asset findings (SEO owns robots/sitemap). */
+export function dedupeCrossModuleAssets(findings: Finding[]): Finding[] {
+  const seoOwns = new Set(["Missing robots.txt", "Missing sitemap.xml"]);
+  const seoTitles = new Set(
+    findings.filter((f) => f.category === "seo").map((f) => f.title),
+  );
+  return findings.filter((f) => {
+    if (f.category !== "ai-readiness") return true;
+    if (!seoOwns.has(f.title)) return true;
+    return !seoTitles.has(f.title);
+  });
+}
+
+export function applyBaseline(findings: Finding[], config: {
+  baseline?: { ignoredFindingIds?: string[]; acceptedRiskIds?: string[] };
+}): Finding[] {
+  const ignored = new Set(config.baseline?.ignoredFindingIds ?? []);
+  const accepted = new Set(config.baseline?.acceptedRiskIds ?? []);
+  return findings.map((f) => {
+    if (ignored.has(f.id)) return { ...f, status: "ignored" as const };
+    if (accepted.has(f.id)) return { ...f, status: "accepted-risk" as const };
+    return f;
+  });
 }
 
 export function filterFindings(

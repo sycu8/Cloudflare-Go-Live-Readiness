@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install from npm — CF Ready</title>
+    <meta
+      name="description"
+      content="Install cf-ready from the public npm registry: @orangecloud/cf-ready"
+    />
+    <link rel="stylesheet" href="../assets/docs.css" />
+  </head>
+  <body>
+    <main class="docs-page">
+      <nav class="docs-nav"><a href="../index.html">← CF Ready</a></nav>
+      <h1>Install from npm</h1>
+      <p>
+        The CLI is published on the public npm registry as
+        <a href="https://www.npmjs.com/package/@orangecloud/cf-ready"><code>@orangecloud/cf-ready</code></a>.
+      </p>
+
+      <h2>Quick install</h2>
+      <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+      <pre><code>npm install -g @orangecloud/cf-ready
+cf-ready scan</code></pre>
+      <pre><code>npm install -D @orangecloud/cf-ready
+npx cf-ready scan</code></pre>
+
+      <h2>Requirements</h2>
+      <ul>
+        <li>Node.js 18 or newer</li>
+        <li>Run from your project root (or pass <code>--cwd</code>)</li>
+      </ul>
+
+      <h2>Maintainers — publish to npmjs.org</h2>
+      <ol>
+        <li>Create an npm organization <code>@orangecloud</code> (or use an existing scoped org).</li>
+        <li>
+          Generate an npm <strong>Automation</strong> or <strong>Publish</strong> token at
+          <a href="https://www.npmjs.com/settings/~tokens">npmjs.com → Access Tokens</a>.
+        </li>
+        <li>
+          Add repository secret <code>NPM_TOKEN</code> in GitHub → Settings → Secrets → Actions.
+        </li>
+        <li>Bump <code>version</code> in <code>package.json</code> and merge to <code>main</code>.</li>
+        <li>
+          Publish via GitHub Release (<strong>Publish to npm</strong> workflow) or push a tag
+          <code>v0.2.0</code> matching <code>package.json</code>.
+        </li>
+      </ol>
+      <p>
+        Manual dry run: Actions → <em>Publish to npm</em> → Run workflow → dry_run = true.
+      </p>
+    </main>
+  </body>
+</html>

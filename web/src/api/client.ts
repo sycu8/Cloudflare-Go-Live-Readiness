@@ -1,7 +1,129 @@
+import {
+  LONG_EXEC_WAIT_MS,
+  MEDIUM_EXEC_WAIT_MS,
+  SHORT_EXEC_WAIT_MS,
+  longExecTimeoutMessage,
+} from "../../../src/shared/exec-timeouts.js";
+import { readApiError, readApiJson } from "./errors.js";
+import { isSandboxStartingMessage } from "./sandbox-errors.js";
+
 const API_BASE = "";
 const fetchOpts: RequestInit = { credentials: "include" };
 
-export type SessionStatus = "idle" | "importing" | "running" | "done" | "error";
+/** Poll interval while waiting for long-running session work (import/exec). */
+export function sessionPollDelayMs(elapsedMs: number): number {
+  if (elapsedMs < 120_000) return 1500;
+  if (elapsedMs < 600_000) return 2500;
+  return 4000;
+}
+
+function parseRetryAfterSec(res: Response): number {
+  const header = res.headers.get("Retry-After");
+  if (!header) return 5;
+  const seconds = Number(header);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 5;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Fetch with limited retries on 429 / transient 5xx. */
+export async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  options?: { maxAttempts?: number },
+): Promise<Response> {
+  const maxAttempts = options?.maxAttempts ?? 4;
+  let lastResponse: Response | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(input, init);
+    if (res.status !== 429 && res.status < 500) return res;
+    lastResponse = res;
+    if (attempt === maxAttempts) return res;
+    const retryMs = res.status === 429 ? parseRetryAfterSec(res) * 1000 : 1000 * attempt;
+    await sleep(Math.min(retryMs, 30_000));
+  }
+
+  return lastResponse ?? fetch(input, init);
+}
+
+export function normalizeGitHubRepoUrl(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const stripped = trimmed.replace(/^\/+/, "");
+  if (/^[\w.-]+\/[\w.-]+/.test(stripped)) return `https://github.com/${stripped}`;
+  return trimmed;
+}
+
+async function waitForSessionStatus(
+  sessionId: string,
+  done: (status: Record<string, unknown>) => boolean,
+  timeoutMs: number,
+  timeoutMessage: string,
+  options?: { completeOnSourceR2Key?: boolean; onPoll?: (status: Record<string, unknown>) => void },
+): Promise<Record<string, unknown>> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const status = (await getStatus(sessionId)) as Record<string, unknown>;
+    options?.onPoll?.(status);
+    // Model B: import completes when source is staged in R2 (not used for exec polling).
+    if (options?.completeOnSourceR2Key && status.sourceR2Key) return status;
+    if (status.status === "error") {
+      throw new Error(String(status.lastError ?? "Operation failed"));
+    }
+    if (done(status)) return status;
+    await new Promise((resolve) => setTimeout(resolve, sessionPollDelayMs(Date.now() - start)));
+  }
+  throw new Error(timeoutMessage);
+}
+
+async function waitForImportComplete(sessionId: string, timeoutMs = 420_000): Promise<void> {
+  await waitForSessionStatus(
+    sessionId,
+    (status) => status.status === "idle" || status.status === "done",
+    timeoutMs,
+    "Import timed out. The repository may be large — try again.",
+    { completeOnSourceR2Key: true },
+  );
+}
+
+const LONG_EXEC_COMMANDS = new Set([
+  "scan",
+  "report",
+  "ai-optimize",
+  "security-scan",
+  "migration-plan",
+  "deploy-check",
+]);
+const MEDIUM_EXEC_COMMANDS = new Set(["ai-ready", "seo-ready"]);
+
+export function execWaitTimeoutMs(line: string): number {
+  const trimmed = line.trim().replace(/^cf-ready\s+/, "");
+  const command = trimmed.split(/\s+/)[0] ?? "scan";
+  if (LONG_EXEC_COMMANDS.has(command)) return LONG_EXEC_WAIT_MS;
+  if (MEDIUM_EXEC_COMMANDS.has(command)) return MEDIUM_EXEC_WAIT_MS;
+  return SHORT_EXEC_WAIT_MS;
+}
+
+async function waitForExecComplete(
+  sessionId: string,
+  timeoutMs = LONG_EXEC_WAIT_MS,
+  onPoll?: (status: Record<string, unknown>) => void,
+) {
+  await waitForSessionStatus(
+    sessionId,
+    (status) => status.status === "done" || status.status === "idle",
+    timeoutMs,
+    longExecTimeoutMessage(),
+    { onPoll },
+  );
+  return getResults(sessionId);
+}
+
+export type SessionStatus = "idle" | "importing" | "extracting" | "running" | "done" | "error";
 
 export type ScanScores = {
   overall: number;
@@ -18,15 +140,51 @@ export type Finding = {
   severity: string;
   category: string;
   description?: string;
+  evidence?: string;
+  evidenceItems?: Array<{ file: string; line?: number; snippet?: string }>;
+  recommendation?: string;
+  remediation?: { steps: string[]; cfReadyCommand?: string };
+  autoFixAvailable?: boolean;
+  requiresApproval?: boolean;
+  affectedFiles?: string[];
+};
+
+export type SessionResults = {
+  result?: ScanResultData;
+  markdown?: string;
+  error?: string | null;
+};
+
+export type ChatResponse = {
+  reply?: string;
+  command?: string;
+  executed?: boolean;
+  result?: {
+    data?: ScanResultData;
+    stdout?: string;
+  };
+};
+
+export type ScanResultData = {
+  productionReady?: boolean;
+  scores?: ScanScores;
+  blockers?: Finding[];
+  findings?: Finding[];
+  inspection?: {
+    projectName?: string;
+    framework?: string;
+    deploymentTarget?: string;
+    packageManager?: string;
+  };
+  markdown?: string;
 };
 
 export async function createSession(): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions`, { method: "POST", ...fetchOpts });
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error ?? "Failed to create session");
+    throw new Error(await readApiError(res, "Failed to create session"));
   }
-  const data = (await res.json()) as { sessionId: string };
+  const data = await readApiJson<{ sessionId: string }>(res);
   return data.sessionId;
 }
 
@@ -34,8 +192,15 @@ export async function createSession(): Promise<string> {
 export async function ensureWorkspaceSession(): Promise<string> {
   const stored = sessionStorage.getItem("cf-ready-session");
   if (stored) {
-    const res = await fetch(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
-    if (res.ok) return stored;
+    try {
+      const res = await fetchWithRetry(`${API_BASE}/api/sessions/${stored}/status`, fetchOpts);
+      if (res.ok) {
+        const status = await readApiJson<{ status?: string }>(res);
+        if (status.status) return stored;
+      }
+    } catch {
+      /* stale or invalid session */
+    }
     sessionStorage.removeItem("cf-ready-session");
   }
 
@@ -44,47 +209,120 @@ export async function ensureWorkspaceSession(): Promise<string> {
   return sessionId;
 }
 
-export async function getStatus(sessionId: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
-  return res.json();
+export async function getStatus(sessionId: string): Promise<{
+  status?: SessionStatus;
+  lastError?: string;
+  sourceR2Key?: string;
+  projectName?: string;
+}> {
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/status`, fetchOpts);
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load session status"));
+  }
+  return readApiJson(res);
 }
 
 export async function uploadZip(sessionId: string, file: File) {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/upload`, {
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/upload`, {
     method: "POST",
     body: form,
     credentials: "include",
   });
-  if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed");
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Upload failed"));
+  return readApiJson(res);
 }
 
 export async function importGitHub(sessionId: string, repoUrl: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/import/github`, {
+  const normalized = normalizeGitHubRepoUrl(repoUrl);
+  const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/import/github`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repoUrl }),
+    body: JSON.stringify({ repoUrl: normalized }),
     credentials: "include",
   });
-  if (!res.ok) throw new Error((await res.json()).error ?? "Import failed");
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Import failed"));
+  const data = await readApiJson<{ ok?: boolean; status?: string; staging?: string }>(res);
+  if (data.status === "importing") {
+    await waitForImportComplete(sessionId);
+  }
+  const status = await getStatus(sessionId);
+  if (status.sourceR2Key) {
+    return { ...data, sourceR2Key: status.sourceR2Key, sandboxPending: Boolean(status.lastError) };
+  }
+  if (status.status === "error") {
+    throw new Error(status.lastError ?? "Import failed");
+  }
+  return data;
 }
 
-export async function execCommand(sessionId: string, line: string) {
-  const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/exec`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ line }),
-    credentials: "include",
-  });
-  return res.json();
+export type ExecCommandResult = {
+  status?: string;
+  exitCode?: number;
+  stdout?: string;
+  stderr?: string;
+  data?: unknown;
+  error?: string;
+  markdown?: string;
+};
+
+export const EXEC_SANDBOX_MAX_RETRIES = 6;
+
+export async function execCommand(
+  sessionId: string,
+  line: string,
+  options?: {
+    onStatus?: (status: Record<string, unknown>) => void;
+    onRetry?: (attempt: number, maxAttempts: number) => void;
+  },
+): Promise<ExecCommandResult> {
+  const maxAttempts = EXEC_SANDBOX_MAX_RETRIES;
+  let lastError: Error | undefined;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetchWithRetry(`${API_BASE}/api/sessions/${sessionId}/exec`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ line }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(await readApiError(res, "Command failed"));
+      const data = await readApiJson<ExecCommandResult>(res);
+
+      if (data.status === "running") {
+        const results = await waitForExecComplete(sessionId, execWaitTimeoutMs(line), (status) => {
+          options?.onStatus?.(status);
+        });
+        if (results.error) throw new Error(results.error);
+        const payload = results.result ?? null;
+        return {
+          exitCode: 0,
+          stdout: payload ? JSON.stringify(payload) : "",
+          stderr: "",
+          data: payload,
+          markdown: results.markdown,
+        };
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const canRetry = isSandboxStartingMessage(lastError.message) && attempt < maxAttempts;
+      if (!canRetry) throw lastError;
+      options?.onRetry?.(attempt, maxAttempts);
+      await sleep(Math.min(5000 * attempt, 25_000));
+    }
+  }
+
+  throw lastError ?? new Error("Command failed");
 }
 
-export async function getResults(sessionId: string) {
+export async function getResults(sessionId: string): Promise<SessionResults> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/results`, fetchOpts);
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load results"));
+  return readApiJson<SessionResults>(res);
 }
 
 export function reportPdfUrl(sessionId: string): string {
@@ -96,26 +334,25 @@ export async function regenerateReport(sessionId: string): Promise<Blob> {
     method: "POST",
     credentials: "include",
   });
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error ?? "Failed to regenerate PDF report");
-  }
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to regenerate PDF report"));
   return res.blob();
 }
 
 export async function listFiles(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/files`, fetchOpts);
-  return res.json() as Promise<{ files: string[] }>;
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to list files"));
+  return readApiJson<{ files: string[]; warning?: string; staged?: boolean }>(res);
 }
 
-export async function chat(sessionId: string, message: string) {
+export async function chat(sessionId: string, message: string): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
     credentials: "include",
   });
-  return res.json();
+  if (!res.ok) throw new Error(await readApiError(res, "Chat request failed"));
+  return readApiJson<ChatResponse>(res);
 }
 
 export function githubAuthUrl(sessionId: string): string {
@@ -124,6 +361,6 @@ export function githubAuthUrl(sessionId: string): string {
 
 export async function listGitHubRepos(sessionId: string) {
   const res = await fetch(`${API_BASE}/api/sessions/${sessionId}/auth/github/repos`, fetchOpts);
-  if (!res.ok) throw new Error("GitHub not connected");
-  return res.json() as Promise<{ repos: Array<{ full_name: string; private: boolean }> }>;
+  if (!res.ok) throw new Error(await readApiError(res, "GitHub not connected"));
+  return readApiJson<{ repos: Array<{ full_name: string; private: boolean }> }>(res);
 }

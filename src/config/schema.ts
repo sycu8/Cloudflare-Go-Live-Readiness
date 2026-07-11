@@ -25,6 +25,22 @@ export const FindingStatusSchema = z.enum([
   "ignored",
 ]);
 
+export const EvidenceItemSchema = z.object({
+  file: z.string(),
+  line: z.number().optional(),
+  column: z.number().optional(),
+  snippet: z.string().optional(),
+  ruleId: z.string().optional(),
+});
+
+export const RemediationSchema = z.object({
+  steps: z.array(z.string()),
+  docsUrl: z.string().url().optional(),
+  cfReadyCommand: z.string().optional(),
+  wranglerSnippet: z.string().optional(),
+  estimatedEffort: z.enum(["minutes", "hours", "days"]).optional(),
+});
+
 export const FindingSchema = z.object({
   id: z.string(),
   category: FindingCategorySchema,
@@ -32,12 +48,18 @@ export const FindingSchema = z.object({
   title: z.string(),
   description: z.string(),
   evidence: z.string().optional(),
+  evidenceItems: z.array(EvidenceItemSchema).optional(),
+  confidence: z.enum(["high", "medium", "low"]).optional(),
   affectedFiles: z.array(z.string()).optional(),
   recommendation: z.string(),
+  remediation: RemediationSchema.optional(),
   autoFixAvailable: z.boolean(),
   requiresApproval: z.boolean(),
   status: FindingStatusSchema,
 });
+
+export type EvidenceItem = z.infer<typeof EvidenceItemSchema>;
+export type Remediation = z.infer<typeof RemediationSchema>;
 
 export type FindingCategory = z.infer<typeof FindingCategorySchema>;
 export type FindingSeverity = z.infer<typeof FindingSeveritySchema>;
@@ -105,6 +127,12 @@ export const CfReadyConfigSchema = z.object({
       model: z.string().default("openai/gpt-4o-mini"),
       apiToken: z.string().optional(),
       gatewayId: z.string().default("default"),
+    })
+    .optional(),
+  baseline: z
+    .object({
+      ignoredFindingIds: z.array(z.string()).default([]),
+      acceptedRiskIds: z.array(z.string()).default([]),
     })
     .optional(),
 });

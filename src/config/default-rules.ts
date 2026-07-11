@@ -78,8 +78,10 @@ export const RUNTIME_BLOCKER_PATTERNS: Array<{
     patterns: [
       /from\s+['"]node:child_process['"]/,
       /from\s+['"]child_process['"]/,
+      /require\s*\(\s*['"]node:child_process['"]\s*\)/,
       /require\s*\(\s*['"]child_process['"]\s*\)/,
-      /\bexec(Sync)?\s*\(/,
+      /\bexecSync\s*\(/,
+      /\bexecFile(Sync)?\s*\(/,
       /\bspawn(Sync)?\s*\(/,
     ],
     severity: "blocker",
@@ -135,6 +137,13 @@ export const RUNTIME_BLOCKER_PATTERNS: Array<{
 export const SCAN_EXCLUDE_DIRS = [
   "node_modules",
   "dist",
+  "out",
+  "Publish",
+  "bin",
+  "obj",
+  "target",
+  ".dfx",
+  "public/build",
   ".next",
   "coverage",
   ".git",
@@ -142,6 +151,20 @@ export const SCAN_EXCLUDE_DIRS = [
   ".turbo",
   ".vercel",
   ".cf-ready-cache",
+];
+
+/** Windows user-profile junctions that often throw EPERM when traversed. */
+export const WINDOWS_PROFILE_JUNCTIONS = [
+  "Application Data",
+  "Local Settings",
+  "My Documents",
+  "Cookies",
+  "NetHood",
+  "PrintHood",
+  "Recent",
+  "SendTo",
+  "Start Menu",
+  "Templates",
 ];
 
 export const CATEGORY_WEIGHTS: Record<string, number> = {

@@ -20,6 +20,7 @@ import { generateAiAssets } from "../generators/ai-assets.js";
 import { generateSeoAssets } from "../generators/seo-assets.js";
 import { getExitCode } from "../cli/options.js";
 import { runScan, serializeScanContext } from "./run-scan.js";
+import { resolveFixFlagsForFinding } from "../config/remediation-templates.js";
 import type { CommandName, CommandOptions, CommandResult } from "./types.js";
 
 function inspectionPayload(context: Awaited<ReturnType<typeof createScanContext>>) {
@@ -43,6 +44,8 @@ export async function runCommand(
   command: CommandName,
   options: CommandOptions,
 ): Promise<CommandResult> {
+  const skipReports = Boolean(options.skipReports);
+
   switch (command) {
     case "scan": {
       const result = await runScan(options);
@@ -58,10 +61,14 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["migration"] });
       const content = generateMigrationPlanMarkdown(context.inspection, context.findings);
       const outputPath = path.join(getOutputDir(context), "migration-plan.md");
-      await writeTextFile(outputPath, content, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, content, { force: true });
+      }
       return {
         exitCode: 0,
-        data: { path: outputPath, findings: context.findings.length },
+        data: skipReports
+          ? { findings: context.findings.length, markdown: content }
+          : { path: outputPath, findings: context.findings.length },
         markdown: content,
       };
     }
@@ -70,13 +77,15 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["security"] });
       const sarif = generateSarif(context.findings, context.rootDir);
       const outputPath = path.join(getOutputDir(context), "security-findings.sarif");
-      await writeTextFile(outputPath, sarif, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, sarif, { force: true });
+      }
       const securityFindings = context.findings.filter((f) => f.category === "security");
       return {
         exitCode: getExitCode(context.productionReady, false),
         data: {
           findings: securityFindings,
-          sarif: outputPath,
+          sarif: skipReports ? undefined : outputPath,
           score: context.scores.security,
         },
       };
@@ -86,13 +95,15 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["ai-readiness"] });
       const content = generateAiReadinessReport(context.inspection, context.findings);
       const outputPath = path.join(getOutputDir(context), "ai-readiness-report.md");
-      await writeTextFile(outputPath, content, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, content, { force: true });
+      }
       return {
         exitCode: 0,
         data: {
           score: context.scores.aiReadiness,
           findings: context.findings,
-          report: outputPath,
+          report: skipReports ? undefined : outputPath,
         },
         markdown: content,
       };
@@ -102,13 +113,15 @@ export async function runCommand(
       const context = await createScanContext({ ...options, modules: ["seo"] });
       const content = generateSeoReadinessReport(context.inspection, context.findings);
       const outputPath = path.join(getOutputDir(context), "seo-readiness-report.md");
-      await writeTextFile(outputPath, content, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, content, { force: true });
+      }
       return {
         exitCode: 0,
         data: {
           score: context.scores.seo,
           findings: context.findings,
-          report: outputPath,
+          report: skipReports ? undefined : outputPath,
         },
         markdown: content,
       };
@@ -168,11 +181,17 @@ export async function runCommand(
 
       const markdown = String(result.markdown ?? "");
       const outputPath = path.join(getOutputDir(context), "cf-ready-ai-optimize.md");
-      await writeTextFile(outputPath, markdown, { force: true });
+      if (!skipReports) {
+        await writeTextFile(outputPath, markdown, { force: true });
+      }
 
       return {
         exitCode: 0,
-        data: { ...result, reportPath: outputPath, model: getAiModel(context.config) },
+        data: {
+          ...result,
+          reportPath: skipReports ? undefined : outputPath,
+          model: getAiModel(context.config),
+        },
         markdown,
       };
     }
@@ -193,20 +212,36 @@ export async function runCommand(
     }
 
     case "fix": {
-      if (!options.aiReadiness && !options.seo) {
-        throw new Error("Specify aiReadiness and/or seo for fix command");
+      let aiReadiness = options.aiReadiness;
+      let seo = options.seo;
+      if (options.findingId) {
+        const flags = resolveFixFlagsForFinding(options.findingId);
+        aiReadiness = flags.aiReadiness;
+        seo = flags.seo;
+        if (!aiReadiness && !seo) {
+          throw new Error(
+            `Finding ${options.findingId} has no automated fix. Apply the recommendation manually.`,
+          );
+        }
+      }
+      if (!aiReadiness && !seo) {
+        throw new Error("Specify --ai-readiness, --seo, or --finding <id>");
       }
       const context = await createScanContext({ ...options, modules: [] });
       const results: Array<{ file: string; status: string }> = [];
 
-      if (options.aiReadiness) {
+      if (aiReadiness) {
         results.push(...(await generateAiAssets(context, { force: options.force })));
       }
-      if (options.seo) {
+      if (seo) {
         results.push(...(await generateSeoAssets(context, { force: options.force })));
       }
 
-      return { exitCode: 0, data: { results } };
+      if (options.rescan) {
+        await runCommand("scan", { ...options, skipReports: false });
+      }
+
+      return { exitCode: 0, data: { results, findingId: options.findingId ?? null } };
     }
 
     default:
