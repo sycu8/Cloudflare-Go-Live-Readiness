@@ -2,6 +2,17 @@
 
 Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-ready`). See also the [README Roadmap](README.md#roadmap) for the original five-phase vision.
 
+## Shipped (v0.2.1)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| npm `@orangecloud/cf-ready` | Shipped | [v0.2.1 on npmjs.org](https://www.npmjs.com/package/@orangecloud/cf-ready) |
+| Web Agent 30-minute scan timeout | Shipped | Shared exec timeouts; parallel rescan tuning |
+| Evidence + remediation reports | Shipped | v0.2.0 — markdown, PDF, SARIF, Web UI |
+| GitHub Action (PR readiness) | Shipped | [`action/action.yml`](action/action.yml), [docs](docs/docs/github-action.html) |
+| Private repo import UI | Shipped | Web Agent repo picker + OAuth token import |
+| OG / SEO polish | Shipped | `docs/assets/og.png`, meta on doc pages |
+
 ## Shipped (v0.1)
 
 - Production CLI: scan, inspect, security, AI/SEO readiness, reports, smoke-test
@@ -10,14 +21,10 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 - Cloudflare Worker deploy (Sandbox, Session DO, R2/KV)
 - GitHub OAuth scaffold for private repos
 
-## In progress (v0.2)
+## In progress (v0.3)
 
 | Item | Status | Notes |
 |------|--------|-------|
-| npm publish `@orangecloud/cf-ready` | Shipped | v0.2.0 on npmjs.org |
-| GitHub Action (PR readiness) | Shipped | [`action/action.yml`](action/action.yml), [docs](docs/docs/github-action.html) |
-| Private repo import UI | Shipped | Web Agent repo picker + OAuth token import |
-| OG / SEO polish | Shipped | `docs/assets/og.png`, meta on doc pages |
 | Framework adapters (Astro, Remix, Hono) | Planned | Detection only today |
 
 ## Phase 2 — GitHub Action (README)
