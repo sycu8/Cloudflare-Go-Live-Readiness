@@ -27,22 +27,23 @@ import { SCAN_MODULE_NAMES, type ScanModuleName } from "../../src/service/scan-m
 import { buildModuleSandboxId } from "./module-sandbox-id.js";
 import { mapWithConcurrency } from "./concurrency.js";
 import { resolveSessionId } from "./session-id.js";
+import { LONG_EXEC_WAIT_MS, LONG_SANDBOX_EXEC_MS } from "../../src/shared/exec-timeouts.js";
 
 /** Max simultaneous module sandboxes during scan (lower = fewer cold-start bursts). */
-const SANDBOX_MODULE_CONCURRENCY = 2;
+const SANDBOX_MODULE_CONCURRENCY = 3;
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 /** Server-side poll while exec/chat runs in waitUntil (must exceed sandbox exec + cold start). */
-const EXEC_POLL_TIMEOUT_MS = 900_000;
+const EXEC_POLL_TIMEOUT_MS = LONG_EXEC_WAIT_MS;
 const SANDBOX_EXEC_TIMEOUT_MS: Record<string, number> = {
-  scan: 600_000,
-  report: 600_000,
-  "ai-optimize": 600_000,
-  "security-scan": 480_000,
-  "migration-plan": 480_000,
-  "deploy-check": 480_000,
-  "ai-ready": 360_000,
-  "seo-ready": 360_000,
+  scan: LONG_SANDBOX_EXEC_MS,
+  report: LONG_SANDBOX_EXEC_MS,
+  "ai-optimize": LONG_SANDBOX_EXEC_MS,
+  "security-scan": 720_000,
+  "migration-plan": 720_000,
+  "deploy-check": 720_000,
+  "ai-ready": 480_000,
+  "seo-ready": 480_000,
 };
 const DEFAULT_SANDBOX_EXEC_TIMEOUT_MS = 300_000;
 
@@ -151,7 +152,7 @@ export class SessionDO implements DurableObject {
     }
   }
 
-  /** Wake primary + module sandboxes before parallel scan to reduce cold-start errors. */
+  /** Wake primary sandbox before parallel scan; module sandboxes ping on first use. */
   private async prewarmScanSandboxes(): Promise<void> {
     await withSandboxRetry(
       async () => {
@@ -159,15 +160,6 @@ export class SessionDO implements DurableObject {
       },
       SANDBOX_COLD_START_RETRY,
     );
-    await mapWithConcurrency([...SCAN_MODULE_NAMES], 2, async (module) => {
-      await withSandboxRetry(
-        async () => {
-          const sandbox = this.sandboxForModule(module);
-          await this.pingSandbox(sandbox);
-        },
-        SANDBOX_COLD_START_RETRY,
-      );
-    });
   }
 
   private async runSingleSandboxFullScan(): Promise<unknown> {

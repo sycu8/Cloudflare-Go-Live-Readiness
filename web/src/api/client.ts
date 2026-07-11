@@ -1,3 +1,9 @@
+import {
+  LONG_EXEC_WAIT_MS,
+  MEDIUM_EXEC_WAIT_MS,
+  SHORT_EXEC_WAIT_MS,
+  longExecTimeoutMessage,
+} from "../../../src/shared/exec-timeouts.js";
 import { readApiError, readApiJson } from "./errors.js";
 import { isSandboxStartingMessage } from "./sandbox-errors.js";
 
@@ -97,21 +103,21 @@ const MEDIUM_EXEC_COMMANDS = new Set(["ai-ready", "seo-ready"]);
 export function execWaitTimeoutMs(line: string): number {
   const trimmed = line.trim().replace(/^cf-ready\s+/, "");
   const command = trimmed.split(/\s+/)[0] ?? "scan";
-  if (LONG_EXEC_COMMANDS.has(command)) return 900_000;
-  if (MEDIUM_EXEC_COMMANDS.has(command)) return 600_000;
-  return 420_000;
+  if (LONG_EXEC_COMMANDS.has(command)) return LONG_EXEC_WAIT_MS;
+  if (MEDIUM_EXEC_COMMANDS.has(command)) return MEDIUM_EXEC_WAIT_MS;
+  return SHORT_EXEC_WAIT_MS;
 }
 
 async function waitForExecComplete(
   sessionId: string,
-  timeoutMs = 900_000,
+  timeoutMs = LONG_EXEC_WAIT_MS,
   onPoll?: (status: Record<string, unknown>) => void,
 ) {
   await waitForSessionStatus(
     sessionId,
     (status) => status.status === "done" || status.status === "idle",
     timeoutMs,
-    "Command timed out after 15 minutes. Large projects may need another run — check Results if partial output exists.",
+    longExecTimeoutMessage(),
     { onPoll },
   );
   return getResults(sessionId);

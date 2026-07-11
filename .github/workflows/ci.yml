@@ -52,8 +52,9 @@ jobs:
       - name: Scan static-site fixture
         shell: bash
         run: |
-          node dist/index.js scan --cwd tests/fixtures/static-site --json > /tmp/scan.json || test $? -eq 1
-          node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/scan.json','utf8')); if(!r.scores) process.exit(1)"
+          OUT="${RUNNER_TEMP:-/tmp}/scan.json"
+          node dist/index.js scan --cwd tests/fixtures/static-site --json > "$OUT" || test $? -eq 1
+          SCAN_OUT="$OUT" node -e "const r=JSON.parse(require('fs').readFileSync(process.env.SCAN_OUT,'utf8')); if(!r.scores) process.exit(1)"
 
   qa-cli:
     runs-on: ubuntu-latest
