@@ -18,11 +18,15 @@
     <header class="site-header">
       <div class="header-inner">
         <a class="logo" href="/"><img class="logo-mark" src="/assets/logo-icon.svg" alt="" width="36" height="36" decoding="async" /><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
-        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+                <button type="button" class="nav-menu-btn nav-menu-btn--docs" data-docs-menu aria-controls="docs-sidebar" aria-expanded="false" aria-label="Open documentation menu">
+          <span class="nav-menu-btn__bars" aria-hidden="true"><span class="nav-menu-btn__bar"></span><span class="nav-menu-btn__bar"></span><span class="nav-menu-btn__bar"></span></span>
+          <span class="nav-menu-btn__label">Menu</span>
+        </button>
+        <nav class="nav-links header-actions"><a href="/">Home</a><a href="/app/" class="btn btn-primary header-cta">Web Agent</a></nav>
       </div>
     </header>
     <div class="docs-layout">
-      <nav class="docs-nav" aria-label="Docs">
+      <nav class="docs-nav" id="docs-sidebar" aria-label="Docs">
         <a href="index.html">Overview</a>
         <a href="getting-started.html" class="active">Getting started</a>
         <a href="examples.html">Examples</a>
