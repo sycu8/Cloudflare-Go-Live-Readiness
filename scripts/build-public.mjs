@@ -19,20 +19,22 @@ function walkHtml(dir) {
   for (const name of readdirSync(dir)) {
     const full = path.join(dir, name);
     if (statSync(full).isDirectory()) walkHtml(full);
-    else if (name.endsWith(".html")) injectThemeScript(full);
+    else if (name.endsWith(".html")) injectScripts(full);
   }
 }
 
-function injectThemeScript(filePath) {
+function injectScripts(filePath) {
   let html = readFileSync(filePath, "utf8");
-  if (html.includes("/assets/theme.js")) return;
-  const tag = '    <script src="/assets/theme.js"></script>\n';
-  if (html.includes("<head>")) {
-    html = html.replace("<head>", `<head>\n${tag}`);
-  } else {
-    return;
+  let changed = false;
+  if (!html.includes("/assets/theme.js") && html.includes("<head>")) {
+    html = html.replace("<head>", `<head>\n    <script src="/assets/theme.js"></script>\n`);
+    changed = true;
   }
-  writeFileSync(filePath, html);
+  if (!html.includes("/assets/site-mobile.js") && html.includes("</body>")) {
+    html = html.replace("</body>", '    <script src="/assets/site-mobile.js" defer></script>\n  </body>');
+    changed = true;
+  }
+  if (changed) writeFileSync(filePath, html);
 }
 
 walkHtml(publicDir);
@@ -51,7 +53,7 @@ if (existsSync(path.join(webDir, "package.json"))) {
   execSync("npm install", { cwd: webDir, stdio: "inherit" });
   execSync("npm run build", { cwd: webDir, stdio: "inherit" });
   const appIndex = path.join(publicDir, "app", "index.html");
-  if (existsSync(appIndex)) injectThemeScript(appIndex);
+  if (existsSync(appIndex)) injectScripts(appIndex);
 }
 
 console.log("Built public/ (docs + web/app)");

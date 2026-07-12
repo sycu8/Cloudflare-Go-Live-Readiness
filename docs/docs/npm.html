@@ -1,56 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script src="/assets/theme.js"></script>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Install from npm — CF Ready</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Install from npm — CF Ready Docs</title>
     <meta
       name="description"
       content="Install cf-ready from the public npm registry: @orangecloud/cf-ready"
     />
-    <link rel="stylesheet" href="../assets/docs.css" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
   </head>
   <body>
-    <main class="docs-page">
-      <nav class="docs-nav"><a href="../index.html">← CF Ready</a></nav>
-      <h1>Install from npm</h1>
-      <p>
-        The CLI is published on the public npm registry as
-        <a href="https://www.npmjs.com/package/@orangecloud/cf-ready"><code>@orangecloud/cf-ready</code></a>.
-      </p>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/"><img class="logo-mark" src="/assets/logo-icon.svg" alt="" width="36" height="36" decoding="async" /><span class="logo-text"><strong>CF Ready</strong><span>Documentation</span></span></a>
+        <nav class="nav-links"><a href="/">Home</a><a href="/app/" class="btn btn-primary" style="padding:0.45rem 0.85rem;min-height:auto">Web Agent</a></nav>
+      </div>
+    </header>
+    <div class="docs-layout">
+      <nav class="docs-nav" aria-label="Docs">
+        <a href="index.html">Overview</a>
+        <a href="getting-started.html">Getting started</a>
+        <a href="npm.html" class="active">npm install</a>
+        <a href="examples.html">Examples</a>
+        <a href="commands.html">Commands</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="web-agent.html">Web Agent</a>
+        <a href="github-action.html">GitHub Action</a>
+        <a href="roadmap.html">Roadmap</a>
+      </nav>
+      <article class="docs-content">
+        <h1>Install from npm</h1>
+        <p>
+          The CLI is published on the public npm registry as
+          <a href="https://www.npmjs.com/package/@orangecloud/cf-ready"><code>@orangecloud/cf-ready</code></a>
+          (latest <strong>0.2.1</strong>).
+        </p>
 
-      <h2>Quick install</h2>
-      <pre><code>npx @orangecloud/cf-ready scan</code></pre>
-      <pre><code>npm install -g @orangecloud/cf-ready
+        <h2>Quick install</h2>
+        <pre><code>npx @orangecloud/cf-ready scan</code></pre>
+        <pre><code>npm install -g @orangecloud/cf-ready
 cf-ready scan</code></pre>
-      <pre><code>npm install -D @orangecloud/cf-ready
+        <pre><code>npm install -D @orangecloud/cf-ready
 npx cf-ready scan</code></pre>
 
-      <h2>Requirements</h2>
-      <ul>
-        <li>Node.js 18 or newer</li>
-        <li>Run from your project root (or pass <code>--cwd</code>)</li>
-      </ul>
+        <h2>Requirements</h2>
+        <ul>
+          <li>Node.js 18 or newer</li>
+          <li>Run from your project root (or pass <code>--cwd</code>)</li>
+        </ul>
 
-      <h2>Maintainers — publish to npmjs.org</h2>
-      <ol>
-        <li>Create an npm organization <code>@orangecloud</code> (or use an existing scoped org).</li>
-        <li>
-          Generate an npm <strong>Automation</strong> or <strong>Publish</strong> token at
-          <a href="https://www.npmjs.com/settings/~tokens">npmjs.com → Access Tokens</a>.
-        </li>
-        <li>
-          Add repository secret <code>NPM_TOKEN</code> in GitHub → Settings → Secrets → Actions.
-        </li>
-        <li>Bump <code>version</code> in <code>package.json</code> and merge to <code>main</code>.</li>
-        <li>
-          Publish via GitHub Release (<strong>Publish to npm</strong> workflow) or push a tag
-          <code>v0.2.1</code> matching <code>package.json</code>.
-        </li>
-      </ol>
-      <p>
-        Manual dry run: Actions → <em>Publish to npm</em> → Run workflow → dry_run = true.
-      </p>
-    </main>
+        <h2>Maintainers — publish to npmjs.org</h2>
+        <ol>
+          <li>Create an npm organization <code>@orangecloud</code> (or use an existing scoped org).</li>
+          <li>
+            Generate an npm <strong>Automation</strong> or <strong>Publish</strong> token at
+            <a href="https://www.npmjs.com/settings/~tokens">npmjs.com → Access Tokens</a>.
+          </li>
+          <li>
+            Add repository secret <code>NPM_TOKEN</code> in GitHub → Settings → Secrets → Actions.
+          </li>
+          <li>Bump <code>version</code> in <code>package.json</code> and merge to <code>main</code>.</li>
+          <li>
+            Publish via GitHub Release (<strong>Publish to npm</strong> workflow) or push a tag
+            <code>v0.2.1</code> matching <code>package.json</code>.
+          </li>
+        </ol>
+        <p>
+          Manual dry run: Actions → <em>Publish to npm</em> → Run workflow → dry_run = true.
+        </p>
+      </article>
+    </div>
+    <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>
+    <script src="/assets/site-mobile.js" defer></script>
   </body>
 </html>
