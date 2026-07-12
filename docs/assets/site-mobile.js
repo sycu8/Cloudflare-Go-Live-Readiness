@@ -1,35 +1,13 @@
 (function () {
-  const MOBILE_MQ = window.matchMedia("(max-width: 768px)");
+  const MOBILE_MQ = window.matchMedia("(max-width: 960px)");
 
   function isMobile() {
     return MOBILE_MQ.matches;
   }
 
-  function createMenuButton(label, controlsId, extraClass) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `nav-menu-btn${extraClass ? ` ${extraClass}` : ""}`;
-    btn.setAttribute("aria-expanded", "false");
-    btn.setAttribute("aria-controls", controlsId);
-    btn.setAttribute("aria-label", label);
-    btn.dataset.defaultLabel = label;
-    btn.innerHTML =
-      '<span class="nav-menu-btn__bar" aria-hidden="true"></span>' +
-      '<span class="nav-menu-btn__bar" aria-hidden="true"></span>' +
-      '<span class="nav-menu-btn__bar" aria-hidden="true"></span>';
-    return btn;
-  }
-
-  function createOverlay() {
-    const el = document.createElement("div");
-    el.className = "nav-overlay";
-    el.hidden = true;
-    return el;
-  }
-
   function setOpen(state) {
     document.body.classList.toggle("nav-open", state);
-    document.querySelectorAll(".nav-menu-btn").forEach((btn) => {
+    document.querySelectorAll("[data-docs-menu], [data-site-menu]").forEach((btn) => {
       btn.setAttribute("aria-expanded", state ? "true" : "false");
       btn.setAttribute("aria-label", state ? "Close menu" : btn.dataset.defaultLabel || "Open menu");
     });
@@ -47,11 +25,30 @@
   }
 
   function openPanel(panel) {
-    closeMenu();
     setOpen(true);
     panel.classList.add("is-open");
     const overlay = document.querySelector(".nav-overlay");
     if (overlay) overlay.hidden = false;
+  }
+
+  function bindMenuButton(btn, panel) {
+    if (!btn || !panel || btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    if (!btn.dataset.defaultLabel) {
+      btn.dataset.defaultLabel = btn.getAttribute("aria-label") || "Open menu";
+    }
+    btn.addEventListener("click", () => {
+      if (document.body.classList.contains("nav-open") && panel.classList.contains("is-open")) {
+        closeMenu();
+      } else {
+        openPanel(panel);
+      }
+    });
+    panel.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (isMobile()) closeMenu();
+      });
+    });
   }
 
   function initHeaderNav() {
@@ -62,22 +59,23 @@
     navLinks.id = navLinks.id || "site-nav";
     navLinks.classList.add("nav-links--drawer");
 
-    const btn = createMenuButton("Open site menu", navLinks.id);
-    btn.addEventListener("click", () => {
-      if (document.body.classList.contains("nav-open") && navLinks.classList.contains("is-open")) {
-        closeMenu();
-      } else {
-        openPanel(navLinks);
-      }
-    });
+    let btn = headerInner.querySelector("[data-site-menu]");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nav-menu-btn nav-menu-btn--site";
+      btn.dataset.siteMenu = "1";
+      btn.setAttribute("aria-controls", navLinks.id);
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-label", "Open site menu");
+      btn.innerHTML =
+        '<span class="nav-menu-btn__bars" aria-hidden="true">' +
+        '<span class="nav-menu-btn__bar"></span><span class="nav-menu-btn__bar"></span><span class="nav-menu-btn__bar"></span>' +
+        "</span><span class=\"nav-menu-btn__label\">Menu</span>";
+      headerInner.insertBefore(btn, navLinks);
+    }
 
-    navLinks.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        if (isMobile()) closeMenu();
-      });
-    });
-
-    headerInner.insertBefore(btn, navLinks);
+    bindMenuButton(btn, navLinks);
   }
 
   function initDocsNav() {
@@ -89,43 +87,32 @@
     docsNav.id = docsNav.id || "docs-sidebar";
     docsNav.classList.add("docs-nav--drawer");
 
-    const title = document.createElement("div");
-    title.className = "docs-nav__title";
-    title.textContent = "Browse docs";
-    docsNav.insertBefore(title, docsNav.firstChild);
-
-    const footer = document.createElement("div");
-    footer.className = "docs-nav__footer";
-    footer.innerHTML = '<a href="/">← Home</a><a href="/app/" class="btn btn-primary docs-nav__cta">Web Agent</a>';
-    docsNav.appendChild(footer);
-
-    const btn = createMenuButton("Open documentation menu", docsNav.id, "nav-menu-btn--docs");
-    btn.addEventListener("click", () => {
-      if (document.body.classList.contains("nav-open") && docsNav.classList.contains("is-open")) {
-        closeMenu();
-      } else {
-        openPanel(docsNav);
-      }
-    });
-
-    docsNav.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        if (isMobile()) closeMenu();
-      });
-    });
-
-    const logo = headerInner.querySelector(".logo");
-    if (logo?.nextSibling) {
-      headerInner.insertBefore(btn, logo.nextSibling);
-    } else {
-      headerInner.appendChild(btn);
+    if (!docsNav.querySelector(".docs-nav__title")) {
+      const title = document.createElement("div");
+      title.className = "docs-nav__title";
+      title.textContent = "Browse docs";
+      docsNav.insertBefore(title, docsNav.firstChild);
     }
 
-    const jump = document.createElement("a");
-    jump.href = "#main-content";
-    jump.className = "docs-skip-content";
-    jump.textContent = "Skip to content";
-    document.querySelector(".docs-layout")?.prepend(jump);
+    if (!docsNav.querySelector(".docs-nav__footer")) {
+      const footer = document.createElement("div");
+      footer.className = "docs-nav__footer";
+      footer.innerHTML =
+        '<a href="/">Home</a><a href="/app/" class="btn btn-primary docs-nav__cta">Web Agent</a>';
+      docsNav.appendChild(footer);
+    }
+
+    const btn = headerInner.querySelector("[data-docs-menu]");
+    bindMenuButton(btn, docsNav);
+
+    const layout = document.querySelector(".docs-layout");
+    if (layout && !layout.querySelector(".docs-skip-content")) {
+      const jump = document.createElement("a");
+      jump.href = "#main-content";
+      jump.className = "docs-skip-content";
+      jump.textContent = "Skip to content";
+      layout.prepend(jump);
+    }
   }
 
   function initMainLandmark() {
@@ -137,30 +124,33 @@
   }
 
   function initOverlay() {
-    const overlay = createOverlay();
+    if (document.querySelector(".nav-overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.className = "nav-overlay";
+    overlay.hidden = true;
     overlay.addEventListener("click", closeMenu);
     document.body.appendChild(overlay);
   }
 
-  function initEscape() {
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeMenu();
-    });
-  }
-
-  function initResize() {
-    MOBILE_MQ.addEventListener("change", () => {
-      if (!isMobile()) closeMenu();
-    });
+  function initThemeOnDocsHeader() {
+    const headerActions = document.querySelector(".site-header .header-actions");
+    if (!headerActions || !window.cfReadyTheme?.remount) return;
+    window.cfReadyTheme.remount();
   }
 
   function init() {
     initOverlay();
-    initEscape();
-    initResize();
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeMenu();
+    });
+    MOBILE_MQ.addEventListener("change", () => {
+      if (!isMobile()) closeMenu();
+    });
     initMainLandmark();
     initDocsNav();
     initHeaderNav();
+    initThemeOnDocsHeader();
+    document.body.classList.add("js-nav-ready");
   }
 
   if (document.readyState === "loading") {
