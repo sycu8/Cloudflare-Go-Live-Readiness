@@ -151,6 +151,7 @@
     initHeaderNav();
     initThemeOnDocsHeader();
     document.body.classList.add("js-nav-ready");
+    closeMenu();
   }
 
   if (document.readyState === "loading") {

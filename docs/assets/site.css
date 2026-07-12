@@ -693,13 +693,19 @@ img, svg { max-width: 100%; height: auto; }
     display: none;
   }
 
-  .nav-overlay {
+  .nav-overlay[hidden] {
+    display: none !important;
+    pointer-events: none;
+  }
+
+  body.nav-open .nav-overlay:not([hidden]) {
     display: block;
     position: fixed;
     inset: 0;
     z-index: 90;
     background: rgba(15, 23, 42, 0.55);
     backdrop-filter: blur(2px);
+    pointer-events: auto;
   }
 
   .nav-links--drawer {
