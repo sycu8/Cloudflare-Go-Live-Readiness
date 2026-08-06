@@ -1060,6 +1060,8 @@ package.json
 
 ## Roadmap
 
+Actionable next-steps plan (v0.3 adapters → Action packaging → auto-fix PR): [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md). Living tracker: [ROADMAP.md](ROADMAP.md).
+
 ### Phase 1: Production CLI
 
 * repository inspection;
