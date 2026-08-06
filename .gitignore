@@ -21,4 +21,5 @@ tests/fixtures/**/openapi.json
 tests/fixtures/**/mcp-server-card.json
 tests/fixtures/**/auth.md
 tests/fixtures/**/cf-ready-ai-optimize.md
+tests/fixtures/**/cf-ready-ai-fix-prompts.md
 tests/fixtures/**/public/
