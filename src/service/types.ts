@@ -48,6 +48,9 @@ export type CommandOptions = ServiceOptions & {
   force?: boolean;
   findingId?: string;
   rescan?: boolean;
+  createPr?: boolean;
+  prTitle?: string;
+  prBranch?: string;
 };
 
 export type CommandResult = {

@@ -27,6 +27,8 @@ jobs:
         with:
           cwd: tests/fixtures/nextjs-app
           fail-on-blocker: "false"
+          install-from: source
+          cf-ready-root: .
 
       - name: Comment PR summary
         if: github.event_name == 'pull_request'
@@ -64,9 +66,11 @@ jobs:
               'SARIF uploaded when available. Use the composite action in your repo:',
               '',
               '```yaml',
-              '- uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.2.0',
+              '- uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.3.0',
               '  with:',
               '    cwd: .',
+              '    install-from: npm',
+              '    package-version: \"0.3.0\"',
               '```',
               '',
               `<!-- cf-ready-pr-check -->`,

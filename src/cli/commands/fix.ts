@@ -12,6 +12,13 @@ export function registerFixCommand(program: Command): void {
     .option("--finding <id>", "Run fix for a specific finding id from the last scan")
     .option("--rescan", "Re-run scan after applying fixes")
     .option("--force", "Overwrite existing generated files")
+    .option(
+      "--create-pr",
+      "Create a git branch and open a PR with safe generated assets (requires git + gh)",
+    )
+    .option("--pr-title <title>", "Pull request title when using --create-pr")
+    .option("--pr-branch <name>", "Branch name when using --create-pr")
+    .option("--dry-run", "With --create-pr, show what would be committed without pushing")
     .action(async function (this: Command) {
       const opts = getGlobalOptions(this);
       const fixOpts = this.opts() as {
@@ -20,6 +27,10 @@ export function registerFixCommand(program: Command): void {
         finding?: string;
         rescan?: boolean;
         force?: boolean;
+        createPr?: boolean;
+        prTitle?: string;
+        prBranch?: string;
+        dryRun?: boolean;
       };
       setVerbose(opts.verbose);
       setUseColor(opts.color);
@@ -37,11 +48,22 @@ export function registerFixCommand(program: Command): void {
           findingId: fixOpts.finding,
           rescan: fixOpts.rescan,
           force: fixOpts.force,
+          createPr: fixOpts.createPr,
+          prTitle: fixOpts.prTitle,
+          prBranch: fixOpts.prBranch,
+          dryRun: fixOpts.dryRun,
         });
 
         const data = result.data as {
           results: Array<{ file: string; status: string }>;
           findingId?: string | null;
+          pullRequest?: {
+            branch: string;
+            files: string[];
+            prUrl?: string;
+            dryRun: boolean;
+            skippedReason?: string;
+          } | null;
         };
 
         if (opts.json) {
@@ -53,6 +75,17 @@ export function registerFixCommand(program: Command): void {
           }
           if (fixOpts.rescan) {
             logger.success("Rescan complete — see updated reports.");
+          }
+          if (data.pullRequest) {
+            if (data.pullRequest.skippedReason) {
+              logger.info(`PR skipped: ${data.pullRequest.skippedReason}`);
+            } else if (data.pullRequest.dryRun) {
+              logger.info(
+                `PR dry-run: would commit ${data.pullRequest.files.length} file(s) on ${data.pullRequest.branch}`,
+              );
+            } else if (data.pullRequest.prUrl) {
+              logger.success(`Opened PR: ${data.pullRequest.prUrl}`);
+            }
           }
         }
       } catch (error) {

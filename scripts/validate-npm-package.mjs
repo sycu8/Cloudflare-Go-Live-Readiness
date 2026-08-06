@@ -46,9 +46,19 @@ if (errors.length) {
 }
 
 console.log(`Validating CLI smoke test for @orangecloud/cf-ready@${pkg.version}…`);
-const out = execSync("node dist/index.js scan --cwd tests/fixtures/static-site --json", {
-  encoding: "utf8",
-});
+let out = "";
+try {
+  out = execSync("node dist/index.js scan --cwd tests/fixtures/static-site --json", {
+    encoding: "utf8",
+  });
+} catch (error) {
+  const err = /** @type {{ status?: number; stdout?: string }} */ (error);
+  // Exit 1 = readiness blockers / security policy — still a valid CLI smoke response
+  if (err.status !== 1 || !err.stdout) {
+    throw error;
+  }
+  out = err.stdout;
+}
 const result = JSON.parse(out);
 if (!result.scores?.overall && result.scores?.overall !== 0) {
   console.error("CLI smoke test failed: missing scores.overall");

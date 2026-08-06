@@ -41,6 +41,8 @@ export async function findDetectedFiles(rootDir: string): Promise<string[]> {
     "vercel.json",
     "netlify.toml",
     "astro.config.mjs",
+    "astro.config.ts",
+    "astro.config.js",
     "remix.config.js",
     "nuxt.config.ts",
     "public/robots.txt",

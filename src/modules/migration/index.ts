@@ -4,6 +4,9 @@ import { analyzeNextJs } from "./nextjs.js";
 import { analyzeVite, analyzeReactSpa } from "./vite.js";
 import { analyzeNode } from "./node.js";
 import { analyzeLegacy } from "./legacy.js";
+import { analyzeAstro } from "./astro.js";
+import { analyzeRemix } from "./remix.js";
+import { analyzeHono } from "./hono.js";
 import { scanRuntimeBlockers } from "./blockers.js";
 
 export async function runMigrationChecks(
@@ -29,15 +32,22 @@ export async function runMigrationChecks(
       findings.push(...analyzeNode(inspection));
       break;
     case "astro":
+      findings.push(...analyzeAstro(inspection));
+      break;
     case "remix":
+      findings.push(...analyzeRemix(inspection));
+      break;
+    case "hono":
+      findings.push(...analyzeHono(inspection));
+      break;
     case "nuxt":
       findings.push({
-        id: `migration-${inspection.framework}`,
+        id: "migration-nuxt",
         category: "migration",
         severity: "info",
-        title: `${inspection.framework} detected`,
-        description: `Review ${inspection.framework} Cloudflare adapter documentation.`,
-        recommendation: `Check official ${inspection.framework} Cloudflare deployment guide and wrangler configuration.`,
+        title: "nuxt detected",
+        description: "Review Nuxt Cloudflare adapter documentation.",
+        recommendation: "Check official Nuxt Cloudflare deployment guide and wrangler configuration.",
         autoFixAvailable: false,
         requiresApproval: false,
         status: "open",
@@ -85,6 +95,20 @@ export function generateMigrationPlanMarkdown(
   if (inspection.nextJs) {
     lines.push(`**Next.js router:** ${inspection.nextJs.router}`);
   }
+  if (inspection.astro) {
+    lines.push(`**Astro output:** ${inspection.astro.outputMode}`);
+  }
+  if (inspection.remix) {
+    lines.push(
+      `**Remix Vite:** ${inspection.remix.usesVite ? "yes" : "no"}`,
+      `**Cloudflare adapter:** ${inspection.remix.hasCloudflareAdapter ? "yes" : "no"}`,
+    );
+  }
+  if (inspection.hono) {
+    lines.push(
+      `**Hono node-server:** ${inspection.hono.hasNodeServer ? "yes" : "no"}`,
+    );
+  }
 
   lines.push("", "## Recommended steps", "");
 
@@ -99,16 +123,70 @@ export function generateMigrationPlanMarkdown(
   }
 
   if (inspection.framework === "vite" || inspection.framework === "react-spa") {
-    lines.push("### Vite/React → Cloudflare Pages", "", "- Build: `npm run build`", "- Deploy `dist/` to Cloudflare Pages", "- Or configure Workers Assets in wrangler.toml", "");
+    lines.push(
+      "### Vite/React → Cloudflare Pages",
+      "",
+      "- Build: `npm run build`",
+      "- Deploy `dist/` to Cloudflare Pages",
+      "- Or configure Workers Assets in wrangler.toml",
+      "",
+    );
   }
 
   if (inspection.framework === "express" || inspection.framework === "nodejs") {
-    lines.push("### Node.js → Progressive migration", "", "1. Put Cloudflare in front (DNS, CDN, WAF)", "2. Refactor APIs to Hono on Workers", "3. Migrate stateful logic to Durable Objects / external DB", "");
+    lines.push(
+      "### Node.js → Progressive migration",
+      "",
+      "1. Put Cloudflare in front (DNS, CDN, WAF)",
+      "2. Refactor APIs to Hono on Workers",
+      "3. Migrate stateful logic to Durable Objects / external DB",
+      "",
+    );
+  }
+
+  if (inspection.framework === "astro") {
+    lines.push(
+      "### Astro → Cloudflare Pages / Workers",
+      "",
+      "- Static: `astro build` → deploy `dist/` to Pages",
+      "- SSR/hybrid: add `@astrojs/cloudflare` adapter and wrangler config",
+      "- Docs: https://docs.astro.build/en/guides/integrations-guide/cloudflare/",
+      "",
+    );
+  }
+
+  if (inspection.framework === "remix") {
+    lines.push(
+      "### Remix → Cloudflare",
+      "",
+      "- Use Remix Cloudflare template / `@remix-run/cloudflare`",
+      "- Replace Node-only session/storage with KV or external stores",
+      "- Add wrangler.toml and validate loaders/actions on Workers",
+      "",
+    );
+  }
+
+  if (inspection.framework === "hono") {
+    lines.push(
+      "### Hono → Cloudflare Workers",
+      "",
+      "- Export the app as a Worker fetch handler",
+      "- Remove `@hono/node-server` for production Workers deploys",
+      "- Add wrangler.toml with `main` pointing at your entry",
+      "",
+    );
   }
 
   lines.push("## Findings", "");
   for (const f of migrationFindings) {
-    lines.push(`### [${f.severity.toUpperCase()}] ${f.title}`, "", f.description, "", `**Recommendation:** ${f.recommendation}`, "");
+    lines.push(
+      `### [${f.severity.toUpperCase()}] ${f.title}`,
+      "",
+      f.description,
+      "",
+      `**Recommendation:** ${f.recommendation}`,
+      "",
+    );
   }
 
   return lines.join("\n");

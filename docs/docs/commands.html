@@ -107,16 +107,19 @@
         <p>Generate <strong>draft assets</strong> only when flags are explicit. Never runs without a flag.</p>
         <pre><code>cf-ready fix --ai-readiness [--force]
 cf-ready fix --seo [--force]
-cf-ready fix --ai-readiness --seo [--force]</code></pre>
+cf-ready fix --ai-readiness --seo [--force]
+cf-ready fix --ai-readiness --create-pr [--dry-run]</code></pre>
         <table class="docs-table">
           <thead><tr><th>Flag</th><th>Generates</th></tr></thead>
           <tbody>
             <tr><td><code>--ai-readiness</code></td><td><code>public/robots.txt</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>sitemap.xml</code>, <code>openapi.json</code>, <code>mcp-server-card.json</code>, <code>auth.md</code></td></tr>
             <tr><td><code>--seo</code></td><td>SEO suggestions markdown, optional meta snippets</td></tr>
             <tr><td><code>--force</code></td><td>Overwrite existing generated files (default: skip)</td></tr>
+            <tr><td><code>--create-pr</code></td><td>Commit safe generated files and open a PR via <code>gh</code> (use <code>--dry-run</code> to preview)</td></tr>
+            <tr><td><code>--pr-title</code> / <code>--pr-branch</code></td><td>Optional PR title and branch name</td></tr>
           </tbody>
         </table>
-        <p>Exit <code>2</code> if neither <code>--ai-readiness</code> nor <code>--seo</code> is set.</p>
+        <p>Exit <code>2</code> if neither <code>--ai-readiness</code> nor <code>--seo</code> is set. <code>--create-pr</code> only includes AI/SEO drafts — never risky migration edits.</p>
 
         <h2 id="ai-optimize">ai-optimize</h2>
         <p>Call Cloudflare Workers AI (via configured worker URL) for migration/refactor suggestions.</p>

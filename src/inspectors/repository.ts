@@ -60,7 +60,10 @@ export async function inspectRepository(rootDir: string): Promise<RepositoryInsp
   const detectedFiles = await findDetectedFiles(rootDir);
   const importantFiles = await buildImportantFilesMap(rootDir, detectedFiles);
   const packageManager = await detectPackageManager(rootDir);
-  const { framework, confidence, nextJs } = await detectFramework(rootDir, pkg);
+  const { framework, confidence, nextJs, astro, remix, hono } = await detectFramework(
+    rootDir,
+    pkg,
+  );
   const deploymentTarget = await detectDeploymentTarget(rootDir, pkg);
   const cloudflare = await inspectCloudflare(rootDir);
   const apiRoutes = await detectApiRoutes(rootDir, framework);
@@ -88,6 +91,9 @@ export async function inspectRepository(rootDir: string): Promise<RepositoryInsp
     importantFiles,
     detectedFiles,
     nextJs,
+    astro,
+    remix,
+    hono,
     routes: [...new Set([...routes, ...apiRoutes])].sort(),
     apiRoutes,
     hasAuthPatterns,

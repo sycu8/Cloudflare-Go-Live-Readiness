@@ -2,6 +2,16 @@
 
 Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-ready`). See also the [README Roadmap](README.md#roadmap) for the original five-phase vision.
 
+**Next steps (actionable plan):** [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) — Phases A–D with checklists, acceptance criteria, and risks.
+
+## Shipped (v0.3.0)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Framework adapters (Astro, Remix, Hono) | Shipped | Deep analyzers + fixtures + remediation |
+| Action npm install path | Shipped | `install-from: npm` default; source for dogfood |
+| `cf-ready fix --create-pr` | Shipped | Safe AI/SEO assets; `--dry-run` supported |
+
 ## Shipped (v0.2.1)
 
 | Item | Status | Notes |
@@ -21,23 +31,26 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 - Cloudflare Worker deploy (Sandbox, Session DO, R2/KV)
 - GitHub OAuth scaffold for private repos
 
-## In progress (v0.3)
+## Recommended order (remaining)
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Framework adapters (Astro, Remix, Hono) | Planned | Detection only today |
+1. **Owner ops** — homepage URL, npm publish `0.3.0`, tag `v0.3.0` / `v0.3`, Worker secrets
+2. **Marketplace listing** — submit Action after version tags
+3. **Branch protection** — require Action check with `fail-on-blocker: true` on consumer repos
+4. Phase 4 dashboard / Phase 5 deploy assistant (later)
 
 ## Phase 2 — GitHub Action (README)
 
 - [x] Composite action: scan, SARIF upload, artifacts
 - [x] Dogfood workflow on PRs (`.github/workflows/cf-ready-pr.yml`)
-- [ ] Publish action to Marketplace / version tags
-- [ ] Block merges on blockers (branch protection + required check)
+- [x] External npm install path (`install-from: npm`)
+- [ ] Publish action to Marketplace / version tags (owner: tag `v0.3.0` after npm publish)
+- [ ] Block merges on blockers (document branch protection — see [action/README.md](action/README.md))
 
 ## Phase 3 — Auto-fix PR
 
-- [ ] `cf-ready fix --create-pr` or Action job
-- [ ] Safe generators only; review required for risky changes
+- [x] `cf-ready fix --create-pr` (CLI; safe assets only)
+- [ ] Optional Action job / comment trigger for scheduled safe fixes
+- [x] Safe generators only; review required for risky changes
 
 ## Phase 4 — Web dashboard
 
@@ -54,8 +67,9 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 ## Manual / owner actions
 
 - GitHub repo homepage: `https://ready.orangecloud.vn`
-- npm org access for `@orangecloud`
+- npm publish `@orangecloud/cf-ready@0.3.0` and tag Action `v0.3.0` / `v0.3`
 - Worker secrets: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`
+- Draft PR #48 (Buy Me a Coffee) — land or close
 
 ## Non-goals (MVP)
 

@@ -17,12 +17,20 @@ inputs:
     description: Fail the step when blockers are found (exit code 1)
     required: false
     default: "true"
-  cf-ready-root:
-    description: Directory containing cf-ready package.json (defaults to repository root)
+  install-from:
+    description: "npm = use published @orangecloud/cf-ready via npx; source = build from cf-ready-root"
     required: false
-    default: "."
+    default: "npm"
+  package-version:
+    description: npm package version when install-from is npm (e.g. 0.3.0 or latest)
+    required: false
+    default: "0.3.0"
+  cf-ready-root:
+    description: Directory containing cf-ready package.json when install-from is source (defaults to action parent)
+    required: false
+    default: ""
   node-version:
-    description: Node.js version for building cf-ready
+    description: Node.js version for running cf-ready
     required: false
     default: "22"
 
@@ -43,33 +51,63 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup Node.js
+    - name: Resolve cf-ready root
+      id: roots
+      shell: bash
+      run: |
+        if [ "${{ inputs.install-from }}" = "source" ]; then
+          if [ -n "${{ inputs.cf-ready-root }}" ]; then
+            ROOT="${{ inputs.cf-ready-root }}"
+          else
+            ROOT="${{ github.action_path }}/.."
+          fi
+          echo "cf_ready_root=$ROOT" >> "$GITHUB_OUTPUT"
+          echo "mode=source" >> "$GITHUB_OUTPUT"
+        else
+          echo "cf_ready_root=" >> "$GITHUB_OUTPUT"
+          echo "mode=npm" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Setup Node.js (source build)
+      if: steps.roots.outputs.mode == 'source'
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
         cache: npm
-        cache-dependency-path: ${{ inputs.cf-ready-root }}/package-lock.json
+        cache-dependency-path: ${{ steps.roots.outputs.cf_ready_root }}/package-lock.json
 
-    - name: Build cf-ready
+    - name: Setup Node.js (npm package)
+      if: steps.roots.outputs.mode == 'npm'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Build cf-ready (source)
+      if: steps.roots.outputs.mode == 'source'
       shell: bash
-      working-directory: ${{ inputs.cf-ready-root }}
+      working-directory: ${{ steps.roots.outputs.cf_ready_root }}
       run: npm ci && npm run build
 
     - name: Run cf-ready scan
       id: scan
       shell: bash
-      working-directory: ${{ inputs.cf-ready-root }}
       run: |
         set +e
         ARGS=(scan --cwd "${{ inputs.cwd }}" --json)
         if [ -n "${{ inputs.config }}" ]; then
           ARGS+=(--config "${{ inputs.config }}")
         fi
-        node dist/index.js "${ARGS[@]}" > "$RUNNER_TEMP/cf-ready-scan.json"
-        CODE=$?
+        OUT="$RUNNER_TEMP/cf-ready-scan.json"
+        if [ "${{ steps.roots.outputs.mode }}" = "source" ]; then
+          node "${{ steps.roots.outputs.cf_ready_root }}/dist/index.js" "${ARGS[@]}" > "$OUT"
+          CODE=$?
+        else
+          npx --yes "@orangecloud/cf-ready@${{ inputs.package-version }}" "${ARGS[@]}" > "$OUT"
+          CODE=$?
+        fi
         set -e
         echo "exit_code=$CODE" >> "$GITHUB_OUTPUT"
-        cp "$RUNNER_TEMP/cf-ready-scan.json" cf-ready-scan.json
+        cp "$OUT" cf-ready-scan.json
         if [ "$CODE" -eq 2 ]; then
           echo "::error::cf-ready scan failed with a runtime error (exit 2)"
           exit 2
@@ -83,7 +121,6 @@ runs:
     - name: Parse scan summary
       id: parse
       shell: bash
-      working-directory: ${{ inputs.cf-ready-root }}
       run: |
         node -e "
         const fs = require('fs');
@@ -110,5 +147,5 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: cf-ready-scan
-        path: ${{ inputs.cf-ready-root }}/cf-ready-scan.json
+        path: cf-ready-scan.json
         retention-days: 14

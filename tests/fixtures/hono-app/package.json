@@ -1,0 +1,14 @@
+{
+  "name": "hono-fixture-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.0.0",
+    "hono": "^4.0.0"
+  }
+}
