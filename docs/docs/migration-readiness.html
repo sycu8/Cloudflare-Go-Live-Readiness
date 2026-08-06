@@ -88,9 +88,12 @@
           </thead>
           <tbody>
             <tr><td><code>nextjs</code></td><td><code>next</code> dependency, <code>next.config.*</code>, <code>app/</code> or <code>pages/</code> directories</td><td>High when <code>next</code> is a dependency</td></tr>
-            <tr><td><code>vite</code></td><td><code>vite</code> dependency or <code>vite.config.*</code></td><td>High / medium</td></tr>
+            <tr><td><code>astro</code></td><td><code>astro</code> dependency or <code>astro.config.*</code>; output mode + <code>@astrojs/cloudflare</code></td><td>High / medium</td></tr>
+            <tr><td><code>remix</code></td><td><code>@remix-run/*</code> deps; Vite vs classic; Cloudflare adapter packages</td><td>High</td></tr>
+            <tr><td><code>hono</code></td><td><code>hono</code> dependency; entry files; <code>@hono/node-server</code></td><td>High</td></tr>
+            <tr><td><code>vite</code></td><td><code>vite</code> dependency or <code>vite.config.*</code> (after Astro/Remix)</td><td>High / medium</td></tr>
             <tr><td><code>react-spa</code></td><td><code>react</code> + <code>react-scripts</code> or <code>react-dom</code></td><td>Medium</td></tr>
-            <tr><td><code>astro</code>, <code>remix</code>, <code>nuxt</code></td><td>Matching framework dependency</td><td>High</td></tr>
+            <tr><td><code>nuxt</code></td><td>Matching framework dependency</td><td>High</td></tr>
             <tr><td><code>express</code></td><td><code>express</code> dependency</td><td>High</td></tr>
             <tr><td><code>nodejs</code></td><td><code>createServer</code> patterns in entry files</td><td>Medium / low</td></tr>
             <tr><td><code>static</code></td><td>HTML files without a JS framework</td><td>High / medium</td></tr>
@@ -119,8 +122,11 @@ npx @vinext/cloudflare deploy --dry-run</code></pre>
           </thead>
           <tbody>
             <tr><td>Vite / React SPA</td><td>Cloudflare Pages or Workers Assets static deploy</td></tr>
+            <tr><td>Astro</td><td>Static → Pages; SSR/hybrid → <code>@astrojs/cloudflare</code> + wrangler</td></tr>
+            <tr><td>Remix</td><td><code>@remix-run/cloudflare</code> template; review loaders/sessions for Workers</td></tr>
+            <tr><td>Hono</td><td>Workers fetch handler; remove <code>@hono/node-server</code> for edge deploys</td></tr>
             <tr><td>Express / Node.js</td><td>Progressive rewrite toward Hono or Workers-compatible handlers</td></tr>
-            <tr><td>Astro, Remix, Nuxt</td><td>Official Cloudflare adapter documentation</td></tr>
+            <tr><td>Nuxt</td><td>Official Cloudflare adapter documentation (detection only)</td></tr>
             <tr><td>Static HTML</td><td>Direct Pages deploy — no runtime blockers expected</td></tr>
           </tbody>
         </table>

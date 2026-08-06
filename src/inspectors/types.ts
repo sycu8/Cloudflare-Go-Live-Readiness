@@ -20,6 +20,24 @@ export type NextJsDetails = {
   configFiles: string[];
 };
 
+export type AstroDetails = {
+  configFiles: string[];
+  hasCloudflareAdapter: boolean;
+  outputMode: "static" | "server" | "hybrid" | "unknown";
+};
+
+export type RemixDetails = {
+  configFiles: string[];
+  hasCloudflareAdapter: boolean;
+  usesVite: boolean;
+};
+
+export type HonoDetails = {
+  entryFiles: string[];
+  hasNodeServer: boolean;
+  hasWorkersAdapterHint: boolean;
+};
+
 export type RepositoryInspection = {
   rootDir: string;
   projectName: string;
@@ -30,6 +48,9 @@ export type RepositoryInspection = {
   importantFiles: Record<string, boolean>;
   detectedFiles: string[];
   nextJs?: NextJsDetails;
+  astro?: AstroDetails;
+  remix?: RemixDetails;
+  hono?: HonoDetails;
   routes: string[];
   apiRoutes: string[];
   hasAuthPatterns: boolean;

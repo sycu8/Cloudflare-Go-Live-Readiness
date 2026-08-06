@@ -55,13 +55,14 @@
         <h2>Phase 2 — GitHub Action (shipped)</h2>
         <ul>
           <li>Composite action: scan, SARIF upload, artifacts</li>
+          <li>External repos: <code>install-from: npm</code> (default)</li>
           <li>PR comment with scores — see <a href="github-action.html">GitHub Action</a></li>
         </ul>
 
-        <h2>Phase 3 — Auto-fix PR (planned)</h2>
+        <h2>Phase 3 — Auto-fix PR (shipped CLI)</h2>
         <ul>
-          <li>Branch + PR with safe <code>fix</code> outputs</li>
-          <li>Review required for risky changes</li>
+          <li><code>cf-ready fix --create-pr</code> with safe AI/SEO assets</li>
+          <li>Optional Action job still planned</li>
         </ul>
 
         <h2>Phase 4 — Web dashboard (planned)</h2>
@@ -81,11 +82,11 @@
         <table class="docs-table">
           <thead><tr><th>Item</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Astro / Remix / Hono deep adapters (v0.3)</td><td>Next — detection only today</td></tr>
-            <tr><td>GitHub Action Marketplace tags + external install path</td><td>Phase 2 leftover</td></tr>
-            <tr><td><code>cf-ready fix --create-pr</code></td><td>Phase 3 planned</td></tr>
-            <tr><td>npm publish <code>@orangecloud/cf-ready</code></td><td>Shipped v0.2.1 — keep releasing on tags</td></tr>
-            <tr><td>Session persistence in Web Agent</td><td>Follow-up after v0.3</td></tr>
+            <tr><td>Astro / Remix / Hono deep adapters (v0.3)</td><td>Shipped</td></tr>
+            <tr><td>GitHub Action npm install path</td><td>Shipped — tag <code>v0.3.0</code> after npm publish</td></tr>
+            <tr><td><code>cf-ready fix --create-pr</code></td><td>Shipped</td></tr>
+            <tr><td>npm publish <code>@orangecloud/cf-ready@0.3.0</code></td><td>Owner action</td></tr>
+            <tr><td>Web dashboard / deploy assistant</td><td>Phase 4–5 planned</td></tr>
           </tbody>
         </table>
       </article>

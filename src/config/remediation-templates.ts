@@ -60,6 +60,34 @@ const FRAMEWORK_MIGRATION: Partial<Record<Framework, Remediation>> = {
     docsUrl: `${CF_DOCS}/workers/vite-plugin/`,
     estimatedEffort: "hours",
   },
+  astro: {
+    steps: [
+      "For static sites, run astro build and deploy dist/ to Cloudflare Pages.",
+      "For SSR/hybrid, install @astrojs/cloudflare and set it as the Astro adapter.",
+      "Add wrangler.toml and validate bindings for images, KV, or D1 if used.",
+    ],
+    docsUrl: "https://docs.astro.build/en/guides/integrations-guide/cloudflare/",
+    estimatedEffort: "hours",
+  },
+  remix: {
+    steps: [
+      "Start from the Remix Cloudflare template or add @remix-run/cloudflare.",
+      "Replace Node-only session/storage with KV, Durable Objects, or external stores.",
+      "Add wrangler.toml and deploy with wrangler.",
+    ],
+    docsUrl: "https://remix.run/docs/en/main/guides/vite#cloudflare",
+    estimatedEffort: "hours",
+  },
+  hono: {
+    steps: [
+      "Export the Hono app as a Worker fetch handler (export default app).",
+      "Remove @hono/node-server for Cloudflare Workers production deploys.",
+      "Add wrangler.toml with main pointing at your entry file.",
+    ],
+    docsUrl: "https://hono.dev/docs/getting-started/cloudflare-workers",
+    wranglerSnippet: 'name = "hono-app"\nmain = "src/index.ts"\ncompatibility_date = "2024-01-01"',
+    estimatedEffort: "minutes",
+  },
 };
 
 export function getRemediationForRule(

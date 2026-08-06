@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.0 — 2026-08-06
+
+### Framework adapters
+
+- Deep migration analyzers for **Astro**, **Remix**, and **Hono** (replacing detection-only stubs)
+- Add `hono` to the framework schema; prefer Astro/Remix/Hono detection before generic Vite/Node
+- Route detection for Astro `src/pages`, Remix `app/routes`, and Hono HTTP methods
+- Remediation templates with Cloudflare docs URLs for Astro, Remix, and Hono
+- Fixtures: `tests/fixtures/astro-app`, `remix-app`, `hono-app`
+
+### GitHub Action
+
+- Default **`install-from: npm`** — consumers run `npx @orangecloud/cf-ready` without vendoring source
+- `install-from: source` + `cf-ready-root` for dogfood / monorepo builds
+- `package-version` input (default `0.3.0`)
+- Action README: Marketplace tags, external workflow snippet, branch-protection steps
+
+### Fix command
+
+- `cf-ready fix --create-pr` opens a branch/PR with safe AI/SEO assets only (`--dry-run` supported)
+- Requires `git` + GitHub CLI (`gh`) for non-dry-run
+
 ## 0.2.1 — 2026-07-11
 
 ### Web Agent

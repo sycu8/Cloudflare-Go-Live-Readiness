@@ -114,6 +114,9 @@ describe("CLI fixtures matrix", () => {
     { fixture: "nextjs-app", command: "scan" },
     { fixture: "vite-app", command: "inspect" },
     { fixture: "express-app", command: "migration-plan" },
+    { fixture: "astro-app", command: "migration-plan" },
+    { fixture: "remix-app", command: "inspect" },
+    { fixture: "hono-app", command: "migration-plan" },
   ] as const;
 
   for (const { fixture, command } of matrix) {
@@ -129,4 +132,26 @@ describe("CLI fixtures matrix", () => {
       expect(stdout.trim().startsWith("{")).toBe(true);
     });
   }
+
+  it("fix --create-pr --dry-run on static fixture", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "cf-ready-fix-pr-"));
+    cpSync(path.join(FIXTURES, "static-site"), dir, { recursive: true });
+    const { stdout, code } = await runCli([
+      "fix",
+      "--cwd",
+      dir,
+      "--ai-readiness",
+      "--force",
+      "--create-pr",
+      "--dry-run",
+      "--json",
+      "--no-color",
+    ]);
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout.trim()) as {
+      pullRequest?: { dryRun?: boolean; files?: string[] };
+    };
+    expect(parsed.pullRequest?.dryRun).toBe(true);
+    expect((parsed.pullRequest?.files ?? []).length).toBeGreaterThan(0);
+  });
 });

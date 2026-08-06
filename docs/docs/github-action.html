@@ -63,7 +63,7 @@
           </ol>
         </nav>
 
-        <h2 id="quick-start">Quick start</h2>
+        <h2 id="quick-start">Quick start (external repos)</h2>
         <pre><code>name: CF Ready
 
 on:
@@ -78,11 +78,13 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.2.1
+      - uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.3.0
         with:
           cwd: .
-          fail-on-blocker: "true"</code></pre>
-        <p>The composite action builds cf-ready from source (<code>npm ci && npm run build</code>), runs <code>scan --json</code>, uploads SARIF, and exposes parsed outputs.</p>
+          fail-on-blocker: "true"
+          install-from: npm
+          package-version: "0.3.0"</code></pre>
+        <p>By default the action installs the published <code>@orangecloud/cf-ready</code> package via <code>npx</code> (no need to vendor this repository). Set <code>install-from: source</code> only when developing cf-ready itself.</p>
 
         <h2 id="permissions">Permissions</h2>
         <table class="docs-table">
@@ -105,8 +107,10 @@ jobs:
             <tr><td><code>cwd</code></td><td><code>.</code></td><td>Project directory to scan (relative to repo root)</td></tr>
             <tr><td><code>config</code></td><td><code>""</code></td><td>Optional path to <code>cf-ready.config.json</code></td></tr>
             <tr><td><code>fail-on-blocker</code></td><td><code>"true"</code></td><td>Fail the step when scan exit code is 1 (blockers found)</td></tr>
-            <tr><td><code>cf-ready-root</code></td><td><code>.</code></td><td>Directory containing cf-ready <code>package.json</code> when vendoring the action source</td></tr>
-            <tr><td><code>node-version</code></td><td><code>"22"</code></td><td>Node.js version for building cf-ready</td></tr>
+            <tr><td><code>install-from</code></td><td><code>npm</code></td><td><code>npm</code> = <code>npx @orangecloud/cf-ready</code>; <code>source</code> = build from <code>cf-ready-root</code></td></tr>
+            <tr><td><code>package-version</code></td><td><code>0.3.0</code></td><td>npm version when <code>install-from</code> is <code>npm</code></td></tr>
+            <tr><td><code>cf-ready-root</code></td><td>action parent</td><td>Directory containing cf-ready <code>package.json</code> when <code>install-from</code> is <code>source</code></td></tr>
+            <tr><td><code>node-version</code></td><td><code>"22"</code></td><td>Node.js version</td></tr>
           </tbody>
         </table>
 
@@ -128,8 +132,13 @@ jobs:
           <li><code>cf-ready-scan.json</code> → Actions artifact (14-day retention)</li>
         </ul>
 
-        <h2 id="fail-on-blocker">fail-on-blocker</h2>
+        <h2 id="fail-on-blocker">fail-on-blocker + branch protection</h2>
         <p>When <code>fail-on-blocker: "true"</code> (default), the action exits with code 1 if cf-ready finds blockers, failing the CI step. Set to <code>"false"</code> to report findings without failing — useful for gradual adoption or fixture scans with expected blockers.</p>
+        <ol>
+          <li>Add the workflow above to your repository.</li>
+          <li>In GitHub → Settings → Branches → Branch protection rules, require the readiness job status check.</li>
+          <li>Keep <code>fail-on-blocker: "true"</code> so blockers block merges.</li>
+        </ol>
         <div class="docs-callout docs-callout--warn">
           <strong>Exit code 2 always fails.</strong> Runtime errors (missing config, build failure) exit 2 regardless of <code>fail-on-blocker</code>.
         </div>
@@ -138,15 +147,17 @@ jobs:
         <p>The cf-ready repository runs its own action on every pull request via <code>.github/workflows/cf-ready-pr.yml</code>:</p>
         <ul>
           <li>Scans <code>tests/fixtures/nextjs-app</code> (a Next.js fixture with intentional blockers)</li>
-          <li>Uses <code>fail-on-blocker: "false"</code> because blockers are expected in the fixture</li>
+          <li>Uses <code>install-from: source</code> and <code>fail-on-blocker: "false"</code> because blockers are expected in the fixture</li>
           <li>Posts a PR comment with overall score, category breakdown, and blocker count</li>
           <li>Uploads SARIF when the scan completes successfully</li>
         </ul>
-        <p>This dogfood workflow validates the action itself. In your repo, point <code>cwd</code> at your application root and keep <code>fail-on-blocker: "true"</code> for strict gates.</p>
-        <pre><code>- uses: ./action          # Local path when developing cf-ready
+        <p>See also <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness/blob/main/action/README.md">action/README.md</a> for Marketplace tagging.</p>
+        <pre><code>- uses: ./action
   with:
     cwd: tests/fixtures/nextjs-app
-    fail-on-blocker: "false"</code></pre>
+    fail-on-blocker: "false"
+    install-from: source
+    cf-ready-root: .</code></pre>
       </article>
     </div>
     <footer class="site-footer"><div class="footer-inner"><div>CF Ready · MIT</div><div><a href="/">Home</a> · <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a></div></div></footer>

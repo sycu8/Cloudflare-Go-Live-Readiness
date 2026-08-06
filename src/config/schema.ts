@@ -73,6 +73,7 @@ export const FrameworkSchema = z.enum([
   "astro",
   "remix",
   "nuxt",
+  "hono",
   "express",
   "nodejs",
   "static",
