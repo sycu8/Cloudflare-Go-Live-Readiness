@@ -66,10 +66,12 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 
 ## Manual / owner actions
 
-- GitHub repo homepage: `https://ready.orangecloud.vn`
-- npm publish `@orangecloud/cf-ready@0.3.0` and tag Action `v0.3.0` / `v0.3`
-- Worker secrets: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`
-- Draft PR #48 (Buy Me a Coffee) — land or close
+- [x] Tag Action `v0.3.0` / `v0.3` + GitHub [Release](https://github.com/sycu8/Cloudflare-Go-Live-Readiness/releases/tag/v0.3.0)
+- [x] PR #48 (Buy Me a Coffee) merged
+- [ ] GitHub repo homepage → `https://ready.orangecloud.vn` (Settings → General; agent token lacks admin)
+- [ ] Topics: `cloudflare`, `workers`, `pages`, `cli`, `astro`, `remix`, `hono`, …
+- [ ] Add `NPM_TOKEN` secret and re-run **Publish to npm** (or `npm publish`) for `@orangecloud/cf-ready@0.3.0`
+- [ ] Worker secrets: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`
 
 ## Non-goals (MVP)
 
