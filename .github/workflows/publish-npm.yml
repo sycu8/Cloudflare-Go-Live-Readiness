@@ -74,6 +74,16 @@ jobs:
             exit 1
           fi
 
+      - name: Verify npm identity
+        if: github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+        run: |
+          echo "npm whoami:"
+          npm whoami || true
+          echo "Expected maintainer for @orangecloud/cf-ready is npm user: sycule"
+          echo "If whoami differs, update NPM_TOKEN to an Automation token for sycule with publish rights."
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish (dry run)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         run: npm publish --dry-run --access public
