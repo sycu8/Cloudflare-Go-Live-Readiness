@@ -67,6 +67,31 @@ export function findingCard(f: Finding): string {
           .join(", ")
       : "");
   const fixCmd = f.remediation?.cfReadyCommand ?? (f.autoFixAvailable ? "cf-ready fix" : "");
+  const steps = f.fixSteps?.length
+    ? f.fixSteps
+    : f.remediation?.steps?.length
+      ? f.remediation.steps
+      : f.recommendation
+        ? [f.recommendation]
+        : [];
+  const prompt =
+    f.agentPrompt ??
+    [
+      "Fix this cf-ready finding for Cloudflare Workers/Pages readiness.",
+      `Title: ${f.title}`,
+      f.description ? `Description: ${f.description}` : "",
+      ...steps.map((s, i) => `${i + 1}. ${s}`),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  const promptAttr = encodeURIComponent(prompt);
+  const stepsHtml = steps.length
+    ? `<ol class="finding-card__steps">${steps
+        .slice(0, 5)
+        .map((s) => `<li>${escapeHtml(s)}</li>`)
+        .join("")}</ol>`
+    : "";
+
   return `
     <article class="finding-card severity-${f.severity}">
       <div class="finding-card__meta">
@@ -77,8 +102,14 @@ export function findingCard(f: Finding): string {
       <h4 class="finding-card__title">${escapeHtml(f.title)}</h4>
       ${f.description ? `<p class="finding-card__desc">${escapeHtml(f.description)}</p>` : ""}
       ${evidence ? `<p class="finding-card__evidence"><strong>Evidence:</strong> ${escapeHtml(evidence)}</p>` : ""}
-      ${f.recommendation ? `<p class="finding-card__rec">${escapeHtml(f.recommendation)}</p>` : ""}
+      ${stepsHtml ? `<div class="finding-card__fix-block"><strong>How to fix</strong>${stepsHtml}</div>` : ""}
+      ${f.recommendation && !steps.length ? `<p class="finding-card__rec">${escapeHtml(f.recommendation)}</p>` : ""}
       ${fixCmd ? `<p class="finding-card__cmd"><code>${escapeHtml(fixCmd)}</code></p>` : ""}
+      <div class="finding-card__actions">
+        <button type="button" class="ghost finding-card__copy" data-action="copy-agent-prompt" data-prompt="${promptAttr}">
+          Copy AI fix prompt
+        </button>
+      </div>
     </article>
   `;
 }

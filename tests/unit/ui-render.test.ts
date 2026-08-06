@@ -79,5 +79,6 @@ describe("ui render", () => {
     );
     expect(html).toContain("Blocker A");
     expect(html).not.toContain("High B");
+    expect(html).toContain("Copy AI fix prompt");
   });
 });

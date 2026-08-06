@@ -13,6 +13,7 @@ import {
   generateRollbackPlan,
   generateDeploymentManifest,
 } from "../modules/deployment/index.js";
+import { generateAiFixPromptsReport } from "../generators/fix-guidance.js";
 import { getOutputDir } from "../core/context.js";
 
 export type ReportFiles = {
@@ -24,9 +25,20 @@ export async function writeAllReports(context: ScanContext): Promise<ReportFiles
   const outputDir = getOutputDir(context);
   await ensureDir(outputDir);
 
+  const guideCtx = {
+    projectName: context.config.projectName ?? context.inspection.projectName,
+    framework: context.inspection.framework,
+    deploymentTarget: context.inspection.deploymentTarget,
+    packageManager: context.inspection.packageManager,
+  };
+
   const reports: Array<{ name: string; content: string }> = [
     { name: "cf-ready-report.md", content: generateMarkdownReport(context) },
     { name: "cf-ready-report.json", content: generateJsonReport(context) },
+    {
+      name: "cf-ready-ai-fix-prompts.md",
+      content: generateAiFixPromptsReport(context.findings, guideCtx),
+    },
     {
       name: "migration-plan.md",
       content: generateMigrationPlanMarkdown(context.inspection, context.findings),

@@ -1,10 +1,18 @@
 import type { ScanContext } from "../core/context.js";
 import type { PdfReportInput } from "../generators/pdf-report.js";
+import { buildFindingAgentPrompt, getFixSteps } from "../generators/fix-guidance.js";
 
 export function pdfReportInputFromContext(context: ScanContext): PdfReportInput {
   const openFindings = context.findings
     .filter((f) => f.status === "open" && f.severity !== "passed")
     .slice(0, 40);
+
+  const guideCtx = {
+    projectName: context.config.projectName ?? context.inspection.projectName,
+    framework: context.inspection.framework,
+    deploymentTarget: context.inspection.deploymentTarget,
+    packageManager: context.inspection.packageManager,
+  };
 
   return {
     projectName: context.config.projectName ?? context.inspection.projectName,
@@ -28,7 +36,8 @@ export function pdfReportInputFromContext(context: ScanContext): PdfReportInput 
       description: f.description,
       recommendation: f.recommendation,
       evidence: f.evidence,
-      remediationSteps: f.remediation?.steps,
+      remediationSteps: getFixSteps(f),
+      agentPromptPreview: buildFindingAgentPrompt(f, guideCtx).slice(0, 200),
     })),
   };
 }
