@@ -1,6 +1,12 @@
 import type { ScanContext } from "../core/context.js";
 import { sortFindings } from "../core/findings.js";
 import type { Finding } from "../config/schema.js";
+import {
+  buildReportAgentPrompt,
+  formatAgentPromptMarkdown,
+  formatRemediationMarkdown,
+  type FixGuidanceContext,
+} from "./fix-guidance.js";
 
 function formatEvidenceBlock(f: Finding): string[] {
   const lines: string[] = [];
@@ -22,23 +28,13 @@ function formatEvidenceBlock(f: Finding): string[] {
   return lines;
 }
 
-function formatRemediationBlock(f: Finding): string[] {
-  if (!f.remediation?.steps.length) return [];
-  const lines = ["**Remediation steps:**", ""];
-  for (const step of f.remediation.steps) {
-    lines.push(`1. ${step}`);
-  }
-  if (f.remediation.cfReadyCommand) {
-    lines.push("", "```bash", f.remediation.cfReadyCommand, "```");
-  }
-  if (f.remediation.docsUrl) {
-    lines.push("", `Docs: ${f.remediation.docsUrl}`);
-  }
-  if (f.remediation.wranglerSnippet) {
-    lines.push("", "```toml", f.remediation.wranglerSnippet, "```");
-  }
-  lines.push("");
-  return lines;
+function guidanceContext(context: ScanContext): FixGuidanceContext {
+  return {
+    projectName: context.config.projectName ?? context.inspection.projectName,
+    framework: context.inspection.framework,
+    deploymentTarget: context.inspection.deploymentTarget,
+    packageManager: context.inspection.packageManager,
+  };
 }
 
 export function generateMarkdownReport(context: ScanContext): string {
@@ -46,6 +42,8 @@ export function generateMarkdownReport(context: ScanContext): string {
   const sorted = sortFindings(findings);
   const openFindings = sorted.filter((f) => f.status === "open" && f.severity !== "passed");
   const autoFixes = sorted.filter((f) => f.autoFixAvailable && f.status === "open");
+  const guideCtx = guidanceContext(context);
+  const actionable = openFindings.filter((f) => f.severity !== "info");
 
   const lines = [
     "# Cloudflare Go-Live Readiness Report",
@@ -96,6 +94,20 @@ export function generateMarkdownReport(context: ScanContext): string {
     lines.push("");
   }
 
+  if (actionable.length > 0) {
+    lines.push(
+      "## Fix with an AI agent",
+      "",
+      "Copy the prompt below into Cursor, Claude, ChatGPT, Copilot, or any coding agent.",
+      "Per-finding prompts are also under each finding, and in `cf-ready-ai-fix-prompts.md`.",
+      "",
+      "````",
+      buildReportAgentPrompt(actionable, guideCtx),
+      "````",
+      "",
+    );
+  }
+
   lines.push("## Findings", "");
   for (const f of openFindings) {
     lines.push(`### [${f.severity.toUpperCase()}] ${f.title}`, "", f.description, "");
@@ -105,7 +117,10 @@ export function generateMarkdownReport(context: ScanContext): string {
     }
     if (f.confidence) lines.push(`**Confidence:** ${f.confidence}`, "");
     if (f.requiresApproval) lines.push(`**Requires approval:** yes`, "");
-    lines.push(...formatRemediationBlock(f));
+    lines.push(...formatRemediationMarkdown(f));
+    if (f.severity !== "info") {
+      lines.push(...formatAgentPromptMarkdown(f, guideCtx));
+    }
     lines.push(`**Recommendation:** ${f.recommendation}`, "");
   }
 
@@ -119,14 +134,15 @@ export function generateGoLiveChecklist(context: ScanContext): string {
     "",
     `**Project:** ${context.config.projectName ?? context.inspection.projectName}`,
     "",
-    "| Status | Severity | Item | Recommendation |",
-    "|--------|----------|------|----------------|",
+    "| Status | Severity | Item | How to fix |",
+    "|--------|----------|------|-----------|",
   ];
 
   for (const f of items) {
     const status = f.severity === "passed" ? "✅" : "⬜";
-    const rec = f.recommendation.replace(/\|/g, "\\|").slice(0, 80);
-    lines.push(`| ${status} | ${f.severity} | ${f.title} | ${rec} |`);
+    const fix =
+      (f.remediation?.steps?.[0] ?? f.recommendation).replace(/\|/g, "\\|").slice(0, 100);
+    lines.push(`| ${status} | ${f.severity} | ${f.title} | ${fix} |`);
   }
 
   return lines.join("\n");

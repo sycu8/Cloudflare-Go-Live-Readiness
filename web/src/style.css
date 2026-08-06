@@ -1263,6 +1263,41 @@ button.full {
   line-height: 1.45;
 }
 
+.finding-card__fix-block {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.finding-card__fix-block strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--text);
+}
+
+.finding-card__steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.finding-card__cmd {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+}
+
+.finding-card__actions {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.finding-card__copy {
+  font-size: 0.72rem !important;
+  padding: 0.25rem 0.55rem !important;
+}
+
 .empty-state {
   text-align: center;
   padding: 1.5rem 0.5rem;

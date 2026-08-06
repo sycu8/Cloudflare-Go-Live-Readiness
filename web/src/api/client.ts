@@ -143,10 +143,17 @@ export type Finding = {
   evidence?: string;
   evidenceItems?: Array<{ file: string; line?: number; snippet?: string }>;
   recommendation?: string;
-  remediation?: { steps: string[]; cfReadyCommand?: string };
+  remediation?: {
+    steps: string[];
+    cfReadyCommand?: string;
+    docsUrl?: string;
+    estimatedEffort?: string;
+  };
   autoFixAvailable?: boolean;
   requiresApproval?: boolean;
   affectedFiles?: string[];
+  agentPrompt?: string;
+  fixSteps?: string[];
 };
 
 export type SessionResults = {

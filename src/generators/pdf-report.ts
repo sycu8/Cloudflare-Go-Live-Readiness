@@ -23,6 +23,7 @@ export type PdfReportInput = {
     recommendation: string;
     evidence?: string;
     remediationSteps?: string[];
+    agentPromptPreview?: string;
   }>;
 };
 
@@ -98,6 +99,7 @@ export function pdfReportInputFromScanData(data: {
     status?: string;
     evidence?: string;
     remediation?: { steps: string[] };
+    agentPrompt?: string;
   }>;
   inspection?: {
     projectName?: string;
@@ -141,6 +143,9 @@ export function pdfReportInputFromScanData(data: {
       recommendation: f.recommendation ?? "",
       evidence: f.evidence,
       remediationSteps: f.remediation?.steps,
+      agentPromptPreview: f.agentPrompt
+        ? f.agentPrompt.split("\n").slice(0, 4).join(" ")
+        : undefined,
     })),
   };
 }
@@ -223,6 +228,7 @@ export async function generatePdfReport(input: PdfReportInput): Promise<Uint8Arr
       );
     }
     if (finding.remediationSteps?.length) {
+      drawLines(writer, ["How to fix:"], 9, { bold: true, color: rgb(0.15, 0.5, 0.35) });
       for (const step of finding.remediationSteps.slice(0, 3)) {
         drawLines(
           writer,
@@ -237,6 +243,17 @@ export async function generatePdfReport(input: PdfReportInput): Promise<Uint8Arr
       wrapText(`Recommendation: ${finding.recommendation}`, font, 9, CONTENT_WIDTH),
       9,
       { color: rgb(0.2, 0.45, 0.65) },
+    );
+    drawLines(
+      writer,
+      wrapText(
+        "AI agent prompt: see cf-ready-report.md / cf-ready-ai-fix-prompts.md (copy-paste into Cursor, Claude, ChatGPT, etc.)",
+        font,
+        8,
+        CONTENT_WIDTH,
+      ),
+      8,
+      { color: rgb(0.45, 0.35, 0.55) },
     );
     writer.y -= 6;
   }

@@ -463,6 +463,30 @@ async function mountAgentApp(
         }
       })();
     });
+
+    resultsPanel.querySelectorAll('[data-action="copy-agent-prompt"]').forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const encoded = (btn as HTMLElement).dataset.prompt ?? "";
+        let text = "";
+        try {
+          text = decodeURIComponent(encoded);
+        } catch {
+          text = encoded;
+        }
+        void navigator.clipboard.writeText(text).then(
+          () => {
+            const prev = btn.textContent;
+            btn.textContent = "Copied!";
+            setTimeout(() => {
+              btn.textContent = prev;
+            }, 1500);
+          },
+          () => {
+            addChatBubble("agent", "Could not copy prompt — select text from the markdown report instead.");
+          },
+        );
+      });
+    });
     const scores = lastResultData.scores;
     if (scores) {
       resultsSummary.textContent = `${scores.overall}/100`;

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1 — 2026-08-06
+
+### Customer reports — fix guidance + AI prompts
+
+- Every actionable finding now includes **How to fix** steps in markdown / checklist / Web Agent
+- Copy-paste **AI agent prompts** for Cursor, Claude, ChatGPT, Copilot, etc. (offline, no API)
+- New report: `cf-ready-ai-fix-prompts.md` (batch + per-finding prompts)
+- JSON report adds `agentPrompt`, `fixSteps`, and top-level `aiFixPrompts`
+- Web Agent Results: **Copy AI fix prompt** button per finding
+- PDF notes where to find full prompts
+
 ## 0.3.0 — 2026-08-06
 
 ### Framework adapters
