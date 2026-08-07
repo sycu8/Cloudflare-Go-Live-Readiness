@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.3 — 2026-08-07
+
+### AI Blog (Workers AI)
+
+- New `/blog/` section with SEO-friendly SSR pages and JSON API (`/api/blog`)
+- Cron publishes a new article when ≥3 days have passed since the last post
+- Workers AI generates ≥300-word polite/professional posts + R2 hero images
+- Topic rotation: Cloudflare platform, CF Ready overview, howto, SEO, AI readiness, fair platform comparison
+- D1 migration `migrations/d1/0002_blog.sql`; see `DEPLOY.md` for apply + seed steps
+
 ## 0.3.2 — 2026-08-07
 
 ### Phase 5 start — Deployment assistant

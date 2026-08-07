@@ -190,6 +190,17 @@ curl -X POST https://ready.orangecloud.vn/api/blog/generate \
   -d '{"force":true}'
 ```
 
+Seed all 6 topic articles at once (initial backlog):
+
+```bash
+curl -X POST https://ready.orangecloud.vn/api/blog/generate \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"seedAll":true}'
+```
+
+Ongoing cadence: cron checks daily and publishes **1 new article every ≥3 days** (topic rotation continues).
+
 Topics rotate: Cloudflare platform → CF Ready overview → howto → SEO → AI readiness → polite platform comparison.
 
 ## R2 storage (`cf-ready-uploads`)
