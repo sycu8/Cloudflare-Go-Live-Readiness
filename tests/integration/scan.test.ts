@@ -23,7 +23,7 @@ describe("integration: scan", () => {
     expect(migrationBlockers.length).toBeGreaterThan(0);
 
     const reports = await writeAllReports(context);
-    expect(reports.length).toBe(11);
+    expect(reports.length).toBe(12);
 
     const reportPath = path.join(fixturePath, "cf-ready-report.json");
     expect(await fileExists(reportPath)).toBe(true);

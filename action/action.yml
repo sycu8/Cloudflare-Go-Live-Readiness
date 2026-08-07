@@ -22,9 +22,9 @@ inputs:
     required: false
     default: "npm"
   package-version:
-    description: npm package version when install-from is npm (e.g. 0.3.0 or latest)
+    description: npm package version when install-from is npm (e.g. 0.3.2 or latest)
     required: false
-    default: "0.3.0"
+    default: "0.3.2"
   cf-ready-root:
     description: Directory containing cf-ready package.json when install-from is source (defaults to action parent)
     required: false

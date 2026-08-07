@@ -4,20 +4,29 @@ Composite action that runs `@orangecloud/cf-ready` on CI / pull requests, upload
 
 ## Consumers (recommended)
 
-Use the published npm package (default):
-
 ```yaml
-- uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.3.0
+- uses: sycu8/Cloudflare-Go-Live-Readiness/action@v0.3.2
   with:
     cwd: .
     fail-on-blocker: "true"
     install-from: npm
-    package-version: "0.3.0"
+    package-version: "0.3.2"
 ```
 
-## Vendoring / dogfood (this repo)
+## Safe fix PR (Phase 3)
 
-Build from source when developing cf-ready itself:
+Open a PR with AI/SEO draft assets only (never auto-merge):
+
+```yaml
+- uses: sycu8/Cloudflare-Go-Live-Readiness/action/fix@v0.3.2
+  with:
+    cwd: .
+    package-version: "0.3.2"
+```
+
+Full example: [`examples/github-action-safe-fix.yml`](../examples/github-action-safe-fix.yml).
+
+## Vendoring / dogfood (this repo)
 
 ```yaml
 - uses: ./action
@@ -30,20 +39,18 @@ Build from source when developing cf-ready itself:
 
 ## Version tags
 
-Tag releases that match npm when publishing:
-
 ```bash
-git tag v0.3.0
+git tag v0.3.2
 git tag -f v0.3
-git push origin v0.3.0 v0.3
+git push origin v0.3.2 v0.3
 ```
 
 ## Marketplace
 
-Submit/update the GitHub Marketplace listing from the repository Releases UI after tagging. Branding is defined in `action.yml` (`icon: cloud`, `color: orange`).
+Submit/update the GitHub Marketplace listing from the repository Releases UI after tagging.
 
 ## Branch protection
 
-1. Require the workflow job that runs this action (with `fail-on-blocker: "true"`).
-2. Optionally allow soft adoption first with `fail-on-blocker: "false"` (comment/SARIF only).
-3. Exit code `2` (runtime error) always fails the step.
+1. Require the readiness job with `fail-on-blocker: "true"`.
+2. Soft adoption: `fail-on-blocker: "false"` (comment/SARIF only).
+3. Exit code `2` always fails.

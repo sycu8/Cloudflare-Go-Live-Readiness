@@ -22,4 +22,5 @@ tests/fixtures/**/mcp-server-card.json
 tests/fixtures/**/auth.md
 tests/fixtures/**/cf-ready-ai-optimize.md
 tests/fixtures/**/cf-ready-ai-fix-prompts.md
+tests/fixtures/**/post-deploy-checklist.md
 tests/fixtures/**/public/

@@ -1,56 +1,60 @@
 # CF Ready Roadmap
 
-Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-ready`). See also the [README Roadmap](README.md#roadmap) for the original five-phase vision.
+Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-ready`). See also the [README Roadmap](README.md#roadmap).
 
-**Next steps (actionable plan):** [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) — Phases A–D with checklists, acceptance criteria, and risks.
+## Status snapshot
+
+| README phase | Status |
+|--------------|--------|
+| 1 — Production CLI | Shipped |
+| 2 — GitHub Action | Shipped (Marketplace listing = owner) |
+| 3 — Auto-fix PR | Shipped CLI + `action/fix` |
+| 4 — Web dashboard | Planned |
+| 5 — Deploy assistant | **In progress** — Wrangler validation + post-deploy checklist (v0.3.2) |
+
+## Shipped (v0.3.2)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Wrangler deep validation | Shipped | name / compatibility_date / entry / stale date |
+| `post-deploy-checklist.md` | Shipped | Smoke-test + rollback + AI prompt |
+| `action/fix` safe-fix PR | Shipped | Example workflow under `examples/` |
+
+## Shipped (v0.3.1)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Fix guidance + AI agent prompts | Shipped | Reports + Web Agent copy button |
+| npm `@orangecloud/cf-ready@0.3.1` | Shipped | [npmjs.org](https://www.npmjs.com/package/@orangecloud/cf-ready) |
 
 ## Shipped (v0.3.0)
 
 | Item | Status | Notes |
 |------|--------|-------|
 | Framework adapters (Astro, Remix, Hono) | Shipped | Deep analyzers + fixtures + remediation |
-| Action npm install path | Shipped | `install-from: npm` default; source for dogfood |
-| `cf-ready fix --create-pr` | Shipped | Safe AI/SEO assets; `--dry-run` supported |
-
-## Shipped (v0.2.1)
-
-| Item | Status | Notes |
-|------|--------|-------|
-| npm `@orangecloud/cf-ready` | Shipped | [v0.2.1 on npmjs.org](https://www.npmjs.com/package/@orangecloud/cf-ready) |
-| Web Agent 30-minute scan timeout | Shipped | Shared exec timeouts; parallel rescan tuning |
-| Evidence + remediation reports | Shipped | v0.2.0 — markdown, PDF, SARIF, Web UI |
-| GitHub Action (PR readiness) | Shipped | [`action/action.yml`](action/action.yml), [docs](docs/docs/github-action.html) |
-| Private repo import UI | Shipped | Web Agent repo picker + OAuth token import |
-| OG / SEO polish | Shipped | `docs/assets/og.png`, meta on doc pages |
-
-## Shipped (v0.1)
-
-- Production CLI: scan, inspect, security, AI/SEO readiness, reports, smoke-test
-- Marketing site + docs at [ready.orangecloud.vn](https://ready.orangecloud.vn)
-- Web Agent MVP at [/app/](https://ready.orangecloud.vn/app/)
-- Cloudflare Worker deploy (Sandbox, Session DO, R2/KV)
-- GitHub OAuth scaffold for private repos
+| Action npm install path | Shipped | `install-from: npm` default |
+| `cf-ready fix --create-pr` | Shipped | Safe AI/SEO assets; `--dry-run` |
 
 ## Recommended order (remaining)
 
-1. **Owner ops** — homepage URL, npm publish `0.3.0`, tag `v0.3.0` / `v0.3`, Worker secrets
-2. **Marketplace listing** — submit Action after version tags
-3. **Branch protection** — require Action check with `fail-on-blocker: true` on consumer repos
-4. Phase 4 dashboard / Phase 5 deploy assistant (later)
+1. **Owner** — GitHub homepage/topics; Marketplace listing; Automation `NPM_TOKEN` for CI publish
+2. **Phase 5 continued** — opt-in Cloudflare API checks; preview deploy orchestration
+3. **Phase 4** — Web dashboard (GitHub App, history, team reports)
 
-## Phase 2 — GitHub Action (README)
+## Phase 2 — GitHub Action
 
 - [x] Composite action: scan, SARIF upload, artifacts
-- [x] Dogfood workflow on PRs (`.github/workflows/cf-ready-pr.yml`)
-- [x] External npm install path (`install-from: npm`)
-- [ ] Publish action to Marketplace / version tags (owner: tag `v0.3.0` after npm publish)
-- [ ] Block merges on blockers (document branch protection — see [action/README.md](action/README.md))
+- [x] Dogfood workflow on PRs
+- [x] External npm install path
+- [x] Version tags `v0.3` / `v0.3.x`
+- [ ] Publish action to Marketplace (owner)
+- [x] Branch-protection docs (`action/README.md`)
 
 ## Phase 3 — Auto-fix PR
 
-- [x] `cf-ready fix --create-pr` (CLI; safe assets only)
-- [ ] Optional Action job / comment trigger for scheduled safe fixes
-- [x] Safe generators only; review required for risky changes
+- [x] `cf-ready fix --create-pr`
+- [x] `action/fix` composite + example workflow
+- [x] Safe generators only; review required
 
 ## Phase 4 — Web dashboard
 
@@ -60,19 +64,20 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 
 ## Phase 5 — Deployment assistant
 
-- [ ] Wrangler config validation
+- [x] Wrangler config validation (local, no API)
+- [x] Post-deploy checklist + smoke-test reminder
 - [ ] Opt-in Cloudflare API checks
-- [ ] Post-deploy smoke + rollback workflows
+- [ ] Preview deploy / rollback workflow automation
 
 ## Manual / owner actions
 
-- [x] Tag Action `v0.3.0` / `v0.3` + GitHub [Release](https://github.com/sycu8/Cloudflare-Go-Live-Readiness/releases/tag/v0.3.0)
-- [x] PR #48 (Buy Me a Coffee) merged
-- [ ] GitHub repo homepage → `https://ready.orangecloud.vn` (Settings → General; agent token lacks admin)
-- [ ] Topics: `cloudflare`, `workers`, `pages`, `cli`, `astro`, `remix`, `hono`, …
-- [ ] Add `NPM_TOKEN` secret and re-run **Publish to npm** (or `npm publish`) for `@orangecloud/cf-ready@0.3.0`
-- [ ] Worker secrets: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`
+- [x] Tag Action `v0.3.x` + GitHub Releases
+- [x] npm `@orangecloud/cf-ready@0.3.1` published
+- [ ] GitHub repo homepage → `https://ready.orangecloud.vn`
+- [ ] Topics on GitHub repo
+- [ ] CI `NPM_TOKEN` = npm **Automation** token (no OTP) for `sycule`
+- [ ] Worker OAuth secrets if using private GitHub import
 
 ## Non-goals (MVP)
 
-No automatic production deploy, no silent source edits, no required Cloudflare API access. See [README — Non-goals](README.md#non-goals-for-mvp).
+No automatic production deploy, no silent source edits, no required Cloudflare API access.
