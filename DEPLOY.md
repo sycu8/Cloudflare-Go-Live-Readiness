@@ -173,6 +173,7 @@ Scheduled Workers AI content:
 | Images | Workers AI (`flux-1-schnell`, fallback SDXL) → R2 `blog/images/{slug}.png` |
 | Storage | D1 `blog_posts` + `blog_generation_state` (migration `migrations/d1/0002_blog.sql`) |
 | Pages | SSR `/blog/`, `/blog/:slug/` (SEO meta + JSON-LD) |
+| Sitemap | Dynamic `/sitemap.xml` (static pages + published blog posts from D1) |
 | API | `GET /api/blog`, `GET /api/blog/:slug`, `POST /api/blog/generate` |
 
 Apply the D1 migration (remote):
