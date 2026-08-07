@@ -5,6 +5,7 @@ import {
   handleBlogApiRequest,
   handleBlogPageRequest,
   handleBlogScheduled,
+  handleSitemapRequest,
 } from "./blog/index.js";
 
 export { Sandbox } from "@cloudflare/sandbox";
@@ -182,6 +183,9 @@ export default {
 
     const blogPage = await handleBlogPageRequest(request, env);
     if (blogPage) return blogPage;
+
+    const sitemap = await handleSitemapRequest(request, env);
+    if (sitemap) return sitemap;
 
     const apiResponse = await handleApiRequest(request, env);
     if (apiResponse) return apiResponse;
