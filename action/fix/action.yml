@@ -1,0 +1,85 @@
+name: CF Ready Safe Fix PR
+description: Generate safe AI/SEO readiness assets and open a pull request (review required)
+branding:
+  icon: git-pull-request
+  color: orange
+
+inputs:
+  cwd:
+    description: Project directory (relative to repository root)
+    required: false
+    default: "."
+  package-version:
+    description: npm package version of @orangecloud/cf-ready
+    required: false
+    default: "0.3.2"
+  ai-readiness:
+    description: Generate AI readiness assets
+    required: false
+    default: "true"
+  seo:
+    description: Generate SEO assets
+    required: false
+    default: "true"
+  force:
+    description: Overwrite existing generated files
+    required: false
+    default: "false"
+  dry-run:
+    description: Preview PR contents without pushing
+    required: false
+    default: "false"
+  pr-title:
+    description: Pull request title
+    required: false
+    default: "chore: apply cf-ready safe readiness fixes"
+  pr-branch:
+    description: Branch name (optional)
+    required: false
+    default: ""
+  node-version:
+    description: Node.js version
+    required: false
+    default: "22"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Configure git identity
+      shell: bash
+      run: |
+        git config user.name "cf-ready-bot"
+        git config user.email "cf-ready-bot@users.noreply.github.com"
+
+    - name: Run cf-ready fix --create-pr
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        ARGS=(fix --cwd "${{ inputs.cwd }}")
+        if [ "${{ inputs.ai-readiness }}" = "true" ]; then
+          ARGS+=(--ai-readiness)
+        fi
+        if [ "${{ inputs.seo }}" = "true" ]; then
+          ARGS+=(--seo)
+        fi
+        if [ "${{ inputs.force }}" = "true" ]; then
+          ARGS+=(--force)
+        fi
+        ARGS+=(--create-pr)
+        if [ "${{ inputs.dry-run }}" = "true" ]; then
+          ARGS+=(--dry-run)
+        fi
+        if [ -n "${{ inputs.pr-title }}" ]; then
+          ARGS+=(--pr-title "${{ inputs.pr-title }}")
+        fi
+        if [ -n "${{ inputs.pr-branch }}" ]; then
+          ARGS+=(--pr-branch "${{ inputs.pr-branch }}")
+        fi
+        npx --yes "@orangecloud/cf-ready@${{ inputs.package-version }}" "${ARGS[@]}"

@@ -12,6 +12,7 @@ import { generateSeoReadinessReport } from "../modules/seo/index.js";
 import {
   generateRollbackPlan,
   generateDeploymentManifest,
+  generatePostDeployChecklist,
 } from "../modules/deployment/index.js";
 import { generateAiFixPromptsReport } from "../generators/fix-guidance.js";
 import { getOutputDir } from "../core/context.js";
@@ -56,6 +57,13 @@ export async function writeAllReports(context: ScanContext): Promise<ReportFiles
       content: generateSeoReadinessReport(context.inspection, context.findings),
     },
     { name: "go-live-checklist.md", content: generateGoLiveChecklist(context) },
+    {
+      name: "post-deploy-checklist.md",
+      content: generatePostDeployChecklist(
+        context.inspection,
+        context.config.productionUrl,
+      ),
+    },
     { name: "rollback-plan.md", content: generateRollbackPlan(context.inspection) },
     {
       name: "deployment-manifest.json",

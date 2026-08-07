@@ -4,6 +4,13 @@ import { fileExists, readTextFile } from "../../core/filesystem.js";
 import { readPackageJson, hasScript } from "../../utils/package-json.js";
 import type { CfReadyConfig, Finding } from "../../config/schema.js";
 import type { RepositoryInspection } from "../../inspectors/types.js";
+import { validateWranglerConfig } from "./wrangler-validate.js";
+
+export {
+  generatePostDeployChecklist,
+  validateWranglerConfig,
+  loadWranglerConfig,
+} from "./wrangler-validate.js";
 
 export async function checkScripts(inspection: RepositoryInspection): Promise<Finding[]> {
   const findings: Finding[] = [];
@@ -205,6 +212,7 @@ export async function runDeploymentChecks(
   const findings: Finding[] = [];
   findings.push(...(await checkScripts(inspection)));
   findings.push(...(await checkCloudflareConfig(inspection)));
+  findings.push(...(await validateWranglerConfig(inspection)));
   findings.push(...(await checkEnvDocs(inspection)));
 
   const migrationSelected = config.migration?.preferredPath || config.target;

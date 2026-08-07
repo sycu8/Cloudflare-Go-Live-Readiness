@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.2 — 2026-08-07
+
+### Phase 5 start — Deployment assistant
+
+- Deep **Wrangler config validation** (name, compatibility_date, main/pages assets, stale dates)
+- New report: `post-deploy-checklist.md` (smoke-test + rollback reminders + AI prompt)
+- Fixture: `tests/fixtures/wrangler-app`
+
+### Phase 3 — Safe fix Action
+
+- New composite action: `action/fix` (`cf-ready fix --create-pr`)
+- Example workflow: `examples/github-action-safe-fix.yml`
+
 ## 0.3.1 — 2026-08-06
 
 ### Customer reports — fix guidance + AI prompts

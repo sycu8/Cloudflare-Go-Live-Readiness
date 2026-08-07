@@ -1,0 +1,10 @@
+{
+  "name": "wrangler-fixture-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo build",
+    "dev": "wrangler dev",
+    "start": "wrangler dev"
+  }
+}

@@ -59,10 +59,10 @@
           <li>PR comment with scores — see <a href="github-action.html">GitHub Action</a></li>
         </ul>
 
-        <h2>Phase 3 — Auto-fix PR (shipped CLI)</h2>
+        <h2>Phase 3 — Auto-fix PR (shipped)</h2>
         <ul>
           <li><code>cf-ready fix --create-pr</code> with safe AI/SEO assets</li>
-          <li>Optional Action job still planned</li>
+          <li>Composite action <code>action/fix</code> + example workflow</li>
         </ul>
 
         <h2>Phase 4 — Web dashboard (planned)</h2>
@@ -71,10 +71,11 @@
           <li>Report viewer and team reporting</li>
         </ul>
 
-        <h2>Phase 5 — Deployment assistant (planned)</h2>
+        <h2>Phase 5 — Deployment assistant (in progress)</h2>
         <ul>
-          <li>Wrangler validation, opt-in Cloudflare API checks</li>
-          <li>Post-deploy smoke orchestration</li>
+          <li>Wrangler validation (name, compatibility_date, entry) — shipped v0.3.2</li>
+          <li>Post-deploy checklist + smoke-test reminder — shipped</li>
+          <li>Opt-in Cloudflare API checks — planned</li>
         </ul>
 
         <h2>Near-term items</h2>
@@ -82,11 +83,12 @@
         <table class="docs-table">
           <thead><tr><th>Item</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Astro / Remix / Hono deep adapters (v0.3)</td><td>Shipped</td></tr>
-            <tr><td>GitHub Action npm install path</td><td>Shipped — tag <code>v0.3.0</code> after npm publish</td></tr>
-            <tr><td><code>cf-ready fix --create-pr</code></td><td>Shipped</td></tr>
-            <tr><td>npm publish <code>@orangecloud/cf-ready@0.3.0</code></td><td>Owner action</td></tr>
-            <tr><td>Web dashboard / deploy assistant</td><td>Phase 4–5 planned</td></tr>
+            <tr><td>Wrangler deep validation + post-deploy checklist</td><td>Shipped v0.3.2</td></tr>
+            <tr><td><code>action/fix</code> safe-fix PR</td><td>Shipped</td></tr>
+            <tr><td>Fix guidance + AI agent prompts</td><td>Shipped v0.3.1</td></tr>
+            <tr><td>Astro / Remix / Hono adapters</td><td>Shipped v0.3.0</td></tr>
+            <tr><td>npm <code>@orangecloud/cf-ready</code></td><td>Published (see npmjs)</td></tr>
+            <tr><td>Web dashboard / CF API deploy checks</td><td>Phase 4–5 planned</td></tr>
           </tbody>
         </table>
       </article>

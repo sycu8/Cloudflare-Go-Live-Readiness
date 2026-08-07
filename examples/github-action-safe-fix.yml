@@ -1,0 +1,29 @@
+# Example — safe fix PR (do not enable auto-merge)
+#
+# Copy into your app repo as .github/workflows/cf-ready-fix.yml
+# Requires permissions: contents: write, pull-requests: write
+
+name: CF Ready Safe Fix
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  safe-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sycu8/Cloudflare-Go-Live-Readiness/action/fix@v0.3.2
+        with:
+          cwd: .
+          ai-readiness: "true"
+          seo: "true"
+          force: "false"
+          dry-run: "false"
+          package-version: "0.3.2"
