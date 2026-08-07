@@ -1,6 +1,11 @@
 import type { AiOptimizeRequest, AiOptimizeResponse, Env } from "./types.js";
 import { buildOptimizePrompt, extractJsonFromModelResponse } from "./prompt.js";
 import { handleApiRequest } from "./api.js";
+import {
+  handleBlogApiRequest,
+  handleBlogPageRequest,
+  handleBlogScheduled,
+} from "./blog/index.js";
 
 export { Sandbox } from "@cloudflare/sandbox";
 export { SessionDO } from "./session-do.js";
@@ -172,9 +177,23 @@ export default {
       return handleOptimize(request, env);
     }
 
+    const blogApi = await handleBlogApiRequest(request, env);
+    if (blogApi) return blogApi;
+
+    const blogPage = await handleBlogPageRequest(request, env);
+    if (blogPage) return blogPage;
+
     const apiResponse = await handleApiRequest(request, env);
     if (apiResponse) return apiResponse;
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    ctx.waitUntil(handleBlogScheduled(env));
   },
 };

@@ -53,6 +53,10 @@
     "GITHUB_REDIRECT_URI": "https://ready.orangecloud.vn/api/auth/github/callback",
     "GOOGLE_REDIRECT_URI": "https://ready.orangecloud.vn/api/auth/google/callback"
   },
+  "triggers": {
+    // Daily check; generation only runs when ≥3 days since the last post.
+    "crons": ["0 10 * * *"]
+  },
   "observability": {
     "enabled": true,
     "logs": {

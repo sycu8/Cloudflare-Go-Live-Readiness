@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>CF Ready Blog — Cloudflare readiness guides</title>
+    <meta
+      name="description"
+      content="SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every 3 days via Workers AI."
+    />
+    <link rel="canonical" href="https://ready.orangecloud.vn/blog/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0F172A" />
+    <script src="/assets/theme.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ready.orangecloud.vn/blog/" />
+    <meta property="og:title" content="CF Ready Blog" />
+    <meta property="og:description" content="Guides for Cloudflare-ready shipping, generated with Workers AI." />
+    <meta property="og:image" content="https://ready.orangecloud.vn/assets/og.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/site.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/">
+          <img class="logo-mark" src="/assets/logo-icon.svg" alt="" width="36" height="36" decoding="async" />
+          <span class="logo-text">
+            <strong>CF Ready</strong>
+            <span>Cloudflare Go-Live Readiness</span>
+          </span>
+        </a>
+        <nav class="nav-links header-actions" aria-label="Main">
+          <a href="/blog/" class="active">Blog</a>
+          <a href="/docs/index.html" class="hide-mobile">Docs</a>
+          <a href="/app/" class="btn btn-primary header-cta">Web Agent</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="blog-hero">
+        <div class="blog-hero__inner">
+          <p class="blog-kicker">CF Ready Blog</p>
+          <h1>Guides for Cloudflare-ready shipping</h1>
+          <p class="blog-lead">
+            Practical articles on the Cloudflare Developer Platform, CF Ready workflows, SEO, and AI readiness —
+            generated with Workers AI every three days.
+          </p>
+        </div>
+      </section>
+      <section class="blog-list">
+        <div class="blog-list__inner" id="blog-root">
+          <p class="blog-empty">Loading articles…</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div>
+          <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
+          <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường &amp; Trịnh Hoàng Tú · OrangeCloud</p>
+          <p style="margin:0.35rem 0 0;font-size:0.8rem">Community open-source tool; not affiliated with Cloudflare, Inc.</p>
+        </div>
+        <div>
+          <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a>
+          ·
+          <a href="/blog/">Blog</a>
+          ·
+          <a href="/docs/index.html">Docs</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const root = document.getElementById("blog-root");
+        if (!root) return;
+
+        function escapeHtml(s) {
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function formatDate(iso) {
+          try {
+            return new Date(iso).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          } catch {
+            return iso;
+          }
+        }
+
+        fetch("/api/blog")
+          .then((r) => r.json())
+          .then((data) => {
+            const posts = data.posts || [];
+            const topics = Object.fromEntries((data.topics || []).map((t) => [t.id, t.label]));
+            if (!posts.length) {
+              root.innerHTML =
+                '<p class="blog-empty">New articles are generated every 3 days with Workers AI. Check back soon.</p>';
+              return;
+            }
+            root.innerHTML =
+              '<div class="blog-grid">' +
+              posts
+                .map((p) => {
+                  const label = topics[p.topicId] || p.topicId;
+                  const img = p.imageUrl
+                    ? `<img class="blog-card__image" src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.imageAlt || p.title)}" loading="lazy" width="640" height="360" />`
+                    : '<div class="blog-card__image blog-card__image--placeholder" aria-hidden="true"></div>';
+                  return `<article class="blog-card"><a class="blog-card__link" href="/blog/${escapeHtml(p.slug)}/">${img}<div class="blog-card__body"><p class="blog-card__meta"><span class="blog-topic">${escapeHtml(label)}</span> · <time datetime="${escapeHtml(p.publishedAt)}">${escapeHtml(formatDate(p.publishedAt))}</time></p><h2 class="blog-card__title">${escapeHtml(p.title)}</h2><p class="blog-card__excerpt">${escapeHtml(p.excerpt)}</p></div></a></article>`;
+                })
+                .join("") +
+              "</div>";
+          })
+          .catch(() => {
+            root.innerHTML =
+              '<p class="blog-empty">Unable to load blog posts right now. Please refresh or visit again later.</p>';
+          });
+      })();
+    </script>
+    <script src="/assets/site-mobile.js" defer></script>
+  </body>
+</html>

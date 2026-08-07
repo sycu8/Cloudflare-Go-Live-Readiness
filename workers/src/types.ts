@@ -89,7 +89,7 @@ export type Env = {
       model: string,
       input: Record<string, unknown>,
       options?: { gateway?: { id: string; skipCache?: boolean } },
-    ): Promise<Record<string, unknown>>;
+    ): Promise<unknown>;
   };
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   SESSION: DurableObjectNamespace;

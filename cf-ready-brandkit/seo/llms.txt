@@ -11,7 +11,7 @@ npx @orangecloud/cf-ready scan
 
 ## Key Pages
 - https://ready.orangecloud.vn/
-- https://ready.orangecloud.vn/docs/index.html
+- https://ready.orangecloud.vn/blog/
 - https://ready.orangecloud.vn/docs/index.html
 - https://ready.orangecloud.vn/docs/getting-started.html
 - https://ready.orangecloud.vn/docs/examples.html
