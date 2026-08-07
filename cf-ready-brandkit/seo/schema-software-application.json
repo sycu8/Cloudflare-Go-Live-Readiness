@@ -5,7 +5,7 @@
   "alternateName": "CF Ready",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "macOS, Linux, Windows",
-  "softwareVersion": "0.1.0",
+  "softwareVersion": "0.3.3",
   "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare.",
   "url": "https://ready.orangecloud.vn",
   "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",

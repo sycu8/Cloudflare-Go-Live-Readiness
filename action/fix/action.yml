@@ -12,7 +12,7 @@ inputs:
   package-version:
     description: npm package version of @orangecloud/cf-ready
     required: false
-    default: "0.3.2"
+    default: "0.3.3"
   ai-readiness:
     description: Generate AI readiness assets
     required: false
