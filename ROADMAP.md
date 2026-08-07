@@ -72,10 +72,10 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 ## Manual / owner actions
 
 - [x] Tag Action `v0.3.x` + GitHub Releases
-- [x] npm `@orangecloud/cf-ready@0.3.1` published
-- [ ] GitHub repo homepage → `https://ready.orangecloud.vn`
-- [ ] Topics on GitHub repo
-- [ ] CI `NPM_TOKEN` = npm **Automation** token (no OTP) for `sycule`
+- [x] npm `@orangecloud/cf-ready@0.3.2` published
+- [ ] GitHub repo homepage → `https://ready.orangecloud.vn` (Settings → General; agent lacks admin)
+- [ ] Topics on GitHub repo (agent lacks admin)
+- [ ] Prefer CI `NPM_TOKEN` = npm **Automation** token (no OTP) for future publishes
 - [ ] Worker OAuth secrets if using private GitHub import
 
 ## Non-goals (MVP)
