@@ -20,6 +20,14 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 | `post-deploy-checklist.md` | Shipped | Smoke-test + rollback + AI prompt |
 | `action/fix` safe-fix PR | Shipped | Example workflow under `examples/` |
 
+## In progress — AI Blog
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Workers AI blog section | In PR | Cron every day; generate when ≥3 days since last post |
+| Topic rotation (6 themes) | In PR | Platform, CF Ready, howto, SEO, AI, fair comparison |
+| D1 posts + R2 images | In PR | SSR `/blog`, `/blog/:slug`, JSON `/api/blog` |
+
 ## Shipped (v0.3.1)
 
 | Item | Status | Notes |

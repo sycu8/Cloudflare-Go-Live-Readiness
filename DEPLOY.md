@@ -162,10 +162,41 @@ When a session imports a GitHub repo, it subscribes to push events for that repo
 
 On each push, linked sessions re-import the repo, run `scan`, and cache a fresh PDF in R2.
 
+## AI Blog (`/blog/`)
+
+Scheduled Workers AI content:
+
+| Piece | Detail |
+|-------|--------|
+| Cadence | Cron `0 10 * * *` (daily check); publishes only when ≥3 days since last post |
+| Text | Workers AI (`@cf/meta/llama-3.1-8b-instruct` family) |
+| Images | Workers AI (`flux-1-schnell`, fallback SDXL) → R2 `blog/images/{slug}.png` |
+| Storage | D1 `blog_posts` + `blog_generation_state` (migration `migrations/d1/0002_blog.sql`) |
+| Pages | SSR `/blog/`, `/blog/:slug/` (SEO meta + JSON-LD) |
+| API | `GET /api/blog`, `GET /api/blog/:slug`, `POST /api/blog/generate` |
+
+Apply the D1 migration (remote):
+
+```bash
+npx wrangler d1 migrations apply cf-ready --remote
+```
+
+Seed the first article after deploy (optional; uses `AI_API_KEY` if set):
+
+```bash
+curl -X POST https://ready.orangecloud.vn/api/blog/generate \
+  -H "Authorization: Bearer $AI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"force":true}'
+```
+
+Topics rotate: Cloudflare platform → CF Ready overview → howto → SEO → AI readiness → polite platform comparison.
+
 ## R2 storage (`cf-ready-uploads`)
 
 - **Source archives** — `sources/github/...` and `sources/uploads/...` (see Model B table above)
 - **PDF reports** — `reports/{sessionId}/{hash}/cf-ready-report.pdf`
+- **Blog images** — `blog/images/{slug}.png`
 - `GET /api/sessions/:id/reports/pdf` — download cached PDF (generates on first request)
 - `POST /api/sessions/:id/reports/generate` — force regenerate and refresh R2 cache
 - CLI `cf-ready scan` also writes `cf-ready-report.pdf` locally
