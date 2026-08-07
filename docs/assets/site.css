@@ -1086,6 +1086,26 @@ html[data-theme="light"] .theme-toggle {
   color: var(--cf-text-primary);
 }
 
+html[data-theme="dark"] .docs-nav a {
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .docs-nav a:hover,
+html[data-theme="dark"] .docs-nav a.active {
+  color: var(--cf-orange-400);
+}
+html[data-theme="dark"] .docs-nav__title {
+  color: var(--cf-orange-400);
+}
+html[data-theme="dark"] .docs-toc a {
+  color: var(--cf-orange-400);
+}
+html[data-theme="dark"] .docs-toc strong {
+  color: var(--cf-text-inverse);
+}
+html[data-theme="dark"] .docs-content a {
+  color: var(--cf-orange-400);
+}
+
 html[data-theme="dark"] .docs-nav--drawer {
   background: var(--cf-navy-800);
   border-right-color: rgba(255, 255, 255, 0.08);
