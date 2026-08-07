@@ -75,4 +75,9 @@ html[data-theme="dark"] {
   --theme-code-text: #fbbf24;
   --theme-docs-table-head: var(--cf-navy-700);
   --cf-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  /* Remap light-theme text tokens so components stay readable on navy */
+  --cf-text-primary: var(--cf-text-inverse);
+  --cf-text-secondary: #cbd5e1;
+  --cf-text-muted: #94a3b8;
+  --cf-surface-muted: rgba(148, 163, 184, 0.22);
 }
