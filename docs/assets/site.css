@@ -43,14 +43,26 @@ img, svg { max-width: 100%; height: auto; }
 }
 .skip-link:focus { left: 0; }
 
-/* Header */
+/* Header
+   Keep backdrop-filter on a pseudo-element so it does not create a
+   containing block for position:fixed mobile drawers inside the header. */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(11, 22, 40, 0.92);
-  backdrop-filter: blur(12px);
+  background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(11, 22, 40, 0.92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 
 .header-inner {
@@ -641,6 +653,11 @@ img, svg { max-width: 100%; height: auto; }
     overflow: hidden;
   }
 
+  /* Keep hamburger above the dimming overlay while the drawer is open */
+  body.nav-open .site-header {
+    z-index: 110;
+  }
+
   .header-inner {
     padding: 0.65rem max(1rem, env(safe-area-inset-right)) 0.65rem max(1rem, env(safe-area-inset-left));
     gap: 0.5rem;
@@ -725,6 +742,7 @@ img, svg { max-width: 100%; height: auto; }
     inset: 0;
     z-index: 90;
     background: rgba(15, 23, 42, 0.55);
+    -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     pointer-events: auto;
   }
@@ -734,31 +752,46 @@ img, svg { max-width: 100%; height: auto; }
     top: 0;
     right: 0;
     bottom: 0;
+    left: auto;
     z-index: 100;
     width: min(88vw, 16rem);
+    max-width: 16rem;
+    height: 100dvh;
     margin: 0;
-    padding: calc(4.25rem + env(safe-area-inset-top)) 1rem 1.5rem;
+    padding: calc(4.25rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: stretch;
+    justify-content: flex-start;
     gap: 0.25rem;
     background: var(--cf-navy-900);
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     transform: translateX(100%);
     transition: transform 0.2s ease;
+    overflow-x: hidden;
     overflow-y: auto;
     display: flex;
+    box-sizing: border-box;
   }
 
   .nav-links--drawer.is-open {
     transform: translateX(0);
   }
 
+  .nav-links--drawer .theme-toggle {
+    align-self: flex-start;
+    margin: 0 0 0.5rem;
+  }
+
   .nav-links--drawer a {
     font-size: 1rem;
     padding: 0.75rem 0.85rem;
     min-height: 44px;
+    width: 100%;
     display: flex;
     align-items: center;
+    flex-shrink: 0;
+    white-space: normal;
   }
 
   .nav-links--drawer .hide-mobile {
@@ -1063,8 +1096,12 @@ html[data-theme="dark"] .btn-outline {
 
 /* Light mode header + nav */
 html[data-theme="light"] .site-header {
-  background: rgba(255, 255, 255, 0.92);
+  background: transparent;
   border-bottom-color: var(--cf-surface-muted);
+}
+
+html[data-theme="light"] .site-header::before {
+  background: rgba(255, 255, 255, 0.92);
 }
 
 html[data-theme="light"] .logo {

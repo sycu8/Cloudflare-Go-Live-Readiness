@@ -51,9 +51,27 @@
     });
   }
 
+  function placeSiteNav(navLinks, headerInner, btn) {
+    if (!navLinks || !headerInner) return;
+    if (isMobile()) {
+      // Portal out of the sticky header so position:fixed uses the viewport
+      // (header blur/stacking contexts otherwise crush the drawer on iOS).
+      if (navLinks.parentElement !== document.body) {
+        document.body.appendChild(navLinks);
+      }
+      return;
+    }
+    closeMenu();
+    if (btn && btn.parentElement === headerInner) {
+      btn.after(navLinks);
+    } else if (navLinks.parentElement !== headerInner) {
+      headerInner.appendChild(navLinks);
+    }
+  }
+
   function initHeaderNav() {
     const headerInner = document.querySelector(".site-header .header-inner");
-    const navLinks = headerInner?.querySelector(".nav-links");
+    const navLinks = headerInner?.querySelector(".nav-links") || document.querySelector(".nav-links--drawer");
     if (!headerInner || !navLinks || document.querySelector(".docs-layout")) return;
 
     navLinks.id = navLinks.id || "site-nav";
@@ -72,10 +90,15 @@
         '<span class="nav-menu-btn__bars" aria-hidden="true">' +
         '<span class="nav-menu-btn__bar"></span><span class="nav-menu-btn__bar"></span><span class="nav-menu-btn__bar"></span>' +
         "</span><span class=\"nav-menu-btn__label\">Menu</span>";
-      headerInner.insertBefore(btn, navLinks);
+      headerInner.appendChild(btn);
     }
 
+    placeSiteNav(navLinks, headerInner, btn);
     bindMenuButton(btn, navLinks);
+
+    MOBILE_MQ.addEventListener("change", () => {
+      placeSiteNav(navLinks, headerInner, btn);
+    });
   }
 
   function initDocsNav() {
