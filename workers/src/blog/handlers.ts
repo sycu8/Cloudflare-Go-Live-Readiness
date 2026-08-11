@@ -134,7 +134,7 @@ export async function handleBlogApiRequest(
   return json({ error: "Not found" }, 404);
 }
 
-/** Cron: generate a post when at least 3 days have passed since the last one. */
+/** Cron: generate one post per day when at least 24 hours have passed since the last one. */
 export async function handleBlogScheduled(env: Env): Promise<void> {
   const result = await generateBlogPost(env, { force: false });
   if (!result.ok) {

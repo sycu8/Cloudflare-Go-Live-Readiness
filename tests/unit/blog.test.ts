@@ -112,17 +112,17 @@ describe("blog generation cadence", () => {
     ).toBe(true);
   });
 
-  it("waits three days between posts", () => {
+  it("waits one day between posts", () => {
     const now = Date.parse("2026-08-07T10:00:00.000Z");
     expect(
       shouldGenerate(
         {
           id: 1,
           next_topic_index: 1,
-          last_generated_at: "2026-08-06T10:00:00.000Z",
+          last_generated_at: "2026-08-07T09:00:00.000Z",
           last_post_id: "x",
           last_error: null,
-          updated_at: "2026-08-06T10:00:00.000Z",
+          updated_at: "2026-08-07T09:00:00.000Z",
         },
         now,
       ),
@@ -133,10 +133,10 @@ describe("blog generation cadence", () => {
         {
           id: 1,
           next_topic_index: 1,
-          last_generated_at: "2026-08-04T09:00:00.000Z",
+          last_generated_at: "2026-08-06T10:00:00.000Z",
           last_post_id: "x",
           last_error: null,
-          updated_at: "2026-08-04T09:00:00.000Z",
+          updated_at: "2026-08-06T10:00:00.000Z",
         },
         now,
       ),

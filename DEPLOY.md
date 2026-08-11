@@ -168,7 +168,7 @@ Scheduled Workers AI content:
 
 | Piece | Detail |
 |-------|--------|
-| Cadence | Cron `0 10 * * *` (daily check); publishes only when ≥3 days since last post |
+| Cadence | Cron `0 10 * * *`; publishes one post per day when ≥1 day since last post |
 | Text | Workers AI (`@cf/meta/llama-3.1-8b-instruct` family) |
 | Images | Workers AI (`flux-1-schnell`, fallback SDXL) → R2 `blog/images/{slug}.png` |
 | Storage | D1 `blog_posts` + `blog_generation_state` (migration `migrations/d1/0002_blog.sql`) |

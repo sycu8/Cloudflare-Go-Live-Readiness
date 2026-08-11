@@ -54,7 +54,7 @@
     "GOOGLE_REDIRECT_URI": "https://ready.orangecloud.vn/api/auth/google/callback"
   },
   "triggers": {
-    // Daily check; generation only runs when ≥3 days since the last post.
+    // Daily publish: generate one blog post when ≥1 day since the last post.
     "crons": ["0 10 * * *"]
   },
   "observability": {

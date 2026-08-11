@@ -112,7 +112,7 @@ function shell(opts: {
 export function renderBlogIndex(posts: BlogPostPublic[]): string {
   const cards =
     posts.length === 0
-      ? `<p class="blog-empty">New articles are generated every 3 days with Workers AI. Check back soon, or trigger a draft after deploy.</p>`
+      ? `<p class="blog-empty">New articles are generated daily with Workers AI. Check back soon, or trigger a draft after deploy.</p>`
       : `<div class="blog-grid">${posts
           .map(
             (p) => `
@@ -138,7 +138,7 @@ export function renderBlogIndex(posts: BlogPostPublic[]): string {
       <div class="blog-hero__inner">
         <p class="blog-kicker">CF Ready Blog</p>
         <h1>Guides for Cloudflare-ready shipping</h1>
-        <p class="blog-lead">Practical articles on the Cloudflare Developer Platform, CF Ready workflows, SEO, and AI readiness — generated with Workers AI every three days.</p>
+        <p class="blog-lead">Practical articles on the Cloudflare Developer Platform, CF Ready workflows, SEO, and AI readiness — generated with Workers AI every day.</p>
       </div>
     </section>
     <section class="blog-list">
@@ -150,7 +150,7 @@ export function renderBlogIndex(posts: BlogPostPublic[]): string {
   return shell({
     title: "CF Ready Blog — Cloudflare readiness guides",
     description:
-      "SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every 3 days via Workers AI.",
+      "SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every day via Workers AI.",
     canonical: `${SITE}/blog/`,
     body,
     jsonLd: {

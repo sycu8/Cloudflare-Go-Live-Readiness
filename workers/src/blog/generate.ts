@@ -173,7 +173,7 @@ export async function generateBlogPost(
     return {
       ok: true,
       skipped: true,
-      reason: `Last post generated at ${state?.last_generated_at}; waiting 3 days between posts`,
+      reason: `Last post generated at ${state?.last_generated_at}; waiting 1 day between posts`,
     };
   }
 
