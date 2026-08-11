@@ -24,7 +24,7 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Workers AI blog section | In PR | Cron every day; generate when ≥3 days since last post |
+| Workers AI blog section | Shipped | Cron daily; one post per day when ≥1 day since last post |
 | Topic rotation (6 themes) | In PR | Platform, CF Ready, howto, SEO, AI, fair comparison |
 | D1 posts + R2 images | In PR | SSR `/blog`, `/blog/:slug`, JSON `/api/blog` |
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Blog
+
+- Daily publish cadence: cron still runs at `0 10 * * *`, and generation now publishes one post per day (≥1 day since last post) instead of every 3 days
+
 ## 0.3.2 — 2026-08-07
 
 ### Phase 5 start — Deployment assistant
