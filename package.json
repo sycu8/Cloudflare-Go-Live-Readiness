@@ -43,8 +43,9 @@
   },
   "scripts": {
     "build": "tsup",
-    "build:web": "node scripts/build-public.mjs",
+    "build:web": "node scripts/build-sitemap.mjs && node scripts/build-public.mjs",
     "build:all": "npm run build && npm run build:web",
+    "build:sitemap": "node scripts/build-sitemap.mjs",
     "generate:og": "node scripts/generate-og.mjs",
     "dev": "tsup --watch",
     "dev:web": "npm run build:web && wrangler dev",
