@@ -110,13 +110,32 @@ export async function handleBlogApiRequest(
     }
     let force = true;
     let topicIndex: number | undefined;
+    let seedAll = false;
     try {
-      const body = (await request.json()) as { force?: boolean; topicIndex?: number };
+      const body = (await request.json()) as {
+        force?: boolean;
+        topicIndex?: number;
+        seedAll?: boolean;
+      };
       if (typeof body.force === "boolean") force = body.force;
       if (typeof body.topicIndex === "number") topicIndex = body.topicIndex;
+      if (body.seedAll === true) seedAll = true;
     } catch {
       /* empty body is fine */
     }
+
+    if (seedAll) {
+      const results = [];
+      for (let i = 0; i < BLOG_TOPICS.length; i++) {
+        const result = await generateBlogPost(env, { force: true, topicIndex: i });
+        results.push(result);
+        if (!result.ok) {
+          return json({ ok: false, seeded: results.length - 1, results }, 502);
+        }
+      }
+      return json({ ok: true, seeded: results.length, results }, 201);
+    }
+
     const result = await generateBlogPost(env, { force, topicIndex });
     if (!result.ok) return json(result, 502);
     return json(result, result.skipped ? 200 : 201);
