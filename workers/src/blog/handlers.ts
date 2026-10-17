@@ -8,6 +8,7 @@ import {
   toPublicPost,
 } from "./store.js";
 import { BLOG_TOPICS } from "./topics.js";
+import { bearerChallenge } from "../discovery/challenge.js";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -15,10 +16,10 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function json(data: unknown, status = 200): Response {
+function json(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS },
+    headers: { "Content-Type": "application/json", ...CORS, ...extraHeaders },
   });
 }
 
@@ -106,7 +107,7 @@ export async function handleBlogApiRequest(
 
   if (pathname === "/api/blog/generate" && request.method === "POST") {
     if (!checkGenerateAuth(request, env)) {
-      return json({ error: "Unauthorized" }, 401);
+      return json({ error: "Unauthorized" }, 401, bearerChallenge(request));
     }
     let force = true;
     let topicIndex: number | undefined;

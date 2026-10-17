@@ -6,6 +6,9 @@ import {
   handleBlogPageRequest,
   handleBlogScheduled,
 } from "./blog/index.js";
+import { bearerChallenge } from "./discovery/challenge.js";
+import { handleDiscoveryRequest } from "./discovery/handle.js";
+import { withHomepageLinkHeaders } from "./discovery/links.js";
 
 export { Sandbox } from "@cloudflare/sandbox";
 export { SessionDO } from "./session-do.js";
@@ -16,15 +19,19 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function jsonResponse(data: unknown, status = 200): Response {
+function jsonResponse(
+  data: unknown,
+  status = 200,
+  extraHeaders?: Record<string, string>,
+): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS, ...extraHeaders },
   });
 }
 
-function unauthorized(): Response {
-  return jsonResponse({ error: "Unauthorized" }, 401);
+function unauthorized(request: Request): Response {
+  return jsonResponse({ error: "Unauthorized" }, 401, bearerChallenge(request));
 }
 
 function checkAuth(request: Request, env: Env): boolean {
@@ -87,7 +94,7 @@ function toMarkdown(
 }
 
 async function handleOptimize(request: Request, env: Env): Promise<Response> {
-  if (!checkAuth(request, env)) return unauthorized();
+  if (!checkAuth(request, env)) return unauthorized(request);
 
   let body: AiOptimizeRequest;
   try {
@@ -173,6 +180,9 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    const discovery = await handleDiscoveryRequest(request);
+    if (discovery) return discovery;
+
     if (url.pathname === "/api/optimize" && request.method === "POST") {
       return handleOptimize(request, env);
     }
@@ -186,7 +196,8 @@ export default {
     const apiResponse = await handleApiRequest(request, env);
     if (apiResponse) return apiResponse;
 
-    return env.ASSETS.fetch(request);
+    const asset = await env.ASSETS.fetch(request);
+    return withHomepageLinkHeaders(request, asset);
   },
 
   async scheduled(
