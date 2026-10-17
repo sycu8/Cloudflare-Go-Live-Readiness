@@ -1,0 +1,67 @@
+{
+  "domain": "orangecloud.vn",
+  "siteHost": "ready.orangecloud.vn",
+  "ttl": 3600,
+  "records": [
+    {
+      "name": "_index._agents.ready",
+      "type": "SVCB",
+      "priority": 1,
+      "target": "ready.orangecloud.vn",
+      "params": "alpn=\"h3,h2\" port=443 mandatory=alpn,port key65001=\"url=https://ready.orangecloud.vn/.well-known/ai-catalog.json\"",
+      "description": "DNS-AID index for the CF Ready hostname"
+    },
+    {
+      "name": "_index._agents.ready",
+      "type": "HTTPS",
+      "priority": 1,
+      "target": "ready.orangecloud.vn",
+      "params": "alpn=\"h3,h2\" port=443 mandatory=alpn,port key65001=\"url=https://ready.orangecloud.vn/.well-known/ai-catalog.json\"",
+      "description": "HTTPS ServiceMode alias of the DNS-AID index"
+    },
+    {
+      "name": "_index._agents",
+      "type": "SVCB",
+      "priority": 1,
+      "target": "ready.orangecloud.vn",
+      "params": "alpn=\"h3,h2\" port=443 mandatory=alpn,port key65001=\"url=https://ready.orangecloud.vn/.well-known/ai-catalog.json\"",
+      "description": "DNS-AID index on the registrable domain"
+    },
+    {
+      "name": "_a2a._agents.ready",
+      "type": "SVCB",
+      "priority": 1,
+      "target": "ready.orangecloud.vn",
+      "params": "alpn=\"h2\" port=443 mandatory=alpn,port key65000=\"/.well-known/ai-catalog.json\"",
+      "description": "Agent-to-agent discovery endpoint"
+    },
+    {
+      "name": "_a2a._agents",
+      "type": "SVCB",
+      "priority": 1,
+      "target": "ready.orangecloud.vn",
+      "params": "alpn=\"h2\" port=443 mandatory=alpn,port key65000=\"/.well-known/ai-catalog.json\"",
+      "description": "Agent-to-agent discovery on the registrable domain"
+    },
+    {
+      "name": "_mcp._agents.ready",
+      "type": "HTTPS",
+      "priority": 1,
+      "target": "ready.orangecloud.vn",
+      "params": "alpn=\"h3,h2\" port=443 mandatory=alpn,port",
+      "description": "MCP server card and WebMCP tools"
+    },
+    {
+      "name": "_catalog._agents.ready",
+      "type": "TXT",
+      "content": "url=https://ready.orangecloud.vn/.well-known/ai-catalog.json",
+      "description": "ARD catalog pointer for the hostname"
+    },
+    {
+      "name": "_catalog._agents",
+      "type": "TXT",
+      "content": "url=https://ready.orangecloud.vn/.well-known/ai-catalog.json",
+      "description": "ARD catalog pointer for the registrable domain"
+    }
+  ]
+}

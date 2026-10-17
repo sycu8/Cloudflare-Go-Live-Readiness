@@ -7,11 +7,15 @@ import {
   parseAuthCookie,
 } from "./session.js";
 import { getUserProviders, isGitHubConnected } from "./users.js";
+import { bearerChallenge } from "../discovery/challenge.js";
 
 export async function handleAuthMe(request: Request, env: Env): Promise<Response> {
   const user = await getUserFromRequest(request, env);
   if (!user) {
-    return Response.json({ authenticated: false, user: null }, { status: 401 });
+    return Response.json(
+      { authenticated: false, user: null },
+      { status: 401, headers: bearerChallenge(request) },
+    );
   }
 
   const providers = await getUserProviders(env, user.id);
@@ -44,8 +48,11 @@ export async function handleAuthLogout(request: Request, env: Env): Promise<Resp
   );
 }
 
-export function unauthorizedResponse(message = "Authentication required"): Response {
-  return Response.json({ error: message }, { status: 401 });
+export function unauthorizedResponse(message = "Authentication required", request?: Request): Response {
+  return Response.json(
+    { error: message },
+    { status: 401, headers: request ? bearerChallenge(request) : undefined },
+  );
 }
 
 export function forbiddenResponse(message = "Forbidden"): Response {
@@ -57,6 +64,6 @@ export async function requireAuth(
   env: Env,
 ): Promise<AuthUser | Response> {
   const user = await getUserFromRequest(request, env);
-  if (!user) return unauthorizedResponse();
+  if (!user) return unauthorizedResponse("Authentication required", request);
   return user;
 }

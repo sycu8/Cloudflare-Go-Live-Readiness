@@ -293,6 +293,35 @@ img, svg { max-width: 100%; height: auto; }
   border-top: 1px solid rgba(255,255,255,0.06);
 }
 
+.docs-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.docs-search label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.docs-search input {
+  flex: 1 1 12rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font: inherit;
+}
+
+.docs-search input:focus-visible {
+  outline: 2px solid var(--cf-orange-500);
+  outline-offset: 2px;
+}
+
 /* Terminal mockup */
 .terminal-mock {
   background: #000;

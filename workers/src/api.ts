@@ -20,6 +20,7 @@ import {
   linkWorkspaceSession,
 } from "./auth/session.js";
 import { checkRateLimitSafe, rateLimitResponse } from "./rate-limit.js";
+import { bearerChallenge } from "./discovery/challenge.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -162,7 +163,11 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   if (isAuthEnforced(env)) {
     const user = await getUserFromRequest(request, env);
     if (!user) {
-      return json({ error: "Authentication required. Sign in with Google or GitHub." }, 401);
+      return json(
+        { error: "Authentication required. Sign in with Google or GitHub." },
+        401,
+        bearerChallenge(request),
+      );
     }
 
     const ownsSession = await assertWorkspaceSessionOwner(env, user.id, sessionId);
@@ -178,7 +183,9 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
   if (pathname.endsWith("/auth/github/repos") && request.method === "GET") {
     try {
       const token = await getGitHubToken(env, sessionId, user?.id);
-      if (!token) return json({ error: "GitHub not connected for private repos" }, 401);
+      if (!token) {
+        return json({ error: "GitHub not connected for private repos" }, 401, bearerChallenge(request));
+      }
       const repos = await listGitHubRepos(env, token, user?.id);
       return json({ repos });
     } catch (error) {
