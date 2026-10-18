@@ -10,7 +10,17 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 | 2 — GitHub Action | Shipped (Marketplace listing = owner) |
 | 3 — Auto-fix PR | Shipped CLI + `action/fix` |
 | 4 — Web dashboard | Planned |
-| 5 — Deploy assistant | **In progress** — Wrangler validation + post-deploy checklist (v0.3.2) |
+| 5 — Deploy assistant | **In progress** — Wrangler validation + post-deploy checklist (v0.3.2+) |
+
+## Shipped (v0.3.3)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Workers AI blog | Shipped | `/blog/`, cron one post per day (≥1 day), D1 + R2 images |
+| Topic rotation | Shipped | Platform, CF Ready, howto, SEO, AI, fair comparison |
+| `seedAll` generate | Shipped | `POST /api/blog/generate` `{ "seedAll": true }` publishes one article per topic |
+| Dynamic sitemap | Shipped | `/sitemap.xml` includes published blog posts; `npm run build:sitemap` fallback |
+| Footer attribution | Shipped | `Made by Lê Sỹ Cường · OrangeCloud` |
 
 ## Shipped (v0.3.2)
 
@@ -19,14 +29,6 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 | Wrangler deep validation | Shipped | name / compatibility_date / entry / stale date |
 | `post-deploy-checklist.md` | Shipped | Smoke-test + rollback + AI prompt |
 | `action/fix` safe-fix PR | Shipped | Example workflow under `examples/` |
-
-## In progress — AI Blog
-
-| Item | Status | Notes |
-|------|--------|-------|
-| Workers AI blog section | Shipped | Cron daily; one post per day when ≥1 day since last post |
-| Topic rotation (6 themes) | In PR | Platform, CF Ready, howto, SEO, AI, fair comparison |
-| D1 posts + R2 images | In PR | SSR `/blog`, `/blog/:slug`, JSON `/api/blog` |
 
 ## Shipped (v0.3.1)
 
@@ -81,10 +83,13 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 
 - [x] Tag Action `v0.3.x` + GitHub Releases
 - [x] npm `@orangecloud/cf-ready@0.3.2` published
+- [ ] Tag Action `v0.3.3` + GitHub Release (triggers npm publish)
+- [ ] npm `@orangecloud/cf-ready@0.3.3` via release/tag workflow
 - [ ] GitHub repo homepage → `https://ready.orangecloud.vn` (Settings → General; agent lacks admin)
 - [ ] Topics on GitHub repo (agent lacks admin)
 - [ ] Prefer CI `NPM_TOKEN` = npm **Automation** token (no OTP) for future publishes
 - [ ] Worker OAuth secrets if using private GitHub import
+- [ ] Apply D1 blog migration: `wrangler d1 migrations apply cf-ready --remote`
 
 ## Non-goals (MVP)
 

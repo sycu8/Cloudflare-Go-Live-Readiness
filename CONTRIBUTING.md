@@ -42,6 +42,23 @@ node dist/index.js inspect --cwd tests/fixtures/vite-app --json
 3. Run `npm run typecheck`, `npm run lint`, and `npm test` before opening a PR
 4. Update README if CLI behavior or commands change
 
+## Release checklist (after each feature / update)
+
+Do this automatically when a feature lands (agent or maintainer):
+
+1. **GitHub**
+   - Update `CHANGELOG.md` with user-facing notes
+   - Sync `ROADMAP.md` / docs status when the feature completes a roadmap item
+   - Open/merge the feature PR; site deploy runs from `main` via `deploy-pages.yml`
+2. **Version + npm (when needed)**
+   - Bump `package.json` / lockfile **when** the published package changes (CLI `dist/`, `examples/`, Action defaults that pin npm) **or** when shipping a coordinated project release
+   - Update Action `package-version` defaults and `action/README.md` examples
+   - Add `.github/release-notes-vX.Y.Z.md`
+   - After merge to `main`, publish a GitHub Release tag `vX.Y.Z` (and move `v0.3`) — that triggers `.github/workflows/publish-npm.yml`
+3. **Skip npm** when the change is docs-only or Worker/site-only and you are not cutting a versioned release; still update CHANGELOG under the next Unreleased / upcoming version section
+
+Owner-only if CI fails: ensure repo secret `NPM_TOKEN` is an npm **Automation** token for publisher `sycule`.
+
 ## Good first contributions
 
 - Framework detection improvements

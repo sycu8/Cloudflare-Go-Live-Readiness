@@ -1,6 +1,6 @@
 {
   "name": "@orangecloud/cf-ready",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Cloudflare Go-Live Readiness CLI — migration, security, AI, SEO, and deployment readiness checks",
   "type": "module",
   "license": "MIT",

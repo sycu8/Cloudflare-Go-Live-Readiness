@@ -12,7 +12,15 @@ Synced with [ROADMAP.md](../ROADMAP.md) and [README Roadmap](../README.md#roadma
 | 4 Web dashboard | Planned |
 | 5 Deploy assistant | **In progress (v0.3.2)** — Wrangler validation + post-deploy checklist |
 
-## This release (v0.3.2)
+## This release (v0.3.3)
+
+- [x] Workers AI blog (`/blog/`, one post per day, D1 + R2)
+- [x] `seedAll` generate option for the initial topic backlog
+- [x] Dynamic sitemap including published blog posts
+- [x] Footer attribution: `Made by Lê Sỹ Cường · OrangeCloud`
+- [ ] Owner: tag `v0.3.3` + npm publish; apply D1 blog migration
+
+## Previous (v0.3.2)
 
 - [x] Deep Wrangler validation
 - [x] `post-deploy-checklist.md`

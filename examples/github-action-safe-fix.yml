@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: sycu8/Cloudflare-Go-Live-Readiness/action/fix@v0.3.2
+      - uses: sycu8/Cloudflare-Go-Live-Readiness/action/fix@v0.3.3
         with:
           cwd: .
           ai-readiness: "true"
           seo: "true"
           force: "false"
           dry-run: "false"
-          package-version: "0.3.2"
+          package-version: "0.3.3"

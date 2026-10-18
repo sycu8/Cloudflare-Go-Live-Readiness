@@ -214,7 +214,7 @@ curl -X POST https://ready.orangecloud.vn/api/blog/generate \
   -d '{"seedAll":true}'
 ```
 
-Ongoing cadence: cron checks daily and publishes **1 new article every ≥3 days** (topic rotation continues).
+Ongoing cadence: cron checks daily and publishes **1 new article when ≥1 day** has passed since the last post (topic rotation continues).
 
 Topics rotate: Cloudflare platform → CF Ready overview → howto → SEO → AI readiness → polite platform comparison.
 

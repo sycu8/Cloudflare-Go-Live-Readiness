@@ -1,10 +1,24 @@
 # Changelog
 
-## Unreleased
+## 0.3.3 — 2026-10-18
 
-### Blog
+### AI Blog (Workers AI)
 
-- Daily publish cadence: cron still runs at `0 10 * * *`, and generation now publishes one post per day (≥1 day since last post) instead of every 3 days
+- New `/blog/` section with SEO-friendly SSR pages and JSON API (`/api/blog`)
+- Cron (`0 10 * * *`) publishes one post per day when ≥1 day has passed since the last post
+- Workers AI generates ≥300-word polite/professional posts + R2 hero images
+- Topic rotation: Cloudflare platform, CF Ready overview, howto, SEO, AI readiness, fair platform comparison
+- D1 migration `migrations/d1/0002_blog.sql`; see `DEPLOY.md` for apply + seed steps
+- `POST /api/blog/generate` accepts `{ "seedAll": true }` to publish one article per topic for the initial backlog
+
+### SEO
+
+- Dynamic `/sitemap.xml` lists static site and docs URLs plus every published blog post (`lastmod`, priority)
+- Static sitemap fallback is refreshed by `npm run build:sitemap` (wired into `build:web`)
+
+### Docs
+
+- Site footer attribution is `Made by Lê Sỹ Cường · OrangeCloud` on the homepage, blog index, and SSR blog pages
 
 ## 0.3.2 — 2026-08-07
 
