@@ -1,0 +1,2 @@
+# Keep SQL migrations as LF so Windows checkouts match the seed renderer.
+migrations/**/*.sql text eol=lf

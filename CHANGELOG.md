@@ -10,6 +10,7 @@
 - Topic rotation: Cloudflare platform, CF Ready overview, howto, SEO, AI readiness, fair platform comparison
 - D1 migration `migrations/d1/0002_blog.sql`; see `DEPLOY.md` for apply + seed steps
 - `POST /api/blog/generate` accepts `{ "seedAll": true }` to publish one article per topic for the initial backlog
+- D1 migration `migrations/d1/0003_blog_seed.sql` publishes four editorial posts for the first backlog topics (platform, overview, howto, SEO). The daily cron continues at AI readiness
 
 ### SEO
 

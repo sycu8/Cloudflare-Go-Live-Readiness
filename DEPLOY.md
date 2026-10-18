@@ -190,13 +190,15 @@ Scheduled Workers AI content:
 | Sitemap | Dynamic `/sitemap.xml` (static pages + published blog posts from D1) |
 | API | `GET /api/blog`, `GET /api/blog/:slug`, `POST /api/blog/generate` |
 
-Apply the D1 migration (remote):
+Apply pending D1 migrations (remote). The deploy workflow already runs this before `wrangler deploy`:
 
 ```bash
 npx wrangler d1 migrations apply cf-ready --remote
 ```
 
-Seed the first article after deploy (optional; uses `AI_API_KEY` if set):
+`migrations/d1/0002_blog.sql` creates the tables. `migrations/d1/0003_blog_seed.sql` publishes four editorial posts for the first backlog topics (Cloudflare platform, CF Ready overview, howto, and SEO). Those posts go live when the migration runs. The daily cron then continues at AI readiness, then the platform comparison, and then rotates. Re-applying the seed is safe: existing slugs are left in place, and a generation cursor that has already moved past topic index 4 is not rewound.
+
+Seed one Workers AI article after deploy (optional; uses `AI_API_KEY` if set):
 
 ```bash
 curl -X POST https://ready.orangecloud.vn/api/blog/generate \
@@ -205,7 +207,7 @@ curl -X POST https://ready.orangecloud.vn/api/blog/generate \
   -d '{"force":true}'
 ```
 
-Seed all 6 topic articles at once (initial backlog):
+Ask Workers AI for one additional article per topic (optional; this adds rows, it does not replace the editorial seed):
 
 ```bash
 curl -X POST https://ready.orangecloud.vn/api/blog/generate \

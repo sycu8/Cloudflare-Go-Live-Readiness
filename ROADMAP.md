@@ -89,7 +89,7 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 - [ ] Topics on GitHub repo (agent lacks admin)
 - [ ] Prefer CI `NPM_TOKEN` = npm **Automation** token (no OTP) for future publishes
 - [ ] Worker OAuth secrets if using private GitHub import
-- [ ] Apply D1 blog migration: `wrangler d1 migrations apply cf-ready --remote`
+- [ ] Apply pending D1 migrations if deploying outside CI: `wrangler d1 migrations apply cf-ready --remote` (`0002` schema, `0003` editorial posts)
 
 ## Non-goals (MVP)
 
