@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
-import { resolve } from "node:path";
 import { createRequire } from "node:module";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   countWordsFromDraft,
@@ -17,6 +16,43 @@ import {
 import { BLOG_TOPICS } from "../../workers/src/blog/topics.js";
 
 const MIGRATION = resolve("migrations/d1/0003_blog_seed.sql");
+const SCHEMA = resolve("migrations/d1/0002_blog.sql");
+
+/** Git for Windows checks text files out with CRLF. Compare logical SQL, not bytes. */
+function normalizeNewlines(sql: string): string {
+  return sql.replace(/\r\n/g, "\n");
+}
+
+function readSql(path: string): string {
+  return normalizeNewlines(readFileSync(path, "utf8"));
+}
+
+type SqliteStatement = {
+  all(): unknown[];
+  get(): unknown;
+  run(): unknown;
+};
+
+type SqliteDatabase = {
+  exec(sql: string): void;
+  prepare(sql: string): SqliteStatement;
+};
+
+async function openMemoryDatabase(): Promise<SqliteDatabase | null> {
+  try {
+    // node:sqlite exists only on Node 22+. Ignore so Vite does not bundle it.
+    const { DatabaseSync } = (await import(/* @vite-ignore */ "node:sqlite")) as {
+      DatabaseSync: new (path: string) => SqliteDatabase;
+    };
+    return new DatabaseSync(":memory:");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/node:sqlite|builtin|Cannot find module|ERR_UNKNOWN_BUILTIN_MODULE|unknown builtin/i.test(message)) {
+      throw error;
+    }
+    return null;
+  }
+}
 
 describe("editorial blog seed", () => {
   it("covers the first four backlog topics without duplicating slugs", () => {
@@ -56,8 +92,9 @@ describe("editorial blog seed", () => {
   });
 
   it("keeps the checked-in migration in sync with the seed module", () => {
-    const sql = readFileSync(MIGRATION, "utf8");
-    expect(sql).toBe(renderBlogSeedMigration());
+    const rendered = renderBlogSeedMigration();
+    expect(readSql(MIGRATION)).toBe(rendered);
+    expect(normalizeNewlines(rendered.replace(/\n/g, "\r\n"))).toBe(rendered);
 
     // Wrangler splits migration files on semicolons and treats CASE/BEGIN as
     // open compound statements. 4 inserts + cursor update, and one more when
@@ -66,22 +103,28 @@ describe("editorial blog seed", () => {
     const { unstable_splitSqlQuery } = require("wrangler") as {
       unstable_splitSqlQuery: (sql: string) => string[];
     };
-    const parts = unstable_splitSqlQuery(sql);
+    const parts = unstable_splitSqlQuery(rendered);
     expect(parts).toHaveLength(5);
     expect(parts.filter((part) => part.startsWith("INSERT OR IGNORE INTO blog_posts"))).toHaveLength(4);
     expect(parts.filter((part) => part.startsWith("UPDATE blog_generation_state"))).toHaveLength(1);
     expect(parts.every((part) => Buffer.byteLength(part) < 100_000)).toBe(true);
     const wrapped = unstable_splitSqlQuery(
-      `${sql}\nINSERT INTO d1_migrations (name) values ('0003_blog_seed.sql');`,
+      `${rendered}\nINSERT INTO d1_migrations (name) values ('0003_blog_seed.sql');`,
     );
     expect(wrapped).toHaveLength(6);
   });
 
-  it("applies on top of the blog schema and advances the topic cursor", () => {
-    const db = new DatabaseSync(":memory:");
-    db.exec(readFileSync(resolve("migrations/d1/0002_blog.sql"), "utf8"));
-    db.exec(readFileSync(MIGRATION, "utf8"));
-    db.exec(readFileSync(MIGRATION, "utf8"));
+  it("applies on top of the blog schema and advances the topic cursor", async (ctx) => {
+    const db = await openMemoryDatabase();
+    if (!db) {
+      ctx.skip();
+      return;
+    }
+    const schema = readSql(SCHEMA);
+    const seed = readSql(MIGRATION);
+    db.exec(schema);
+    db.exec(seed);
+    db.exec(seed);
 
     const rows = db
       .prepare(
@@ -122,8 +165,12 @@ describe("editorial blog seed", () => {
     expect(state.last_post_id).toBe("seed-seo-cloudflare");
     expect(state.updated_at).toBe(SEED_CURSOR_UPDATED_AT);
 
-    const preserved = new DatabaseSync(":memory:");
-    preserved.exec(readFileSync(resolve("migrations/d1/0002_blog.sql"), "utf8"));
+    const preserved = await openMemoryDatabase();
+    if (!preserved) {
+      ctx.skip();
+      return;
+    }
+    preserved.exec(schema);
     preserved
       .prepare(
         `UPDATE blog_generation_state
@@ -134,7 +181,7 @@ describe("editorial blog seed", () => {
          WHERE id = 1`,
       )
       .run();
-    preserved.exec(readFileSync(MIGRATION, "utf8"));
+    preserved.exec(seed);
     const later = preserved
       .prepare(
         `SELECT next_topic_index, last_generated_at, last_post_id, updated_at
