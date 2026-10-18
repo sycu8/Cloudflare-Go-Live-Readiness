@@ -5,6 +5,7 @@ import {
   handleBlogApiRequest,
   handleBlogPageRequest,
   handleBlogScheduled,
+  handleSitemapRequest,
 } from "./blog/index.js";
 import { bearerChallenge } from "./discovery/challenge.js";
 import { handleDiscoveryRequest } from "./discovery/handle.js";
@@ -192,6 +193,9 @@ export default {
 
     const blogPage = await handleBlogPageRequest(request, env);
     if (blogPage) return blogPage;
+
+    const sitemap = await handleSitemapRequest(request, env);
+    if (sitemap) return sitemap;
 
     const apiResponse = await handleApiRequest(request, env);
     if (apiResponse) return apiResponse;
