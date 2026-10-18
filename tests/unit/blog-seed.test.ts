@@ -96,9 +96,12 @@ describe("editorial blog seed", () => {
     expect(readSql(MIGRATION)).toBe(rendered);
     expect(normalizeNewlines(rendered.replace(/\n/g, "\r\n"))).toBe(rendered);
 
-    // Wrangler splits migration files on semicolons and treats CASE/BEGIN as
-    // open compound statements. 4 inserts + cursor update, and one more when
-    // wrangler appends the d1_migrations bookkeeping insert.
+    // Wrangler 4 requires Node 22 and splits migration files on semicolons.
+    // CASE/BEGIN open a compound statement, so the cursor update must not use them
+    // or the following d1_migrations insert gets glued on. CI also runs Node 18/20.
+    const nodeMajor = Number(process.versions.node.split(".")[0]);
+    if (nodeMajor < 22) return;
+
     const require = createRequire(import.meta.url);
     const { unstable_splitSqlQuery } = require("wrangler") as {
       unstable_splitSqlQuery: (sql: string) => string[];
