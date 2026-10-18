@@ -16,8 +16,11 @@ Living roadmap for [CF Ready](https://ready.orangecloud.vn) (`@orangecloud/cf-re
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Workers AI blog | Shipped | `/blog/`, cron ≥3 days, D1 + R2 images |
+| Workers AI blog | Shipped | `/blog/`, cron one post per day (≥1 day), D1 + R2 images |
 | Topic rotation | Shipped | Platform, CF Ready, howto, SEO, AI, fair comparison |
+| `seedAll` generate | Shipped | `POST /api/blog/generate` `{ "seedAll": true }` publishes one article per topic |
+| Dynamic sitemap | Shipped | `/sitemap.xml` includes published blog posts; `npm run build:sitemap` fallback |
+| Footer attribution | Shipped | `Made by Lê Sỹ Cường · OrangeCloud` |
 
 ## Shipped (v0.3.2)
 

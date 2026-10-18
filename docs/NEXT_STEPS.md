@@ -14,8 +14,10 @@ Synced with [ROADMAP.md](../ROADMAP.md) and [README Roadmap](../README.md#roadma
 
 ## This release (v0.3.3)
 
-- [x] Workers AI blog (`/blog/`, cron ≥3 days, D1 + R2)
-- [x] Deploy + docs/nav/sitemap updates
+- [x] Workers AI blog (`/blog/`, one post per day, D1 + R2)
+- [x] `seedAll` generate option for the initial topic backlog
+- [x] Dynamic sitemap including published blog posts
+- [x] Footer attribution: `Made by Lê Sỹ Cường · OrangeCloud`
 - [ ] Owner: tag `v0.3.3` + npm publish; apply D1 blog migration
 
 ## Previous (v0.3.2)

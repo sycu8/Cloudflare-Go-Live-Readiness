@@ -7,8 +7,8 @@
   </url>
   <url>
     <loc>https://ready.orangecloud.vn/blog/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://ready.orangecloud.vn/app/</loc>
@@ -84,5 +84,41 @@
     <loc>https://ready.orangecloud.vn/docs/roadmap.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ready.orangecloud.vn/blog/cloudflare-vs-vercel-edge-deployment-trade-offs-2026-08-07/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ready.orangecloud.vn/blog/ai-readiness-for-modern-sites-leveraging-cloudflare-ai-servi-2026-08-07/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ready.orangecloud.vn/blog/optimize-your-cloudflare-site-for-seo-2026-08-07/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ready.orangecloud.vn/blog/get-started-with-cf-ready-a-step-by-step-guide-2026-08-07/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ready.orangecloud.vn/blog/cloudflare-go-live-readiness-cf-ready-checklist-for-smooth-d-2026-08-07/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ready.orangecloud.vn/blog/unlock-edge-computing-with-cloudflare-2026-08-07/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

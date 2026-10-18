@@ -6,7 +6,7 @@
     <title>CF Ready Blog — Cloudflare readiness guides</title>
     <meta
       name="description"
-      content="SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every 3 days via Workers AI."
+      content="SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every day via Workers AI."
     />
     <link rel="canonical" href="https://ready.orangecloud.vn/blog/" />
     <meta name="robots" content="index, follow" />
@@ -50,7 +50,7 @@
           <h1>Guides for Cloudflare-ready shipping</h1>
           <p class="blog-lead">
             Practical articles on the Cloudflare Developer Platform, CF Ready workflows, SEO, and AI readiness —
-            generated with Workers AI every three days.
+            generated with Workers AI every day.
           </p>
         </div>
       </section>
@@ -65,7 +65,7 @@
       <div class="footer-inner">
         <div>
           <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
-          <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường &amp; Trịnh Hoàng Tú · OrangeCloud</p>
+          <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường · OrangeCloud</p>
           <p style="margin:0.35rem 0 0;font-size:0.8rem">Community open-source tool; not affiliated with Cloudflare, Inc.</p>
         </div>
         <div>
@@ -110,7 +110,7 @@
             const topics = Object.fromEntries((data.topics || []).map((t) => [t.id, t.label]));
             if (!posts.length) {
               root.innerHTML =
-                '<p class="blog-empty">New articles are generated every 3 days with Workers AI. Check back soon.</p>';
+                '<p class="blog-empty">New articles are generated daily with Workers AI. Check back soon.</p>';
               return;
             }
             root.innerHTML =
