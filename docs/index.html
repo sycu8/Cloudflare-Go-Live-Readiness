@@ -28,6 +28,11 @@
     <meta name="twitter:image" content="https://ready.orangecloud.vn/assets/og.svg" />
 
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json" />
+    <link rel="service-desc" href="/openapi.json" type="application/json" />
+    <link rel="service-doc" href="/docs/index.html" type="text/html" />
+    <link rel="describedby" href="/.well-known/ai-catalog.json" type="application/json" />
+    <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/json" />
     <link rel="apple-touch-icon" href="/assets/logo-icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -122,6 +127,24 @@
               <pre><code id="install-cmd">npx @orangecloud/cf-ready scan</code></pre>
               <p class="copy-hint">Node.js 18+ · <code>npx @orangecloud/cf-ready scan</code> · <a href="docs/npm.html">npm install</a></p>
             </div>
+            <form
+              class="docs-search"
+              action="/docs/index.html"
+              method="get"
+              toolname="search_cf_ready_docs"
+              tooldescription="Search CF Ready documentation for CLI commands, readiness checks, and Cloudflare migration guidance."
+            >
+              <label for="docs-query">Search the docs</label>
+              <input
+                id="docs-query"
+                name="q"
+                type="search"
+                required
+                placeholder="robots.txt, security, wrangler"
+                toolparamdescription="Search keywords, such as a command name or readiness category."
+              />
+              <button class="btn btn-ghost" type="submit">Search</button>
+            </form>
           </div>
           <div class="hero-visual">
             <div class="terminal-mock" role="img" aria-label="Example cf-ready scan output">
@@ -374,6 +397,7 @@ cf-ready scan</code></pre>
         } catch { /* ignore */ }
       });
     </script>
+      <script src="/assets/webmcp.js"></script>
       <script src="/assets/site-mobile.js" defer></script>
   </body>
 </html>

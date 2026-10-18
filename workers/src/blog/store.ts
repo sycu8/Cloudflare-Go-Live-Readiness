@@ -46,7 +46,7 @@ export type BlogPostPublic = {
   publishedAt: string;
 };
 
-const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export function toPublicPost(row: BlogPostRow, origin: string): BlogPostPublic {
   let keywords: string[] = [];
@@ -126,11 +126,12 @@ export async function getGenerationState(env: Env): Promise<BlogGenerationState 
   );
 }
 
+/** True when no prior post exists, or at least one full day has passed since the last publish. */
 export function shouldGenerate(state: BlogGenerationState | null, now = Date.now()): boolean {
   if (!state?.last_generated_at) return true;
   const last = Date.parse(state.last_generated_at);
   if (Number.isNaN(last)) return true;
-  return now - last >= THREE_DAYS_MS;
+  return now - last >= ONE_DAY_MS;
 }
 
 export async function listPublishedPosts(env: Env, limit = 50): Promise<BlogPostRow[]> {

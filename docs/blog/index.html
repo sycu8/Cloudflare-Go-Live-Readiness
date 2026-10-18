@@ -6,7 +6,7 @@
     <title>CF Ready Blog — Cloudflare readiness guides</title>
     <meta
       name="description"
-      content="SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every 3 days via Workers AI."
+      content="SEO-friendly guides on Cloudflare, CF Ready, SEO optimization, and AI readiness. New posts every day via Workers AI."
     />
     <link rel="canonical" href="https://ready.orangecloud.vn/blog/" />
     <meta name="robots" content="index, follow" />
@@ -50,7 +50,7 @@
           <h1>Guides for Cloudflare-ready shipping</h1>
           <p class="blog-lead">
             Practical articles on the Cloudflare Developer Platform, CF Ready workflows, SEO, and AI readiness —
-            generated with Workers AI every three days.
+            generated with Workers AI every day.
           </p>
         </div>
       </section>
@@ -110,7 +110,7 @@
             const topics = Object.fromEntries((data.topics || []).map((t) => [t.id, t.label]));
             if (!posts.length) {
               root.innerHTML =
-                '<p class="blog-empty">New articles are generated every 3 days with Workers AI. Check back soon.</p>';
+                '<p class="blog-empty">New articles are generated daily with Workers AI. Check back soon.</p>';
               return;
             }
             root.innerHTML =
