@@ -23,6 +23,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/assets/site.css" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Person",
+          "@id": "https://orangecloud.vn/#person",
+          "name": "Cường Lê Sỹ",
+          "url": "https://orangecloud.vn/about/",
+          "sameAs": ["https://github.com/sycu8", "https://www.linkedin.com/in/sycule/"]
+        },
+        {
+          "@type": "Blog",
+          "@id": "https://ready.orangecloud.vn/blog/#blog",
+          "name": "CF Ready Blog",
+          "url": "https://ready.orangecloud.vn/blog/",
+          "inLanguage": "en",
+          "description": "Guides on Cloudflare Developer Platform readiness, SEO, and AI. Not a publication of Cloudflare, Inc.",
+          "author": { "@id": "https://orangecloud.vn/#person" },
+          "publisher": { "@id": "https://orangecloud.vn/#person" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -66,7 +90,7 @@
         <div>
           <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
           <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường · OrangeCloud</p>
-          <p style="margin:0.35rem 0 0;font-size:0.8rem">Community open-source tool; not affiliated with Cloudflare, Inc.</p>
+          <p class="publication-disclaimer">Not a Cloudflare, Inc. publication. Community open-source tool; not affiliated with Cloudflare, Inc.</p>
         </div>
         <div>
           <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a>

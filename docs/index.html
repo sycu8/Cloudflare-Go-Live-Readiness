@@ -44,15 +44,25 @@
       "@context": "https://schema.org",
       "@graph": [
         {
-          "@type": "WebSite",
-          "name": "CF Ready",
-          "alternateName": "Cloudflare Go-Live Readiness",
-          "url": "https://ready.orangecloud.vn"
+          "@type": "Person",
+          "@id": "https://orangecloud.vn/#person",
+          "name": "Cường Lê Sỹ",
+          "alternateName": ["Cuong Le Sy", "Lê Sỹ Cường", "Sycule"],
+          "url": "https://orangecloud.vn/about/",
+          "sameAs": [
+            "https://github.com/sycu8",
+            "https://www.linkedin.com/in/sycule/"
+          ]
         },
         {
-          "@type": "Organization",
-          "name": "OrangeCloud",
-          "url": "https://ready.orangecloud.vn"
+          "@type": "WebSite",
+          "@id": "https://ready.orangecloud.vn/#website",
+          "name": "CF Ready",
+          "alternateName": "Cloudflare Go-Live Readiness",
+          "url": "https://ready.orangecloud.vn/",
+          "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare. Not a publication of Cloudflare, Inc.",
+          "author": { "@id": "https://orangecloud.vn/#person" },
+          "publisher": { "@id": "https://orangecloud.vn/#person" }
         },
         {
           "@type": "SoftwareApplication",
@@ -61,15 +71,15 @@
           "applicationCategory": "DeveloperApplication",
           "operatingSystem": "macOS, Linux, Windows",
           "programmingLanguage": "TypeScript",
-          "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare.",
-          "url": "https://ready.orangecloud.vn",
+          "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare. Not a publication of Cloudflare, Inc.",
+          "url": "https://ready.orangecloud.vn/",
           "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
           "softwareVersion": "0.3.3",
           "license": "https://opensource.org/licenses/MIT",
-          "author": { "@type": "Organization", "name": "OrangeCloud" },
+          "author": { "@id": "https://orangecloud.vn/#person" },
           "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
           "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
-          "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started.html",
+          "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started",
           "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
         }
       ]
@@ -368,7 +378,7 @@ cf-ready scan</code></pre>
         <div>
           <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
           <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường · OrangeCloud</p>
-          <p style="margin:0.35rem 0 0;font-size:0.8rem">Community open-source tool; not affiliated with Cloudflare, Inc.</p>
+          <p class="publication-disclaimer">Not a Cloudflare, Inc. publication. Community open-source tool; not affiliated with Cloudflare, Inc.</p>
         </div>
         <div>
           <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a>

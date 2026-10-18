@@ -76,6 +76,7 @@ export function renderLoginScreen(config: AuthProviderConfig, authError?: string
           New accounts are created automatically on first sign-in.
           GitHub connection can also authorize private repository imports.
         </p>
+        <p class="auth-footnote">Not a Cloudflare, Inc. publication.</p>
 
         <a class="auth-link" href="/">← Back to docs</a>
       </div>

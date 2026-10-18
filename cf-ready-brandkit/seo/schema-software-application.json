@@ -1,19 +1,31 @@
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Cloudflare Go-Live Readiness",
-  "alternateName": "CF Ready",
-  "applicationCategory": "DeveloperApplication",
-  "operatingSystem": "macOS, Linux, Windows",
-  "softwareVersion": "0.3.3",
-  "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare.",
-  "url": "https://ready.orangecloud.vn",
-  "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
-  "programmingLanguage": "TypeScript",
-  "license": "https://opensource.org/licenses/MIT",
-  "author": { "@type": "Organization", "name": "OrangeCloud" },
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
-  "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started.html",
-  "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://orangecloud.vn/#person",
+      "name": "Cường Lê Sỹ",
+      "alternateName": ["Cuong Le Sy", "Lê Sỹ Cường", "Sycule"],
+      "url": "https://orangecloud.vn/about/",
+      "sameAs": ["https://github.com/sycu8", "https://www.linkedin.com/in/sycule/"]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Cloudflare Go-Live Readiness",
+      "alternateName": "CF Ready",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS, Linux, Windows",
+      "softwareVersion": "0.3.3",
+      "description": "Open-source CLI for checking migration, security, AI readiness, SEO, and deployment readiness before launching on Cloudflare. Not a publication of Cloudflare, Inc.",
+      "url": "https://ready.orangecloud.vn/",
+      "downloadUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+      "programmingLanguage": "TypeScript",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@id": "https://orangecloud.vn/#person" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
+      "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started",
+      "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+    }
+  ]
 }

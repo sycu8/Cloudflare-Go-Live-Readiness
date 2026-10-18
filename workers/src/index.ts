@@ -10,6 +10,7 @@ import {
 import { bearerChallenge } from "./discovery/challenge.js";
 import { handleDiscoveryRequest } from "./discovery/handle.js";
 import { withHomepageLinkHeaders } from "./discovery/links.js";
+import { appShellUrl, isAppClientRoute } from "./app-shell.js";
 
 export { Sandbox } from "@cloudflare/sandbox";
 export { SessionDO } from "./session-do.js";
@@ -177,6 +178,22 @@ async function handleOptimize(request: Request, env: Env): Promise<Response> {
   return jsonResponse(result);
 }
 
+async function fetchAppShell(request: Request, env: Env): Promise<Response> {
+  const shellUrl = appShellUrl(request.url);
+  let shell = await env.ASSETS.fetch(new Request(shellUrl, { method: "GET" }));
+  if (shell.status >= 300 && shell.status < 400) {
+    const location = shell.headers.get("Location");
+    if (location) {
+      shell = await env.ASSETS.fetch(new Request(new URL(location, shellUrl), { method: "GET" }));
+    }
+  }
+  const headers = new Headers(shell.headers);
+  headers.delete("Location");
+  const status = shell.ok ? 200 : shell.status;
+  if (request.method === "HEAD") return new Response(null, { status, headers });
+  return new Response(shell.body, { status, headers });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -201,6 +218,14 @@ export default {
     if (apiResponse) return apiResponse;
 
     const asset = await env.ASSETS.fetch(request);
+    if (
+      (request.method === "GET" || request.method === "HEAD") &&
+      asset.status === 404 &&
+      isAppClientRoute(url.pathname)
+    ) {
+      await asset.body?.cancel();
+      return fetchAppShell(request, env);
+    }
     return withHomepageLinkHeaders(request, asset);
   },
 
