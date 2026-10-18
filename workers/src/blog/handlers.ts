@@ -8,6 +8,7 @@ import {
   toPublicPost,
 } from "./store.js";
 import { BLOG_TOPICS } from "./topics.js";
+import { bearerChallenge } from "../discovery/challenge.js";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -15,10 +16,10 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function json(data: unknown, status = 200): Response {
+function json(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...CORS },
+    headers: { "Content-Type": "application/json", ...CORS, ...extraHeaders },
   });
 }
 
@@ -106,17 +107,36 @@ export async function handleBlogApiRequest(
 
   if (pathname === "/api/blog/generate" && request.method === "POST") {
     if (!checkGenerateAuth(request, env)) {
-      return json({ error: "Unauthorized" }, 401);
+      return json({ error: "Unauthorized" }, 401, bearerChallenge(request));
     }
     let force = true;
     let topicIndex: number | undefined;
+    let seedAll = false;
     try {
-      const body = (await request.json()) as { force?: boolean; topicIndex?: number };
+      const body = (await request.json()) as {
+        force?: boolean;
+        topicIndex?: number;
+        seedAll?: boolean;
+      };
       if (typeof body.force === "boolean") force = body.force;
       if (typeof body.topicIndex === "number") topicIndex = body.topicIndex;
+      if (body.seedAll === true) seedAll = true;
     } catch {
       /* empty body is fine */
     }
+
+    if (seedAll) {
+      const results = [];
+      for (let i = 0; i < BLOG_TOPICS.length; i++) {
+        const result = await generateBlogPost(env, { force: true, topicIndex: i });
+        results.push(result);
+        if (!result.ok) {
+          return json({ ok: false, seeded: results.length - 1, results }, 502);
+        }
+      }
+      return json({ ok: true, seeded: results.length, results }, 201);
+    }
+
     const result = await generateBlogPost(env, { force, topicIndex });
     if (!result.ok) return json(result, 502);
     return json(result, result.skipped ? 200 : 201);
@@ -134,7 +154,7 @@ export async function handleBlogApiRequest(
   return json({ error: "Not found" }, 404);
 }
 
-/** Cron: generate a post when at least 3 days have passed since the last one. */
+/** Cron: generate one post per day when at least 24 hours have passed since the last one. */
 export async function handleBlogScheduled(env: Env): Promise<void> {
   const result = await generateBlogPost(env, { force: false });
   if (!result.ok) {
