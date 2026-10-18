@@ -9,7 +9,9 @@ describe("sitemap", () => {
     const locs = STATIC_SITEMAP_ENTRIES.map((e) => e.loc);
     expect(locs).toContain("https://ready.orangecloud.vn/");
     expect(locs).toContain("https://ready.orangecloud.vn/blog/");
-    expect(locs).toContain("https://ready.orangecloud.vn/docs/getting-started.html");
+    expect(locs).toContain("https://ready.orangecloud.vn/docs/getting-started");
+    expect(locs).toContain("https://ready.orangecloud.vn/docs/");
+    expect(locs.some((loc) => loc.endsWith(".html"))).toBe(false);
   });
 
   it("renders valid xml with blog posts and lastmod", () => {

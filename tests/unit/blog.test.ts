@@ -8,7 +8,8 @@ import {
   slugify,
   type GeneratedBlogDraft,
 } from "../../workers/src/blog/prompts.js";
-import { shouldGenerate } from "../../workers/src/blog/store.js";
+import { shouldGenerate, type BlogPostPublic } from "../../workers/src/blog/store.js";
+import { ORANGE_CLOUD_PERSON_ID, renderBlogPost } from "../../workers/src/blog/html.js";
 import { BLOG_TOPICS, topicAtIndex } from "../../workers/src/blog/topics.js";
 
 const longPara =
@@ -141,5 +142,34 @@ describe("blog generation cadence", () => {
         now,
       ),
     ).toBe(true);
+  });
+});
+
+describe("blog post schema", () => {
+  const post: BlogPostPublic = {
+    id: "1",
+    slug: "edge-notes",
+    topicId: "what-is-cloudflare",
+    title: "Edge notes",
+    excerpt: "A short excerpt.",
+    bodyMarkdown: "Body",
+    bodyHtml: "<p>Body</p>",
+    metaDescription: "Meta about edge notes.",
+    keywords: ["edge"],
+    imageUrl: null,
+    imageAlt: null,
+    wordCount: 320,
+    publishedAt: "2026-08-07T10:00:00.000Z",
+  };
+
+  it("emits BlogPosting linked to the Orange Cloud person", () => {
+    const html = renderBlogPost(post);
+    expect(html).toContain('"@type":"BlogPosting"');
+    expect(html).toContain(`"@id":"${ORANGE_CLOUD_PERSON_ID}"`);
+    expect(html).toContain("https://ready.orangecloud.vn/blog/edge-notes/#article");
+    expect(html).toContain("Not a Cloudflare, Inc. publication.");
+    expect(html).toContain("Made by Lê Sỹ Cường · OrangeCloud");
+    expect(html).not.toContain("worksFor");
+    expect(html).not.toContain("twitter:site");
   });
 });

@@ -3,6 +3,22 @@ import { BLOG_TOPICS } from "./topics.js";
 
 const SITE = "https://ready.orangecloud.vn";
 
+/** Canonical Person on the Orange Cloud apex. No employment role is included. */
+export const ORANGE_CLOUD_PERSON_ID = "https://orangecloud.vn/#person";
+
+const PUBLICATION_DISCLAIMER = "Not a Cloudflare, Inc. publication.";
+
+function personNode(): Record<string, unknown> {
+  return {
+    "@type": "Person",
+    "@id": ORANGE_CLOUD_PERSON_ID,
+    name: "Cường Lê Sỹ",
+    alternateName: ["Cuong Le Sy", "Lê Sỹ Cường", "Sycule"],
+    url: "https://orangecloud.vn/about/",
+    sameAs: ["https://github.com/sycu8", "https://www.linkedin.com/in/sycule/"],
+  };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -32,6 +48,7 @@ function shell(opts: {
   ogImage?: string | null;
   body: string;
   jsonLd?: unknown;
+  robots?: string;
 }): string {
   const ogImage = opts.ogImage || `${SITE}/assets/og.svg`;
   const jsonLd = opts.jsonLd
@@ -46,7 +63,7 @@ function shell(opts: {
     <title>${escapeHtml(opts.title)}</title>
     <meta name="description" content="${escapeHtml(opts.description)}" />
     <link rel="canonical" href="${escapeHtml(opts.canonical)}" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="${escapeHtml(opts.robots ?? "index, follow")}" />
     <meta name="theme-color" content="#0F172A" />
     <script src="/assets/theme.js"></script>
     <meta property="og:type" content="article" />
@@ -91,7 +108,7 @@ function shell(opts: {
         <div>
           <strong style="color:var(--cf-text-inverse)">CF Ready</strong>
           <p style="margin:0.35rem 0 0">Made by Lê Sỹ Cường · OrangeCloud</p>
-          <p style="margin:0.35rem 0 0;font-size:0.8rem">Community open-source tool; not affiliated with Cloudflare, Inc.</p>
+          <p class="publication-disclaimer">${PUBLICATION_DISCLAIMER} Community open-source tool; not affiliated with Cloudflare, Inc.</p>
         </div>
         <div>
           <a href="https://github.com/sycu8/Cloudflare-Go-Live-Readiness">GitHub</a>
@@ -155,12 +172,19 @@ export function renderBlogIndex(posts: BlogPostPublic[]): string {
     body,
     jsonLd: {
       "@context": "https://schema.org",
-      "@type": "Blog",
-      name: "CF Ready Blog",
-      url: `${SITE}/blog/`,
-      description:
-        "Guides on Cloudflare Developer Platform readiness, SEO, and AI — by OrangeCloud.",
-      publisher: { "@type": "Organization", name: "OrangeCloud", url: SITE },
+      "@graph": [
+        personNode(),
+        {
+          "@type": "Blog",
+          "@id": `${SITE}/blog/#blog`,
+          name: "CF Ready Blog",
+          url: `${SITE}/blog/`,
+          inLanguage: "en",
+          description: `Guides on Cloudflare Developer Platform readiness, SEO, and AI. ${PUBLICATION_DISCLAIMER}`,
+          author: { "@id": ORANGE_CLOUD_PERSON_ID },
+          publisher: { "@id": ORANGE_CLOUD_PERSON_ID },
+        },
+      ],
     },
   });
 }
@@ -206,21 +230,25 @@ export function renderBlogPost(post: BlogPostPublic): string {
     body,
     jsonLd: {
       "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      headline: post.title,
-      description: post.metaDescription,
-      datePublished: post.publishedAt,
-      image: post.imageUrl ? [post.imageUrl] : undefined,
-      keywords: post.keywords.join(", "),
-      author: { "@type": "Organization", name: "OrangeCloud" },
-      publisher: {
-        "@type": "Organization",
-        name: "OrangeCloud",
-        url: SITE,
-        logo: { "@type": "ImageObject", url: `${SITE}/assets/logo-icon.svg` },
-      },
-      mainEntityOfPage: canonical,
-      wordCount: post.wordCount,
+      "@graph": [
+        personNode(),
+        {
+          "@type": "BlogPosting",
+          "@id": `${canonical}#article`,
+          headline: post.title,
+          description: post.metaDescription,
+          inLanguage: "en",
+          datePublished: post.publishedAt,
+          dateModified: post.publishedAt,
+          mainEntityOfPage: canonical,
+          image: post.imageUrl ? [post.imageUrl] : [`${SITE}/assets/og.svg`],
+          keywords: post.keywords.join(", "),
+          wordCount: post.wordCount,
+          author: { "@id": ORANGE_CLOUD_PERSON_ID },
+          publisher: { "@id": ORANGE_CLOUD_PERSON_ID },
+          disambiguatingDescription: `Independent CF Ready guide. ${PUBLICATION_DISCLAIMER}`,
+        },
+      ],
     },
   });
 }
@@ -240,6 +268,7 @@ export function renderBlogNotFound(slug: string): string {
     title: "Article not found | CF Ready Blog",
     description: "The requested CF Ready blog article could not be found.",
     canonical: `${SITE}/blog/`,
+    robots: "noindex",
     body,
   });
 }

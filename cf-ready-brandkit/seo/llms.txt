@@ -1,7 +1,9 @@
 # Cloudflare Go-Live Readiness
 
+> Open-source CLI that checks whether a website or application is ready to go live on Cloudflare. Not a publication of Cloudflare, Inc.
+
 ## Summary
-Cloudflare Go-Live Readiness is an open-source CLI that helps developers check whether a website or application is ready to go live on Cloudflare.
+Cloudflare Go-Live Readiness is an open-source CLI that helps developers check whether a website or application is ready to go live on Cloudflare. Not a publication of Cloudflare, Inc.
 
 ## Package
 @orangecloud/cf-ready
@@ -12,17 +14,17 @@ npx @orangecloud/cf-ready scan
 ## Key Pages
 - https://ready.orangecloud.vn/
 - https://ready.orangecloud.vn/blog/
-- https://ready.orangecloud.vn/docs/index.html
-- https://ready.orangecloud.vn/docs/getting-started.html
-- https://ready.orangecloud.vn/docs/examples.html
-- https://ready.orangecloud.vn/docs/commands.html
-- https://ready.orangecloud.vn/docs/configuration.html
-- https://ready.orangecloud.vn/docs/web-agent.html
-- https://ready.orangecloud.vn/docs/migration-readiness.html
-- https://ready.orangecloud.vn/docs/security-readiness.html
-- https://ready.orangecloud.vn/docs/ai-readiness.html
-- https://ready.orangecloud.vn/docs/seo-readiness.html
-- https://ready.orangecloud.vn/docs/reports.html
+- https://ready.orangecloud.vn/docs/
+- https://ready.orangecloud.vn/docs/getting-started
+- https://ready.orangecloud.vn/docs/examples
+- https://ready.orangecloud.vn/docs/commands
+- https://ready.orangecloud.vn/docs/configuration
+- https://ready.orangecloud.vn/docs/web-agent
+- https://ready.orangecloud.vn/docs/migration-readiness
+- https://ready.orangecloud.vn/docs/security-readiness
+- https://ready.orangecloud.vn/docs/ai-readiness
+- https://ready.orangecloud.vn/docs/seo-readiness
+- https://ready.orangecloud.vn/docs/reports
 - https://ready.orangecloud.vn/app/
 
 ## What It Does

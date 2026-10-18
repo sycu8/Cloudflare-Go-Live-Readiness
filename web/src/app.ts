@@ -144,6 +144,7 @@ async function mountAgentApp(
     <div class="process-timer-host" id="process-timer-host" aria-hidden="true"></div>
 
     <div class="app-shell">
+      <p class="app-disclaimer" role="note">Not a Cloudflare, Inc. publication.</p>
       <div class="layout">
         <aside class="panel panel--project is-active" id="panel-project" aria-label="Project">
           <div class="panel-header">
