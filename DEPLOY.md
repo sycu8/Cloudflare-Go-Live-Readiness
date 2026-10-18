@@ -78,6 +78,20 @@ Set in dashboard or `wrangler.jsonc` vars:
 - `GOOGLE_REDIRECT_URI` — `https://<worker>/api/auth/google/callback`
 - `WORKER_PUBLIC_URL` — public worker URL for AI optimize callbacks
 
+## Agent discovery DNS (DNS-AID)
+
+The Worker serves `/.well-known/*`, `/auth.md`, `/robots.txt` Content-Signal directives, and homepage `Link` headers. DNS-AID records are not created by `wrangler deploy`. Publish them with a token that has Zone DNS Edit:
+
+```bash
+export CLOUDFLARE_ZONE_ID=8b2d9a7c97013a739dcb2d2ce28b084d   # orangecloud.vn
+node scripts/publish-dns-aid.mjs show
+node scripts/publish-dns-aid.mjs publish
+node scripts/publish-dns-aid.mjs dnssec
+node scripts/publish-dns-aid.mjs verify
+```
+
+Zone definitions live in `dns/records.json` (`_index._agents`, `_a2a._agents`, `_mcp._agents`, `_catalog._agents`). DNSSEC is already signing `orangecloud.vn` (DNSKEY is published). Validating resolvers set the AD bit only after the `.vn` parent has the matching DS record.
+
 ## GitHub OAuth App (required for sign-in + private repos)
 
 1. Open https://github.com/settings/developers → **New OAuth App**
@@ -168,7 +182,7 @@ Scheduled Workers AI content:
 
 | Piece | Detail |
 |-------|--------|
-| Cadence | Cron `0 10 * * *` (daily check); publishes only when ≥3 days since last post |
+| Cadence | Cron `0 10 * * *`; publishes one post per day when ≥1 day since last post |
 | Text | Workers AI (`@cf/meta/llama-3.1-8b-instruct` family) |
 | Images | Workers AI (`flux-1-schnell`, fallback SDXL) → R2 `blog/images/{slug}.png` |
 | Storage | D1 `blog_posts` + `blog_generation_state` (migration `migrations/d1/0002_blog.sql`) |
