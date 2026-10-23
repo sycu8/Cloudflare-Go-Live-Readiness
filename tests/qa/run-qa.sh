@@ -18,7 +18,8 @@ run() {
 }
 
 cd "$(dirname "$0")/../.."
-npm run build -s
+# CLI inventory executes dist/index.js. build:all produces that bundle.
+npm run build:all -s
 
 # Global
 run "G01" $CLI --version

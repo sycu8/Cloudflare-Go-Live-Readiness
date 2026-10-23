@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Website** | [ready.orangecloud.vn](https://ready.orangecloud.vn) |
+| **Live site** | [https://ready.orangecloud.vn](https://ready.orangecloud.vn) |
 | **Web Agent** | [ready.orangecloud.vn/app](https://ready.orangecloud.vn/app/) — upload source or import GitHub, run scans in the browser |
 | **CLI** | `cf-ready` |
 | **npm** | [`@orangecloud/cf-ready`](https://www.npmjs.com/package/@orangecloud/cf-ready) |
