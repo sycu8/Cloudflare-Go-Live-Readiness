@@ -81,6 +81,35 @@
           "installUrl": "https://www.npmjs.com/package/@orangecloud/cf-ready",
           "softwareHelp": "https://ready.orangecloud.vn/docs/getting-started",
           "codeRepository": "https://github.com/sycu8/Cloudflare-Go-Live-Readiness"
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://ready.orangecloud.vn/#answers",
+          "url": "https://ready.orangecloud.vn/#answers",
+          "isPartOf": { "@id": "https://ready.orangecloud.vn/#website" },
+          "inLanguage": ["vi", "en"],
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "inLanguage": "vi",
+              "name": "CF Ready kiểm tra những gì trước khi đưa site lên Cloudflare?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "inLanguage": "vi",
+                "text": "CF Ready đọc repository và chấm năm nhóm: ứng dụng có chạy trên Workers hoặc Pages không, có lộ secret hay rủi ro từ thư viện không, crawler AI có hiểu được site không, phần SEO cơ bản đã đủ chưa, và đã có checklist triển khai chưa. Lệnh scan chỉ xuất báo cáo. Công cụ không tự deploy và không sửa mã, trừ khi bạn chủ động chạy lệnh fix để tạo robots.txt, sitemap hoặc llms.txt."
+              }
+            },
+            {
+              "@type": "Question",
+              "inLanguage": "en",
+              "name": "What does CF Ready check before a Cloudflare launch?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "inLanguage": "en",
+                "text": "CF Ready reads the repository and scores five areas: whether the app can run on Workers or Pages, whether secrets or dependency risks are exposed, whether AI crawlers can understand the site, whether basic SEO metadata is present, and whether a deployment checklist exists. A scan only writes a report. It does not deploy and does not change source unless you explicitly run a fix command to draft robots.txt, a sitemap, or llms.txt."
+              }
+            }
+          ]
         }
       ]
     }
@@ -169,6 +198,23 @@
                 <div>Reports generated: 8</div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--muted" id="answers" aria-labelledby="answers-title">
+        <div class="section-inner">
+          <h2 id="answers-title">Câu trả lời ngắn</h2>
+          <p class="section-intro">Hai câu trả lời ngắn, tiếng Việt và tiếng Anh, về việc CF Ready làm trước khi lên production.</p>
+          <div class="answer-grid">
+            <article class="card answer-card" lang="vi">
+              <h3>CF Ready kiểm tra những gì trước khi đưa site lên Cloudflare?</h3>
+              <p>CF Ready đọc repository và chấm năm nhóm: ứng dụng có chạy trên Workers hoặc Pages không, có lộ secret hay rủi ro từ thư viện không, crawler AI có hiểu được site không, phần SEO cơ bản đã đủ chưa, và đã có checklist triển khai chưa. Lệnh scan chỉ xuất báo cáo. Công cụ không tự deploy và không sửa mã, trừ khi bạn chủ động chạy lệnh fix để tạo robots.txt, sitemap hoặc llms.txt.</p>
+            </article>
+            <article class="card answer-card" lang="en">
+              <h3>What does CF Ready check before a Cloudflare launch?</h3>
+              <p>CF Ready reads the repository and scores five areas: whether the app can run on Workers or Pages, whether secrets or dependency risks are exposed, whether AI crawlers can understand the site, whether basic SEO metadata is present, and whether a deployment checklist exists. A scan only writes a report. It does not deploy and does not change source unless you explicitly run a fix command to draft robots.txt, a sitemap, or llms.txt.</p>
+            </article>
           </div>
         </div>
       </section>
@@ -395,6 +441,7 @@ cf-ready scan</code></pre>
           <p class="footer-sponsor__label">Help keep this site running</p>
           <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="Sycule" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
         </div>
+        <nav class="footer-family" aria-label="OrangeCloud projects"><a href="https://orangecloud.vn">OrangeCloud</a> · <a href="https://onboarding.orangecloud.vn">Onboarding</a> · <a href="https://launch.orangecloud.vn">OCLaunch</a> · <a href="https://lookup.orangecloud.vn">Edge coverage</a></nav>
       </div>
     </footer>
     <script>
