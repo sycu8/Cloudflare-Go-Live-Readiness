@@ -60,6 +60,7 @@
     "test:e2e": "node scripts/e2e-web-agent.mjs",
     "test:qa": "node tests/qa/run-full-qa.mjs",
     "test:qa:cli": "bash tests/qa/run-qa.sh",
+    "test:wrangler-dry-run": "node scripts/wrangler-dry-run.mjs",
     "validate:npm": "node scripts/validate-npm-package.mjs",
     "prepublishOnly": "npm run build && npm run validate:npm",
     "pages:deploy": "npm run build:all && wrangler deploy"

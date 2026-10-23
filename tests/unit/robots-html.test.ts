@@ -22,6 +22,24 @@ beforeAll(async () => {
   workerFetch = worker.default.fetch;
 });
 
+/** Wrangler rejects a rule that another `*` rule already covers. */
+function redundantRunWorkerFirstRules(wrangler: string): string[] {
+  const match = wrangler.match(/"run_worker_first"\s*:\s*(\[[\s\S]*?\])/);
+  if (!match) return [];
+  const patterns = [...match[1]!.matchAll(/"(!?\/[^"]*)"/g)].map((item) => item[1]!);
+  const errors: string[] = [];
+  for (const rule of patterns) {
+    if (!rule.endsWith("*")) continue;
+    const prefix = rule.slice(0, -1);
+    for (const other of patterns) {
+      if (other !== rule && other.startsWith(prefix)) {
+        errors.push(`'${other}': rule '${rule}' makes it redundant`);
+      }
+    }
+  }
+  return errors;
+}
+
 function patternMatches(pattern: string, pathname: string): boolean {
   const source = `^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`;
   return new RegExp(source).test(pathname);
@@ -59,9 +77,10 @@ describe("HTML routes reach the worker for robots tags", () => {
   it("invokes the worker before HTML assets and still binds ASSETS", () => {
     expect(wrangler).toContain('"binding": "ASSETS"');
     expect(wrangler).toContain('"directory": "./public"');
-    for (const pathname of ["/", "/docs/npm", "/app/", "/index.html", "/docs/getting-started"]) {
+    for (const pathname of ["/", "/docs/npm", "/docs/", "/blog/", "/app/", "/index.html", "/docs/getting-started"]) {
       expect(workerRunsFirst(wrangler, pathname), pathname).toBe(true);
     }
+    expect(redundantRunWorkerFirstRules(wrangler)).toEqual([]);
     expect(workerRunsFirst(wrangler, "/assets/site.css")).toBe(false);
     expect(workerRunsFirst(wrangler, "/sitemap.xml")).toBe(false);
   });
@@ -84,7 +103,7 @@ describe("HTML routes reach the worker for robots tags", () => {
   });
 
   it("adds noindex on /docs/npm and /app/ only for non-canonical hosts", async () => {
-    const pages = ["/docs/npm", "/app/", "/blog/"];
+    const pages = ["/docs/npm", "/docs/", "/blog/", "/app/"];
     for (const pathname of pages) {
       const seen: string[] = [];
       const preview = await workerFetch(
