@@ -23,14 +23,19 @@ npm run build
 | `npm run dev` | Watch mode CLI build |
 | `npm run typecheck` | TypeScript check (CLI + Workers) |
 | `npm run lint` | ESLint |
-| `npm test` | Run Vitest |
-| `npm run test:integration` | Integration tests |
+| `npm test` | Run Vitest. CLI tests execute `dist/index.js` and need `npm run build:all` first; Vitest runs that build when `dist/index.js` is missing |
+| `npm run test:integration` | Integration tests (same `build:all` requirement for CLI cases) |
+| `npm run test:cli` | Run `build:all`, then smoke every CLI command |
+| `npm run test:qa:cli` | Run `build:all`, then the CLI QA inventory |
 | `npm run pages:deploy` | Deploy site + Worker to Cloudflare |
 
 ## Local testing
 
+CLI tests (`npm test`, `npm run test:cli`, `npm run test:qa:cli`) need `npm run build:all` first so `dist/index.js` exists. `test:cli` and `test:qa:cli` run that build themselves. Vitest runs it when `dist/index.js` is missing; run `build:all` again after CLI source changes so the suite does not keep a stale bundle.
+
 ```bash
-npm run build
+npm run build:all
+npm test
 node dist/index.js scan --cwd tests/fixtures/nextjs-app
 node dist/index.js inspect --cwd tests/fixtures/vite-app --json
 ```

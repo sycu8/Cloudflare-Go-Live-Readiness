@@ -12,7 +12,24 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
+    // HTML matches a static asset and would otherwise skip the Worker, so
+    // non-canonical hosts never received X-Robots-Tag. These routes invoke the
+    // Worker first; routeRequest still serves the file through ASSETS.
+    "run_worker_first": [
+      "/",
+      "/index.html",
+      "/404.html",
+      "/docs",
+      "/docs/",
+      "/docs/*",
+      "/blog",
+      "/blog/",
+      "/blog/*",
+      "/app",
+      "/app/",
+      "/app/index.html"
+    ]
   },
   "containers": [
     {

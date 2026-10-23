@@ -8,6 +8,8 @@ import { tmpdir } from "node:os";
 
 const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Requires dist/index.js from `npm run build:all`. Vitest global setup runs that
+// build when the file is missing. Re-run build:all after CLI source changes.
 const CLI = path.join(__dirname, "../../dist/index.js");
 const FIXTURES = path.join(__dirname, "../fixtures");
 

@@ -57,6 +57,12 @@ export async function handleBlogPageRequest(
   }
 
   if (pathname === "/blog" || pathname === "/blog/") {
+    // The built index is a static asset. Prefer it so run_worker_first can add
+    // X-Robots-Tag without replacing the page. Render from D1 only when the
+    // asset is missing.
+    const asset = await env.ASSETS.fetch(request);
+    if (asset.status < 400) return asset;
+    await asset.body?.cancel();
     const origin = originFrom(request, env);
     const rows = await listPublishedPosts(env);
     const posts = rows.map((r) => toPublicPost(r, origin));

@@ -2,8 +2,10 @@
 /**
  * Run every cf-ready CLI command and print a summary table.
  * Usage: npm run test:cli
+ *
+ * Runs `npm run build:all` first. The commands execute `dist/index.js`.
  */
-import { execFile } from "node:child_process";
+import { execFile, execSync } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +14,7 @@ import { tmpdir } from "node:os";
 
 const execFileAsync = promisify(execFile);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+execSync("npm run build:all", { cwd: root, stdio: "inherit" });
 const CLI = path.join(root, "dist/index.js");
 const workDir = mkdtempSync(path.join(tmpdir(), "cf-ready-cli-run-"));
 cpSync(path.join(root, "tests/fixtures/static-site"), workDir, { recursive: true });
