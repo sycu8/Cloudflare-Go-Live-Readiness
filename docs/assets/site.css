@@ -537,6 +537,28 @@ img, svg { max-width: 100%; height: auto; }
 .footer-inner a { color: var(--cf-text-muted); text-decoration: none; }
 .footer-inner a:hover { color: var(--cf-orange-400); }
 
+.footer-family {
+  flex: 1 1 100%;
+  line-height: 1.6;
+}
+
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.answer-card h3 {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin: 0 0 0.6rem;
+}
+
+.answer-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
 .publication-disclaimer {
   margin: 0.35rem 0 0;
   font-size: 0.8rem;

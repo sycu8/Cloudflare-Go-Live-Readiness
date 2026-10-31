@@ -107,4 +107,73 @@ describe("ready site SEO", () => {
     expect(docs).toContain("Not a Cloudflare, Inc. publication.");
     expect(read("docs/index.html")).toContain('data-slug="Sycule"');
   });
+
+  it("publishes a bilingual answer block and FAQPage", () => {
+    const html = read("docs/index.html");
+    expect(html).toContain('lang="vi"');
+    expect(html).toContain('lang="en"');
+    const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    expect(match).toBeTruthy();
+    const graph = JSON.parse(match![1]!) as {
+      "@graph": Array<Record<string, unknown>>;
+    };
+    const faq = graph["@graph"].find((node) => node["@type"] === "FAQPage");
+    expect(faq).toMatchObject({
+      "@id": "https://ready.orangecloud.vn/#answers",
+      inLanguage: ["vi", "en"],
+    });
+    const questions = faq?.mainEntity as Array<{
+      name: string;
+      acceptedAnswer: { text: string };
+    }>;
+    expect(questions).toHaveLength(2);
+    for (const question of questions) {
+      expect(html).toContain(question.name);
+      expect(html).toContain(question.acceptedAnswer.text);
+    }
+    expect(html).not.toContain("Trịnh Hoàng Tú");
+  });
+
+  it("links the hub and sibling projects from the footer", () => {
+    const pages = [
+      "docs/index.html",
+      "docs/404.html",
+      "docs/blog/index.html",
+      "docs/docs/getting-started.html",
+      "workers/src/blog/html.ts",
+    ];
+    for (const rel of pages) {
+      const html = read(rel);
+      expect(html, rel).toContain('href="https://orangecloud.vn"');
+      expect(html, rel).toContain('href="https://onboarding.orangecloud.vn"');
+      expect(html, rel).toContain('href="https://launch.orangecloud.vn"');
+      expect(html, rel).toContain('href="https://lookup.orangecloud.vn"');
+    }
+  });
+
+  it("gives public pages a title, description, canonical, and Open Graph tags", () => {
+    const files = walk(path.join(root, "docs")).filter((file) => file.endsWith(".html"));
+    files.push(path.join(root, "web/index.html"));
+    for (const file of files) {
+      if (file.endsWith(`${path.sep}404.html`)) continue;
+      const html = readFileSync(file, "utf8");
+      const name = path.relative(root, file);
+      expect(html, name).toMatch(/<title>[^<]+<\/title>/);
+      expect(html, name).toMatch(/<meta\b[^>]*name=["']description["']/);
+      expect(html, name).toMatch(
+        /<link\s+rel="canonical"\s+href="https:\/\/ready\.orangecloud\.vn\/[^"]*"/,
+      );
+      for (const prop of ["og:title", "og:description", "og:url", "og:image"]) {
+        expect(html, `${name} ${prop}`).toMatch(
+          new RegExp(`<meta\\b[^>]*property=["']${prop}["']`),
+        );
+      }
+    }
+  });
+
+  it("points the README at the live site and disables workers.dev", () => {
+    expect(read("README.md")).toContain("[https://ready.orangecloud.vn](https://ready.orangecloud.vn)");
+    expect(read("wrangler.jsonc")).toContain('"workers_dev": false');
+    expect(read("workers/src/index.ts")).toContain("withNonCanonicalRobots");
+  });
 });

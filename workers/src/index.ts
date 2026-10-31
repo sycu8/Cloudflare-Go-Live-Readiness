@@ -11,6 +11,7 @@ import { bearerChallenge } from "./discovery/challenge.js";
 import { handleDiscoveryRequest } from "./discovery/handle.js";
 import { withHomepageLinkHeaders } from "./discovery/links.js";
 import { appShellUrl, isAppClientRoute } from "./app-shell.js";
+import { withNonCanonicalRobots } from "./robots-host.js";
 
 export { Sandbox } from "@cloudflare/sandbox";
 export { SessionDO } from "./session-do.js";
@@ -196,37 +197,7 @@ async function fetchAppShell(request: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    const discovery = await handleDiscoveryRequest(request);
-    if (discovery) return discovery;
-
-    if (url.pathname === "/api/optimize" && request.method === "POST") {
-      return handleOptimize(request, env);
-    }
-
-    const blogApi = await handleBlogApiRequest(request, env);
-    if (blogApi) return blogApi;
-
-    const blogPage = await handleBlogPageRequest(request, env);
-    if (blogPage) return blogPage;
-
-    const sitemap = await handleSitemapRequest(request, env);
-    if (sitemap) return sitemap;
-
-    const apiResponse = await handleApiRequest(request, env);
-    if (apiResponse) return apiResponse;
-
-    const asset = await env.ASSETS.fetch(request);
-    if (
-      (request.method === "GET" || request.method === "HEAD") &&
-      asset.status === 404 &&
-      isAppClientRoute(url.pathname)
-    ) {
-      await asset.body?.cancel();
-      return fetchAppShell(request, env);
-    }
-    return withHomepageLinkHeaders(request, asset);
+    return withNonCanonicalRobots(request, await routeRequest(request, env));
   },
 
   async scheduled(
@@ -237,3 +208,37 @@ export default {
     ctx.waitUntil(handleBlogScheduled(env));
   },
 };
+
+async function routeRequest(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+
+  const discovery = await handleDiscoveryRequest(request);
+  if (discovery) return discovery;
+
+  if (url.pathname === "/api/optimize" && request.method === "POST") {
+    return handleOptimize(request, env);
+  }
+
+  const blogApi = await handleBlogApiRequest(request, env);
+  if (blogApi) return blogApi;
+
+  const blogPage = await handleBlogPageRequest(request, env);
+  if (blogPage) return blogPage;
+
+  const sitemap = await handleSitemapRequest(request, env);
+  if (sitemap) return sitemap;
+
+  const apiResponse = await handleApiRequest(request, env);
+  if (apiResponse) return apiResponse;
+
+  const asset = await env.ASSETS.fetch(request);
+  if (
+    (request.method === "GET" || request.method === "HEAD") &&
+    asset.status === 404 &&
+    isAppClientRoute(url.pathname)
+  ) {
+    await asset.body?.cancel();
+    return fetchAppShell(request, env);
+  }
+  return withHomepageLinkHeaders(request, asset);
+}
