@@ -4,6 +4,7 @@
  *
  * Container images are not built (`--containers-rollout=none`): that step needs
  * Docker and is not what rejects assets.run_worker_first. Route checks still run.
+ * Wrangler 4 requires Node.js >= 22. The Vitest wrapper skips this on older CI nodes.
  *
  * Usage: npm run test:wrangler-dry-run
  */
