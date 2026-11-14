@@ -2,15 +2,15 @@
   "projectName": "Vite Cloudflare Site",
   "productionUrl": "https://example.com",
   "framework": "vite",
-  "target": "cloudflare-pages",
+  "target": "cloudflare-workers",
   "migration": {
-    "preferredPath": "cloudflare-pages",
+    "preferredPath": "cloudflare-workers",
     "allowAutoMigration": false
   },
   "aiPolicy": "allow-assistive-agents",
   "seo": {
     "defaultTitle": "Vite Cloudflare Site",
-    "defaultDescription": "A fast static website prepared for Cloudflare Pages.",
+    "defaultDescription": "A fast static website prepared for Workers with static assets. Pages is still supported.",
     "defaultImage": "/og.png",
     "organizationName": "OrangeCloud"
   },

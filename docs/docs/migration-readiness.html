@@ -124,13 +124,13 @@ npx @vinext/cloudflare deploy --dry-run</code></pre>
             <tr><th>Framework</th><th>Migration guidance</th></tr>
           </thead>
           <tbody>
-            <tr><td>Vite / React SPA</td><td>Cloudflare Pages or Workers Assets static deploy</td></tr>
-            <tr><td>Astro</td><td>Static → Pages; SSR/hybrid → <code>@astrojs/cloudflare</code> + wrangler</td></tr>
-            <tr><td>Remix</td><td><code>@remix-run/cloudflare</code> template; review loaders/sessions for Workers</td></tr>
+            <tr><td>Vite / React SPA</td><td>Workers with static assets. Start new projects with Workers. Pages is still supported.</td></tr>
+            <tr><td>Astro</td><td>Static → Workers static assets (Pages is still supported); SSR/hybrid → <code>@astrojs/cloudflare</code> + wrangler</td></tr>
+            <tr><td>Remix</td><td>React Router (formerly Remix) with the Cloudflare Vite plugin. Remix 3 has a separate Workers guide. Review loaders/sessions for Workers.</td></tr>
             <tr><td>Hono</td><td>Workers fetch handler; remove <code>@hono/node-server</code> for edge deploys</td></tr>
             <tr><td>Express / Node.js</td><td>Progressive rewrite toward Hono or Workers-compatible handlers</td></tr>
             <tr><td>Nuxt</td><td>Official Cloudflare adapter documentation (detection only)</td></tr>
-            <tr><td>Static HTML</td><td>Direct Pages deploy — no runtime blockers expected</td></tr>
+            <tr><td>Static HTML</td><td>Workers with static assets. Start new projects with Workers. Pages is still supported. No runtime blockers expected.</td></tr>
           </tbody>
         </table>
 
