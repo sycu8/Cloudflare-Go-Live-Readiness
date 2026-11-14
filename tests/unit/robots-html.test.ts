@@ -77,7 +77,17 @@ describe("HTML routes reach the worker for robots tags", () => {
   it("invokes the worker before HTML assets and still binds ASSETS", () => {
     expect(wrangler).toContain('"binding": "ASSETS"');
     expect(wrangler).toContain('"directory": "./public"');
-    for (const pathname of ["/", "/docs/npm", "/docs/", "/blog/", "/app/", "/index.html", "/docs/getting-started"]) {
+    for (const pathname of [
+      "/",
+      "/docs/npm",
+      "/docs/",
+      "/blog/",
+      "/app/",
+      "/index.html",
+      "/docs/getting-started",
+      "/api/blog",
+      "/api/health",
+    ]) {
       expect(workerRunsFirst(wrangler, pathname), pathname).toBe(true);
     }
     expect(redundantRunWorkerFirstRules(wrangler)).toEqual([]);
@@ -103,7 +113,7 @@ describe("HTML routes reach the worker for robots tags", () => {
   });
 
   it("adds noindex on /docs/npm and /app/ only for non-canonical hosts", async () => {
-    const pages = ["/docs/npm", "/docs/", "/blog/", "/app/"];
+    const pages = ["/docs/npm", "/docs/", "/app/"];
     for (const pathname of pages) {
       const seen: string[] = [];
       const preview = await workerFetch(
@@ -123,7 +133,7 @@ describe("HTML routes reach the worker for robots tags", () => {
     }
   });
 
-  it("renders the blog index from D1 when the static asset is missing", async () => {
+  it("renders the blog index without the static shell and noindexes non-canonical hosts", async () => {
     const env = {
       ASSETS: {
         fetch: async () => new Response("missing", { status: 404 }),

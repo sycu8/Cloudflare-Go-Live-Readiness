@@ -79,8 +79,8 @@
         </div>
       </section>
       <section class="blog-list">
-        <div class="blog-list__inner" id="blog-root">
-          <p class="blog-empty">Loading articles…</p>
+        <div class="blog-list__inner">
+          <p class="blog-empty">New articles are generated daily with Workers AI. Check back soon, or trigger a draft after deploy.</p>
         </div>
       </section>
     </main>
@@ -103,60 +103,6 @@
       </div>
     </footer>
 
-    <script>
-      (function () {
-        const root = document.getElementById("blog-root");
-        if (!root) return;
-
-        function escapeHtml(s) {
-          return String(s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
-        }
-
-        function formatDate(iso) {
-          try {
-            return new Date(iso).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            });
-          } catch {
-            return iso;
-          }
-        }
-
-        fetch("/api/blog")
-          .then((r) => r.json())
-          .then((data) => {
-            const posts = data.posts || [];
-            const topics = Object.fromEntries((data.topics || []).map((t) => [t.id, t.label]));
-            if (!posts.length) {
-              root.innerHTML =
-                '<p class="blog-empty">New articles are generated daily with Workers AI. Check back soon.</p>';
-              return;
-            }
-            root.innerHTML =
-              '<div class="blog-grid">' +
-              posts
-                .map((p) => {
-                  const label = topics[p.topicId] || p.topicId;
-                  const img = p.imageUrl
-                    ? `<img class="blog-card__image" src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.imageAlt || p.title)}" loading="lazy" width="640" height="360" />`
-                    : '<div class="blog-card__image blog-card__image--placeholder" aria-hidden="true"></div>';
-                  return `<article class="blog-card"><a class="blog-card__link" href="/blog/${escapeHtml(p.slug)}/">${img}<div class="blog-card__body"><p class="blog-card__meta"><span class="blog-topic">${escapeHtml(label)}</span> · <time datetime="${escapeHtml(p.publishedAt)}">${escapeHtml(formatDate(p.publishedAt))}</time></p><h2 class="blog-card__title">${escapeHtml(p.title)}</h2><p class="blog-card__excerpt">${escapeHtml(p.excerpt)}</p></div></a></article>`;
-                })
-                .join("") +
-              "</div>";
-          })
-          .catch(() => {
-            root.innerHTML =
-              '<p class="blog-empty">Unable to load blog posts right now. Please refresh or visit again later.</p>';
-          });
-      })();
-    </script>
     <script src="/assets/site-mobile.js" defer></script>
   </body>
 </html>

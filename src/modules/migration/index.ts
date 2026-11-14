@@ -124,11 +124,11 @@ export function generateMigrationPlanMarkdown(
 
   if (inspection.framework === "vite" || inspection.framework === "react-spa") {
     lines.push(
-      "### Vite/React → Cloudflare Pages",
+      "### Vite/React → Workers with static assets",
       "",
       "- Build: `npm run build`",
-      "- Deploy `dist/` to Cloudflare Pages",
-      "- Or configure Workers Assets in wrangler.toml",
+      "- Deploy `dist/` with Workers static assets",
+      "- Start new projects with Workers. Pages is still supported.",
       "",
     );
   }
@@ -146,9 +146,10 @@ export function generateMigrationPlanMarkdown(
 
   if (inspection.framework === "astro") {
     lines.push(
-      "### Astro → Cloudflare Pages / Workers",
+      "### Astro → Workers with static assets",
       "",
-      "- Static: `astro build` → deploy `dist/` to Pages",
+      "- Static: `astro build` → deploy `dist/` with Workers static assets",
+      "- Start new projects with Workers. Pages is still supported.",
       "- SSR/hybrid: add `@astrojs/cloudflare` adapter and wrangler config",
       "- Docs: https://docs.astro.build/en/guides/integrations-guide/cloudflare/",
       "",
@@ -157,9 +158,10 @@ export function generateMigrationPlanMarkdown(
 
   if (inspection.framework === "remix") {
     lines.push(
-      "### Remix → Cloudflare",
+      "### React Router (formerly Remix) → Cloudflare Workers",
       "",
-      "- Use Remix Cloudflare template / `@remix-run/cloudflare`",
+      "- Use React Router (formerly Remix) with the Cloudflare Vite plugin",
+      "- Remix 3 has a separate Workers guide",
       "- Replace Node-only session/storage with KV or external stores",
       "- Add wrangler.toml and validate loaders/actions on Workers",
       "",

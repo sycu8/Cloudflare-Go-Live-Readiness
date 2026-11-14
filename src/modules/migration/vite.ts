@@ -7,10 +7,11 @@ export function analyzeVite(inspection: RepositoryInspection): Finding[] {
     createFinding({
       category: "migration",
       severity: "info",
-      title: "Vite project — Cloudflare Pages recommended",
-      description: "Vite SPAs deploy well to Cloudflare Pages or Workers Assets.",
+      title: "Vite project — Workers with static assets recommended",
+      description:
+        "Vite SPAs deploy well to Workers with static assets. Pages is still supported.",
       recommendation:
-        "Use Cloudflare Pages for static builds, or Workers Assets for edge-hosted SPAs. Configure wrangler.toml with assets binding.",
+        "Start new projects with Workers. Use Workers static assets for static builds and edge-hosted SPAs, and set the Wrangler assets directory. Pages is still supported.",
       autoFixAvailable: false,
       requiresApproval: false,
     }),
@@ -18,8 +19,9 @@ export function analyzeVite(inspection: RepositoryInspection): Finding[] {
       category: "migration",
       severity: "info",
       title: "Suggested deployment target",
-      description: `Current target: ${inspection.deploymentTarget}. Recommended: cloudflare-pages.`,
-      recommendation: "Add wrangler.toml or connect repository to Cloudflare Pages dashboard.",
+      description: `Current target: ${inspection.deploymentTarget}. Recommended: Workers with static assets.`,
+      recommendation:
+        "Add a Wrangler config with an assets directory. Start new projects with Workers. Pages is still supported.",
       autoFixAvailable: false,
       requiresApproval: false,
     }),
@@ -31,9 +33,11 @@ export function analyzeReactSpa(_inspection: RepositoryInspection): Finding[] {
     createFinding({
       category: "migration",
       severity: "info",
-      title: "React SPA — Cloudflare Pages recommended",
-      description: "Static React builds can be deployed to Cloudflare Pages.",
-      recommendation: "Build with npm run build and deploy dist/ to Cloudflare Pages.",
+      title: "React SPA — Workers with static assets recommended",
+      description:
+        "Static React builds can be deployed with Workers static assets. Pages is still supported.",
+      recommendation:
+        "Build with npm run build and deploy dist/ with Workers static assets. Start new projects with Workers. Pages is still supported.",
       autoFixAvailable: false,
       requiresApproval: false,
     }),

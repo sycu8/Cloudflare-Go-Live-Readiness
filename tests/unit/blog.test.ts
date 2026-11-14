@@ -9,7 +9,7 @@ import {
   type GeneratedBlogDraft,
 } from "../../workers/src/blog/prompts.js";
 import { shouldGenerate, type BlogPostPublic } from "../../workers/src/blog/store.js";
-import { ORANGE_CLOUD_PERSON_ID, renderBlogPost } from "../../workers/src/blog/html.js";
+import { ORANGE_CLOUD_PERSON_ID, renderBlogIndex, renderBlogPost } from "../../workers/src/blog/html.js";
 import { BLOG_TOPICS, topicAtIndex } from "../../workers/src/blog/topics.js";
 
 const longPara =
@@ -171,5 +171,13 @@ describe("blog post schema", () => {
     expect(html).toContain("Made by Lê Sỹ Cường · OrangeCloud");
     expect(html).not.toContain("worksFor");
     expect(html).not.toContain("twitter:site");
+  });
+
+  it("interpolates the index title instead of leaving the template expression", () => {
+    const html = renderBlogIndex([post]);
+    expect(html).toContain("Edge notes");
+    expect(html).toContain('href="/blog/edge-notes/"');
+    expect(html).not.toContain("${escapeHtml(p.title)}");
+    expect(html).not.toContain("${escapeHtml(p.slug)}");
   });
 });

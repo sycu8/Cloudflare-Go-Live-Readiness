@@ -62,7 +62,7 @@ const FRAMEWORK_MIGRATION: Partial<Record<Framework, Remediation>> = {
   },
   astro: {
     steps: [
-      "For static sites, run astro build and deploy dist/ to Cloudflare Pages.",
+      "For static sites, run astro build and deploy dist/ with Workers static assets. Start new projects with Workers. Pages is still supported.",
       "For SSR/hybrid, install @astrojs/cloudflare and set it as the Astro adapter.",
       "Add wrangler.toml and validate bindings for images, KV, or D1 if used.",
     ],
@@ -71,11 +71,11 @@ const FRAMEWORK_MIGRATION: Partial<Record<Framework, Remediation>> = {
   },
   remix: {
     steps: [
-      "Start from the Remix Cloudflare template or add @remix-run/cloudflare.",
+      "Start from React Router (formerly Remix) with the Cloudflare Vite plugin. Remix 3 has a separate Workers guide.",
       "Replace Node-only session/storage with KV, Durable Objects, or external stores.",
       "Add wrangler.toml and deploy with wrangler.",
     ],
-    docsUrl: "https://remix.run/docs/en/main/guides/vite#cloudflare",
+    docsUrl: "https://developers.cloudflare.com/workers/framework-guides/web-apps/react-router/",
     estimatedEffort: "hours",
   },
   hono: {

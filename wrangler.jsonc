@@ -18,6 +18,9 @@
     // Worker first; routeRequest still serves the file through ASSETS.
     // A "*" rule already covers its prefix, so "/docs/" and "/blog/" must not
     // be listed next to "/docs/*" and "/blog/*" or Wrangler rejects the config.
+    // /api/* is not a static file. With not_found_handling "404-page", a path
+    // left off this list is answered with 404.html and the Worker never runs.
+    // That is why GET /api/blog returned the HTML 404 page.
     "run_worker_first": [
       "/",
       "/index.html",
@@ -28,7 +31,8 @@
       "/blog/*",
       "/app",
       "/app/",
-      "/app/index.html"
+      "/app/index.html",
+      "/api/*"
     ]
   },
   "containers": [

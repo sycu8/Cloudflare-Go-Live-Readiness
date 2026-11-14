@@ -57,16 +57,18 @@ export async function handleBlogPageRequest(
   }
 
   if (pathname === "/blog" || pathname === "/blog/") {
-    // The built index is a static asset. Prefer it so run_worker_first can add
-    // X-Robots-Tag without replacing the page. Render from D1 only when the
-    // asset is missing.
-    const asset = await env.ASSETS.fetch(request);
-    if (asset.status < 400) return asset;
-    await asset.body?.cancel();
+    // Always render the index. The static docs/blog/index.html shell fetched
+    // /api/blog in the browser and left ${escapeHtml(p.title)} in the HTML.
+    // That API was the asset 404 page, so the expression never filled in.
+    // An unbound D1 database yields an empty list, not a 404.
     const origin = originFrom(request, env);
     const rows = await listPublishedPosts(env);
     const posts = rows.map((r) => toPublicPost(r, origin));
-    return htmlResponse(renderBlogIndex(posts));
+    const response = htmlResponse(renderBlogIndex(posts));
+    if (request.method === "HEAD") {
+      return new Response(null, { status: response.status, headers: response.headers });
+    }
+    return response;
   }
 
   const postMatch = pathname.match(/^\/blog\/([^/]+)\/?$/);

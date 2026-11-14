@@ -18,7 +18,7 @@ export function analyzeRemix(inspection: RepositoryInspection): Finding[] {
         ? `Config files: ${remix.configFiles.join(", ")}.`
         : "Remix detected from @remix-run/* dependencies.",
       recommendation:
-        "Prefer the official Remix Cloudflare templates (@remix-run/cloudflare) for Workers/Pages.",
+        "Prefer React Router (formerly Remix) on Workers with the Cloudflare Vite plugin. Remix 3 has a separate Workers guide.",
       remediation,
       autoFixAvailable: false,
       requiresApproval: false,
@@ -36,7 +36,7 @@ export function analyzeRemix(inspection: RepositoryInspection): Finding[] {
         description:
           "Project appears configured for Node (@remix-run/node) or lacks @remix-run/cloudflare packages.",
         recommendation:
-          "Migrate to @remix-run/cloudflare (or Cloudflare Pages template). Review loaders/actions for Node-only APIs.",
+          "Migrate to React Router (formerly Remix). Review loaders/actions for Node-only APIs.",
         remediation,
         autoFixAvailable: false,
         requiresApproval: true,
