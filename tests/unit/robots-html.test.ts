@@ -92,7 +92,7 @@ describe("HTML routes reach the worker for robots tags", () => {
     }
     expect(redundantRunWorkerFirstRules(wrangler)).toEqual([]);
     expect(workerRunsFirst(wrangler, "/assets/site.css")).toBe(false);
-    expect(workerRunsFirst(wrangler, "/sitemap.xml")).toBe(false);
+    expect(workerRunsFirst(wrangler, "/sitemap.xml")).toBe(true);
   });
 
   it("returns noindex for / on a non-canonical host and omits it on the canonical host", async () => {
