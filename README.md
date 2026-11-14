@@ -504,15 +504,15 @@ General example:
   "projectName": "Vite Cloudflare Site",
   "productionUrl": "https://example.com",
   "framework": "vite",
-  "target": "cloudflare-pages",
+  "target": "cloudflare-workers",
   "migration": {
-    "preferredPath": "cloudflare-pages",
+    "preferredPath": "cloudflare-workers",
     "allowAutoMigration": false
   },
   "aiPolicy": "allow-assistive-agents",
   "seo": {
     "defaultTitle": "Vite Cloudflare Site",
-    "defaultDescription": "A fast static website prepared for Cloudflare Pages.",
+    "defaultDescription": "A fast static website prepared for Workers with static assets. Pages is still supported.",
     "defaultImage": "/og.png",
     "organizationName": "OrangeCloud"
   },
@@ -533,11 +533,11 @@ General example:
   "projectName": "Static Cloudflare Site",
   "productionUrl": "https://example.com",
   "framework": "static",
-  "target": "cloudflare-pages",
+  "target": "cloudflare-workers",
   "aiPolicy": "allow-assistive-agents",
   "seo": {
     "defaultTitle": "Static Cloudflare Site",
-    "defaultDescription": "A static website prepared for Cloudflare Pages and AI discovery.",
+    "defaultDescription": "A static website prepared for Workers with static assets and AI discovery. Pages is still supported.",
     "defaultImage": "/og.png",
     "organizationName": "OrangeCloud"
   },
@@ -661,8 +661,8 @@ The tool should not run these migration commands automatically in the MVP.
 
 For Vite or static React apps, it may recommend:
 
-* Cloudflare Pages;
-* Workers Assets;
+* Workers with static assets (start new projects with Workers);
+* Pages, which is still supported;
 * simple static deployment;
 * preview deployment workflow.
 
@@ -1181,4 +1181,4 @@ The CLI is read-only by default. It does not deploy, does not automatically migr
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.
 
-Deploy the docs site to Cloudflare Pages: [DEPLOY.md](DEPLOY.md)
+Deploy the docs site with Workers static assets: [DEPLOY.md](DEPLOY.md)

@@ -18,7 +18,7 @@ export function analyzeAstro(inspection: RepositoryInspection): Finding[] {
         ? `Astro config: ${astro.configFiles.join(", ")}.`
         : "Astro detected from package dependencies.",
       recommendation:
-        "Use @astrojs/cloudflare for SSR/hybrid, or deploy static builds to Cloudflare Pages.",
+        "Use @astrojs/cloudflare for SSR/hybrid, or deploy static builds with Workers static assets. Start new projects with Workers. Pages is still supported.",
       remediation,
       autoFixAvailable: false,
       requiresApproval: false,
@@ -65,10 +65,10 @@ export function analyzeAstro(inspection: RepositoryInspection): Finding[] {
         id: "migration-astro-pages",
         category: "migration",
         severity: "info",
-        title: "Suggested target: Cloudflare Pages (static Astro)",
+        title: "Suggested target: Workers with static assets (static Astro)",
         description: `Current deployment target: ${inspection.deploymentTarget}.`,
         recommendation:
-          "Build with `astro build` and deploy `dist/` to Cloudflare Pages, or add the Cloudflare adapter if you need SSR.",
+          "Build with `astro build` and deploy `dist/` with Workers static assets. Start new projects with Workers. Pages is still supported. Add the Cloudflare adapter if you need SSR.",
         remediation,
         autoFixAvailable: false,
         requiresApproval: false,

@@ -60,10 +60,10 @@
         <pre><code># Expected: blockers when fs/child_process present in app code
 cf-ready scan --cwd ./my-next-app --json | jq '.blockers'</code></pre>
 
-        <h2 id="vite">Vite / React SPA → Cloudflare Pages</h2>
+        <h2 id="vite">Vite / React SPA → Workers with static assets</h2>
         <ol>
           <li>Use <code>examples/vite/cf-ready.config.json</code> as template</li>
-          <li>Set <code>target: "cloudflare-pages"</code></li>
+          <li>Set <code>target: "cloudflare-workers"</code>. Start new projects with Workers. Pages is still supported.</li>
           <li><code>cf-ready scan</code> — migration score focuses on static output and build script</li>
           <li>Ensure <code>npm run build</code> produces <code>dist/</code></li>
           <li>Generate SEO/AI files if missing: <code>cf-ready fix --seo --ai-readiness</code></li>
