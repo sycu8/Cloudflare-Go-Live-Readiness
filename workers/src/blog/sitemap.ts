@@ -65,11 +65,14 @@ export function renderSitemapXml(entries: SitemapEntry[]): string {
 export async function buildSitemapEntries(env: Env): Promise<SitemapEntry[]> {
   const entries = [...STATIC_SITEMAP_ENTRIES];
   try {
-    const posts = await listPublishedPosts(env, 500);
+    if (!env.DB) return entries;
+    // One sitemap document holds at most 50,000 URLs. Static pages use a few
+    // dozen, so this limit still includes every published post.
+    const posts = await listPublishedPosts(env, 50_000);
     for (const post of posts) {
       entries.push({
         loc: `${SITE}/blog/${post.slug}/`,
-        lastmod: toLastmod(post.published_at),
+        lastmod: toLastmod(post.updated_at) ?? toLastmod(post.published_at),
         changefreq: "monthly",
         priority: 0.7,
       });

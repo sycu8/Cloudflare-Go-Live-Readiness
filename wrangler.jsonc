@@ -21,6 +21,8 @@
     // /api/* is not a static file. With not_found_handling "404-page", a path
     // left off this list is answered with 404.html and the Worker never runs.
     // That is why GET /api/blog returned the HTML 404 page.
+    // /sitemap.xml is a static asset unless listed here, so the Worker never
+    // merged published D1 posts into it.
     "run_worker_first": [
       "/",
       "/index.html",
@@ -32,7 +34,8 @@
       "/app",
       "/app/",
       "/app/index.html",
-      "/api/*"
+      "/api/*",
+      "/sitemap.xml"
     ]
   },
   "containers": [
